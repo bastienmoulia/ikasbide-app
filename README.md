@@ -4,10 +4,12 @@ Projet de compagnon web et mobile pour s'entraîner au basque en suivant la prog
 
 ## État actuel
 
-Le premier socle est implémenté : **Angular PWA, Angular Material, connexion/déconnexion
-Google via Firebase Authentication et accueil de parcours vide**, responsive et en
-basque avec une traduction française sous chaque texte. Aucun contenu du livre
-n’est embarqué. Le curriculum et la progression
+Le socle du ticket [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) est livré
+et déployé : **Angular PWA, Angular Material, connexion/déconnexion Google via Firebase
+Authentication et accueil de parcours vide**, responsive et bilingue, avec le basque
+en premier et la traduction française en dessous. L’application est disponible sur
+[ikasbide-app.web.app](https://ikasbide-app.web.app) et peut être installée depuis le
+navigateur. Aucun contenu du livre n’est embarqué. Le curriculum et la progression
 restent à réaliser dans les tickets suivants.
 
 ### Démarrer sans compte Firebase
@@ -33,8 +35,8 @@ npm run format:check
 ```
 
 La [procédure Firebase](docs/firebase-setup.md) décrit la connexion à votre projet,
-le développement avec `npm start`, le premier déploiement Hosting et l’installation
-de la PWA. Aucun déploiement de production n’est requis par les tests.
+le développement avec `npm start`, le déploiement Hosting et l’installation de la PWA.
+Les tests automatisés n’utilisent que les émulateurs et ne déploient jamais en production.
 
 ## Première version prévue
 
@@ -103,14 +105,14 @@ Seul le socle du ticket #2 est implémenté ; les autres fonctionnalités ci-des
 restent **à réaliser**. La [spec V1](https://github.com/bastienmoulia/ikasbide-app/issues/1)
 reste la référence détaillée.
 
-| Ticket                                                       | Livrable                                       | Dépend de |
-| ------------------------------------------------------------ | ---------------------------------------------- | --------- |
-| [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) | PWA authentifiée et premier socle déployable   | —         |
-| [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum             | #2        |
-| [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées       | #3        |
-| [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | #3        |
-| [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives   | #4, #5    |
-| [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) | Carte de progression par objectif              | #6        |
+| Ticket                                                       | Livrable                                       | État       | Dépend de |
+| ------------------------------------------------------------ | ---------------------------------------------- | ---------- | --------- |
+| [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) | PWA authentifiée et premier socle déployable   | Livré      | —         |
+| [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum             | À réaliser | #2        |
+| [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées       | À réaliser | #3        |
+| [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | À réaliser | #3        |
+| [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives   | À réaliser | #4, #5    |
+| [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) | Carte de progression par objectif              | À réaliser | #6        |
 
 La répétition espacée viendra plus tard, à partir du vocabulaire et des expressions clés dans les deux sens basque–français. Les applications natives via Capacitor, la reconnaissance vocale et les moteurs dédiés aux jeux oraux ne font pas partie de cette V1.
 
