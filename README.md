@@ -4,11 +4,36 @@ Projet de compagnon web et mobile pour s'entraîner au basque en suivant la prog
 
 ## État actuel
 
-**Le projet est en phase de conception ; l'application n'est pas encore implémentée.**
+Le premier socle est implémenté : **Angular PWA, Angular Material, connexion/déconnexion
+Google via Firebase Authentication et accueil de parcours vide**, responsive et en
+français. Aucun contenu du livre n’est embarqué. Le curriculum et la progression
+restent à réaliser dans les tickets suivants.
 
-Ce dépôt contient le [glossaire métier](GLOSSARY.md), les [décisions d'architecture](docs/adr/), la [spécification V1](https://github.com/bastienmoulia/ikasbide-app/issues/1) et ses tickets d'implémentation. Il ne contient pas encore de code applicatif, de dépendances, de tests exécutables ni de configuration de déploiement.
+### Démarrer sans compte Firebase
 
-Il n'y a donc pas encore de commande d'installation ou de lancement, ni de version déployée documentée. Ces instructions seront ajoutées avec le premier socle fonctionnel.
+Avec Node 24.15+ (ou 22.22.3+) :
+
+```bash
+npm ci
+npx playwright install chromium
+npm run build:e2e
+npm run emulators
+```
+
+Ouvrir `http://127.0.0.1:5100`, cliquer sur la connexion Google, puis créer un compte
+**fictif** dans la fenêtre de l’émulateur. Ne pas utiliser d’identifiants réels.
+
+Pour vérifier le projet :
+
+```bash
+npm run typecheck
+npm test
+npm run format:check
+```
+
+La [procédure Firebase](docs/firebase-setup.md) décrit la connexion à votre projet,
+le développement avec `npm start`, le premier déploiement Hosting et l’installation
+de la PWA. Aucun déploiement de production n’est requis par les tests.
 
 ## Première version prévue
 
@@ -37,16 +62,16 @@ Les tentatives conserveront uniquement l'item, le résultat, la date et les iden
 
 La PWA permettra de consulter hors ligne le contenu déjà chargé et d'enregistrer des tentatives en attente de synchronisation. Le contenu jamais consulté et les ressources audio externes ne seront pas garantis hors ligne.
 
-## Stack et validation prévues
+## Stack et validation
 
-| Besoin | Choix |
-| --- | --- |
-| Application installable sur mobile et ordinateur | Angular PWA |
-| Interface | Angular Material |
-| Connexion | Firebase Authentication avec Google |
-| Curriculum, tentatives et progression | Firestore |
-| Hébergement | Firebase Hosting |
-| Tests des parcours utilisateur | Playwright et émulateurs Firebase |
+| Besoin                                           | Choix                               |
+| ------------------------------------------------ | ----------------------------------- |
+| Application installable sur mobile et ordinateur | Angular PWA                         |
+| Interface                                        | Angular Material                    |
+| Connexion                                        | Firebase Authentication avec Google |
+| Curriculum, tentatives et progression            | Firestore                           |
+| Hébergement                                      | Firebase Hosting                    |
+| Tests des parcours utilisateur                   | Playwright et émulateurs Firebase   |
 
 Les tests utiliseront des contenus fictifs originaux et des comptes simulés. Ils couvriront les comportements visibles dans le navigateur, les droits d'accès Firestore et l'import du curriculum, sans dépendre du livre numérisé, d'un compte Google réel ou des services de production.
 
@@ -60,16 +85,18 @@ Pour le chapitre 1, l'application proposera uniquement un lien vers la [page aud
 
 ## Feuille de route
 
-Les fonctionnalités ci-dessous sont **à réaliser**, pas déjà disponibles. La [spec V1](https://github.com/bastienmoulia/ikasbide-app/issues/1) reste la référence détaillée.
+Seul le socle du ticket #2 est implémenté ; les autres fonctionnalités ci-dessous
+restent **à réaliser**. La [spec V1](https://github.com/bastienmoulia/ikasbide-app/issues/1)
+reste la référence détaillée.
 
-| Ticket | Livrable | Dépend de |
-| --- | --- | --- |
-| [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) | PWA authentifiée et premier socle déployable | — |
-| [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum | #2 |
-| [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées | #3 |
-| [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | #3 |
-| [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives | #4, #5 |
-| [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) | Carte de progression par objectif | #6 |
+| Ticket                                                       | Livrable                                       | Dépend de |
+| ------------------------------------------------------------ | ---------------------------------------------- | --------- |
+| [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) | PWA authentifiée et premier socle déployable   | —         |
+| [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum             | #2        |
+| [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées       | #3        |
+| [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | #3        |
+| [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives   | #4, #5    |
+| [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) | Carte de progression par objectif              | #6        |
 
 La répétition espacée viendra plus tard, à partir du vocabulaire et des expressions clés dans les deux sens basque–français. Les applications natives via Capacitor, la reconnaissance vocale et les moteurs dédiés aux jeux oraux ne font pas partie de cette V1.
 

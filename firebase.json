@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "public": "dist/ikasbide/browser",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        ]
+      },
+      {
+        "source": "/{index.html,ngsw.json,ngsw-worker.js,firebase-config.json}",
+        "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+      }
+    ]
+  },
+  "emulators": {
+    "auth": { "host": "127.0.0.1", "port": 9099 },
+    "hosting": { "host": "127.0.0.1", "port": 5100 },
+    "ui": { "enabled": false },
+    "singleProjectMode": true
+  }
+}

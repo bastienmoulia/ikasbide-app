@@ -1,0 +1,15 @@
+.agents/
+docs/agents/
+docs/adr/
+GLOSSARY.md
+AGENTS.md
+skills-lock.json
+dist/
+node_modules/
+.angular/
+.firebase/
+test-results/
+playwright-report/
+public/firebase-config.json
+package-lock.json
+*-debug.log*
