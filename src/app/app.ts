@@ -3,90 +3,156 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AuthService } from './auth.service';
+import { BilingualText } from './bilingual-text';
 
 @Component({
-  imports: [MatButtonModule, MatCardModule, MatProgressBarModule],
+  imports: [MatButtonModule, MatCardModule, MatProgressBarModule, BilingualText],
   selector: 'app-root',
-  styleUrl: './app.scss',
+  styleUrl: './app.css',
   template: `
-    <a class="skip-link" href="#main">Aller au contenu</a>
+    <a class="skip-link" href="#main">
+      <app-bilingual-text eu="Edukira joan" fr="Aller au contenu" />
+    </a>
     <header>
-      <a class="brand" href="/" aria-label="Ikasbide, accueil">
+      <a class="brand" href="/">
         <span class="brand-mark" aria-hidden="true">i</span>
         Ikasbide
       </a>
-      <span class="tagline">Votre compagnon de basque</span>
+      <span class="tagline">
+        <app-bilingual-text eu="Euskara ikasteko laguna" fr="Votre compagnon de basque" />
+      </span>
     </header>
     <main id="main">
       @if (auth.error(); as error) {
-        <p role="alert">{{ error }}</p>
+        <p role="alert">
+          <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+        </p>
       }
       @if (auth.status() === 'loading') {
-        <p role="status">Chargement de votre session…</p>
-        <mat-progress-bar mode="indeterminate" aria-label="Chargement de votre session" />
-      } @else if (auth.status() === 'unavailable') {
-        <h1>Connexion indisponible</h1>
-        <p role="alert">
-          Impossible de préparer la connexion. Vérifiez votre accès à Internet. Si le problème
-          persiste, la configuration Firebase doit être vérifiée par le responsable de
-          l’application.
+        <p id="session-loading" role="status">
+          <app-bilingual-text eu="Saioa kargatzen…" fr="Chargement de votre session…" />
         </p>
-        <a mat-stroked-button href="/">Réessayer</a>
+        <mat-progress-bar mode="indeterminate" aria-labelledby="session-loading" />
+      } @else if (auth.status() === 'unavailable') {
+        <h1>
+          <app-bilingual-text eu="Ezin da saioa hasi" fr="Connexion indisponible" />
+        </h1>
+        <p role="alert">
+          <app-bilingual-text
+            eu="Ezin izan da saioa hasteko konexioa prestatu. Egiaztatu Interneteko konexioa. Arazoak jarraitzen badu, aplikazioaren arduradunak Firebase konfigurazioa egiaztatu behar du."
+            fr="Impossible de préparer la connexion. Vérifiez votre accès à Internet. Si le problème persiste, la configuration Firebase doit être vérifiée par le responsable de l’application."
+          />
+        </p>
+        <a mat-stroked-button href="/">
+          <app-bilingual-text eu="Berriz saiatu" fr="Réessayer" />
+        </a>
       } @else if (auth.user(); as user) {
         <div class="account">
-          <span>{{ user.displayName || user.email || 'Compte Google connecté' }}</span>
+          <span>
+            @if (user.displayName || user.email; as identity) {
+              {{ identity }}
+            } @else {
+              <app-bilingual-text eu="Google kontua konektatuta" fr="Compte Google connecté" />
+            }
+          </span>
           <button
             mat-stroked-button
             type="button"
             [disabled]="auth.pending()"
             (click)="auth.signOut()"
           >
-            Se déconnecter
+            <app-bilingual-text eu="Amaitu saioa" fr="Se déconnecter" />
           </button>
         </div>
-        <p class="eyebrow">Votre espace d’apprentissage</p>
-        <h1>Votre parcours</h1>
-        <p class="lead">Retrouvez ici les unités, chapitres et séquences de votre parcours.</p>
+        <p class="eyebrow">
+          <app-bilingual-text eu="Zure ikasteko gunea" fr="Votre espace d’apprentissage" />
+        </p>
+        <h1>
+          <app-bilingual-text eu="Zure ibilbidea" fr="Votre parcours" />
+        </h1>
+        <p class="lead">
+          <app-bilingual-text
+            eu="Zure ibilbideko unitateak, kapituluak eta sekuentziak hemen aurkituko dituzu."
+            fr="Retrouvez ici les unités, chapitres et séquences de votre parcours."
+          />
+        </p>
         <mat-card appearance="outlined">
           <mat-card-content>
-            <h2>Le parcours se prépare</h2>
-            <p>Aucun chapitre publié pour le moment.</p>
+            <h2>
+              <app-bilingual-text eu="Ibilbidea prestatzen ari gara" fr="Le parcours se prépare" />
+            </h2>
+            <p>
+              <app-bilingual-text
+                eu="Oraindik ez dago argitaratutako kapitulurik."
+                fr="Aucun chapitre publié pour le moment."
+              />
+            </p>
             <p class="muted">
-              Les premiers contenus seront ajoutés prochainement. Vous pouvez déjà installer
-              l’application pour la retrouver facilement.
+              <app-bilingual-text
+                eu="Edukiak laster gehituko ditugu. Aplikazioa instala dezakezu dagoeneko, erraz aurkitzeko."
+                fr="Les premiers contenus seront ajoutés prochainement. Vous pouvez déjà installer l’application pour la retrouver facilement."
+              />
             </p>
           </mat-card-content>
         </mat-card>
       } @else {
         <section class="intro">
-          <p class="eyebrow">Ongi etorri · Bienvenue</p>
-          <h1>Le basque, à votre rythme.</h1>
+          <p class="eyebrow">
+            <app-bilingual-text eu="Ongi etorri" fr="Bienvenue" />
+          </p>
+          <h1>
+            <app-bilingual-text eu="Euskara, zure erritmoan." fr="Le basque, à votre rythme." />
+          </h1>
           <p class="lead">
-            Un espace personnel pour apprendre et pratiquer, en suivant la progression d’Ikasbide
-            metodoa.
+            <app-bilingual-text
+              eu="Ikasbide metodoaren urratsei jarraituz ikasteko eta praktikatzeko zure gunea."
+              fr="Un espace personnel pour apprendre et pratiquer, en suivant la progression d’Ikasbide metodoa."
+            />
           </p>
         </section>
         <mat-card appearance="outlined">
           <mat-card-content>
-            <h2>Un petit pas, chaque fois.</h2>
-            <p>Connectez-vous pour accéder à votre parcours d’apprentissage.</p>
+            <h2>
+              <app-bilingual-text
+                eu="Pauso txiki bat aldi bakoitzean."
+                fr="Un petit pas, chaque fois."
+              />
+            </h2>
+            <p>
+              <app-bilingual-text
+                eu="Hasi saioa zure ikaskuntza-ibilbidea ikusteko."
+                fr="Connectez-vous pour accéder à votre parcours d’apprentissage."
+              />
+            </p>
             <button
               mat-flat-button
               type="button"
               [disabled]="auth.pending()"
               (click)="auth.signIn()"
             >
-              Se connecter avec Google
+              <app-bilingual-text eu="Hasi saioa Google bidez" fr="Se connecter avec Google" />
             </button>
             @if (auth.pending()) {
-              <p role="status">Connexion en cours…</p>
+              <p role="status">
+                <app-bilingual-text eu="Saioa hasten…" fr="Connexion en cours…" />
+              </p>
             }
-            <p class="muted">L’accès est ouvert à toute personne disposant d’un compte Google.</p>
+            <p class="muted">
+              <app-bilingual-text
+                eu="Google kontua duen edonor sar daiteke."
+                fr="L’accès est ouvert à toute personne disposant d’un compte Google."
+              />
+            </p>
           </mat-card-content>
         </mat-card>
       }
     </main>
-    <footer>Apprendre, pratiquer, prendre confiance.</footer>
+    <footer>
+      <app-bilingual-text
+        eu="Ikasi, praktikatu, konfiantza hartu."
+        fr="Apprendre, pratiquer, prendre confiance."
+      />
+    </footer>
   `,
 })
 export class App {

@@ -6,7 +6,8 @@ Projet de compagnon web et mobile pour s'entraîner au basque en suivant la prog
 
 Le premier socle est implémenté : **Angular PWA, Angular Material, connexion/déconnexion
 Google via Firebase Authentication et accueil de parcours vide**, responsive et en
-français. Aucun contenu du livre n’est embarqué. Le curriculum et la progression
+basque avec une traduction française sous chaque texte. Aucun contenu du livre
+n’est embarqué. Le curriculum et la progression
 restent à réaliser dans les tickets suivants.
 
 ### Démarrer sans compte Firebase
@@ -39,12 +40,25 @@ de la PWA. Aucun déploiement de production n’est requis par les tests.
 
 L'application suivra l'organisation du livre : **Unité → Chapitre → Séquence**, avec des ressources pédagogiques et des activités composées d'items. Le glossaire définit ces termes et fait référence pour le projet.
 
-- Interface en français et contenu pédagogique en français et en basque.
+- Interface et contenu bilingues : basque en premier, traduction française dessous en plus petit.
 - Chapitre 1 disponible en premier, puis ajout des chapitres au fil de la progression.
 - Ordre pédagogique recommandé, sans verrouillage des séquences selon les résultats.
 - Couleur d'accent par chapitre, sur fonds neutres : rouge pour le chapitre 1, puis cycle violet, bleu, vert et orange.
 - Quatre formats autocorrigés : texte à trous, traduction dans les deux sens, QCM et remise en ordre des mots.
 - Activités orales ou collectives conservées comme consignes facultatives, sans prétendre les corriger automatiquement.
+
+### Convention d’affichage bilingue
+
+Les textes de l’interface et les contenus bilingues suivent la présentation du
+livre : **texte basque en premier, traduction française directement dessous,
+dans une taille plus petite**, jamais côte à côte. Cette règle s’applique aussi
+aux titres, boutons, consignes et messages de chargement ou d’erreur. Les noms
+propres et les données de compte ne sont pas traduits.
+
+Utiliser le composant `app-bilingual-text` avec ses deux entrées obligatoires
+`eu` et `fr` pour conserver cette présentation. Chaque texte porte l’attribut
+`lang` de sa langue pour les lecteurs d’écran ; les libellés accessibles des
+contrôles conservent les deux langues.
 
 ### Correction et progression
 

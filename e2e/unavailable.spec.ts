@@ -7,9 +7,12 @@ test('missing configuration is shown as unavailable, not signed out', async ({ p
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Connexion indisponible' })).toBeVisible();
   await expect(page.getByRole('alert')).toContainText('configuration Firebase');
+  await expect(page.getByRole('alert').locator('[lang="eu"]')).toContainText(
+    'Firebase konfigurazioa',
+  );
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toHaveCount(0);
   await page.unroute('**/firebase-config.json');
-  await page.getByRole('link', { name: 'Réessayer', exact: true }).click();
+  await page.getByRole('link', { name: 'Berriz saiatu Réessayer', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeEnabled();
 });
 
@@ -44,9 +47,15 @@ test('a cancelled Google popup offers a retry without authenticating', async ({ 
   await popup.waitForLoadState('domcontentloaded');
   await popup.close();
   // Firebase waits before treating a closed provider window as a cancellation.
-  await expect(page.getByRole('alert')).toHaveText('Connexion annulée. Vous pouvez réessayer.', {
-    timeout: 15_000,
-  });
+  await expect(page.getByRole('alert').locator('[lang="fr"]')).toHaveText(
+    'Connexion annulée. Vous pouvez réessayer.',
+    {
+      timeout: 15_000,
+    },
+  );
+  await expect(page.getByRole('alert').locator('[lang="eu"]')).toHaveText(
+    'Saioa hasteko prozesua bertan behera utzi da. Berriz saia zaitezke.',
+  );
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeEnabled();
   await expect(page.getByRole('heading', { name: 'Votre parcours' })).toHaveCount(0);
 });

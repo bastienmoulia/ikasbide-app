@@ -1,11 +1,40 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function expectBilingualPresentation(page: Page): Promise<void> {
+  await expect(page.locator('html')).toHaveAttribute('lang', 'eu');
+  const texts = page.locator('app-bilingual-text:visible');
+  expect(await texts.count()).toBeGreaterThan(0);
+  for (const text of await texts.all()) {
+    const basque = text.locator('[lang="eu"]');
+    const french = text.locator('[lang="fr"]');
+    await expect(basque).not.toBeEmpty();
+    await expect(french).not.toBeEmpty();
+    const layout = await text.evaluate((element) => {
+      const basque = element.querySelector<HTMLElement>('[lang="eu"]');
+      const french = element.querySelector<HTMLElement>('[lang="fr"]');
+      if (!basque || !french) throw new Error('Both languages must be present.');
+      return {
+        basqueBottom: basque.getBoundingClientRect().bottom,
+        frenchTop: french.getBoundingClientRect().top,
+        basqueSize: Number.parseFloat(getComputedStyle(basque).fontSize),
+        frenchSize: Number.parseFloat(getComputedStyle(french).fontSize),
+      };
+    });
+    expect(layout.frenchTop).toBeGreaterThanOrEqual(layout.basqueBottom);
+    expect(layout.frenchSize).toBeLessThan(layout.basqueSize);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+}
 
 test('a visitor sees a clear Google sign-in entry point', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Le basque, à votre rythme.' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Se déconnecter' })).toHaveCount(0);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
+    'Euskara, zure erritmoan. Le basque, à votre rythme.',
+  );
+  await expectBilingualPresentation(page);
 });
 
 test('a learner signs in with Google, keeps the session and signs out', async ({ page }) => {
@@ -22,6 +51,7 @@ test('a learner signs in with Google, keeps the session and signs out', async ({
   await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
   await expect(page.getByText('Apprenant fictif', { exact: true })).toBeVisible();
   await expect(page.getByText('Aucun chapitre publié pour le moment.')).toBeVisible();
+  await expectBilingualPresentation(page);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
   await page.getByRole('button', { name: 'Se déconnecter' }).click();
