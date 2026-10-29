@@ -16,9 +16,10 @@ l’**import et la navigation du curriculum** : une commande valide les sources 
 dépôt privé `bastienmoulia/ikasbide-content` et les publie dans Firestore ; les
 apprenants connectés parcourent unités, chapitres colorés, objectifs et séquences.
 Aucun contenu du livre n’est embarqué dans ce dépôt ; voir
-[docs/curriculum.md](docs/curriculum.md). Les activités interactives et la progression
-restent à réaliser. Un curriculum fictif de démonstration (**1 unité et 2 chapitres**)
-est publié pour essayer la navigation ; il ne constitue pas le contenu du livre.
+[docs/curriculum.md](docs/curriculum.md). Les quatre formats autocorrigés et les
+consignes orales facultatives sont interactifs ; le suivi de progression reste à
+réaliser. Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié
+pour essayer la navigation ; il ne constitue pas le contenu du livre.
 
 ### Démarrer sans compte Firebase
 
@@ -119,7 +120,12 @@ contrôles conservent les deux langues.
 
 ### Correction et progression
 
-Les réponses admises seront définies dans le contenu. La comparaison normalisera la casse, Unicode, les espaces et la ponctuation finale, tout en préservant les lettres, accents, suffixes et la ponctuation interne significative. Une réponse « presque » pourra recevoir un retour encourageant, mais ne comptera pas comme correcte.
+Les réponses admises sont définies dans le contenu. La comparaison normalise Unicode
+(NFC), la casse, les espaces et la ponctuation finale, tout en préservant les lettres,
+accents, suffixes et la ponctuation interne significative. Une transposition unique de
+deux lettres adjacentes dans un mot d'au moins cinq caractères peut afficher « Presque ! » ;
+elle reste incorrecte et ne fournit aucun indice de maîtrise. Voir
+[docs/curriculum.md](docs/curriculum.md) pour le détail.
 
 Une carte de progression remplacera l'autoévaluation déclarative par une estimation des objectifs de communication : **à découvrir**, **en cours**, **acquis**. Le critère convenu pour « acquis » est une réussite sur au moins **trois items distincts**, répartie sur au moins **deux sessions de pratique distinctes**. Cette estimation n'est pas une évaluation complète des capacités orales.
 

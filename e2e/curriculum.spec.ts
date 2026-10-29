@@ -53,6 +53,12 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
     /Remise en ordre.*Remettez les mots dans l’ordre.*Demandez d’où vient la personne\./,
     /Activité orale facultative.*Dialogue à deux/,
   ]);
+  const oralPrompt = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Dialogue à deux/ }) });
+  await expect(oralPrompt.getByRole('textbox')).toHaveCount(0);
+  await expect(oralPrompt.getByRole('radio')).toHaveCount(0);
+  await expect(oralPrompt.getByRole('button')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Enregistrements audio/ })).toHaveAttribute(
     'href',
     'https://example.org/ikasbide-audio',
@@ -68,7 +74,7 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
   await expect(page.getByRole('article')).toHaveText([
     /Note.*Les salutations/,
     /Dialogue.*Miren.*Bonjour ! Je suis Miren\. Et toi \?.*Jon/,
-    /Texte à trous.*Complétez les phrases.*Kaixo, Jon ___\./,
+    /Texte à trous.*Complétez les phrases.*Kaixo, Jon.*Bonjour, je suis Jon\./,
     /QCM.*Choisissez la salutation.*Agur.*Kaixo.*Eskerrik asko/,
   ]);
   await page.reload();
@@ -76,6 +82,128 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
   await page.getByRole('link', { name: /Retour au parcours/ }).click();
   await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
+});
+
+test('a learner gets item-level feedback for gap-fill answers', async ({ page }) => {
+  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  await signInWithGoogle(page);
+
+  const activity = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Complétez les phrases/ }) });
+  await activity.getByRole('textbox').first().fill('NAIZ');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .first()
+    .click();
+  await expect(activity.getByRole('status').first()).toContainText('Correct');
+
+  await activity.getByRole('textbox').nth(1).fill('ko');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(1)
+    .click();
+  await expect(activity.getByRole('status').nth(1)).toContainText('Incorrect');
+
+  await activity.getByRole('textbox').nth(2).fill('on');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(2)
+    .click();
+  await expect(activity.getByRole('status').nth(2)).toContainText('Correct');
+
+  await activity.getByRole('textbox').nth(3).fill('Kiaxo');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(3)
+    .click();
+  await expect(activity.getByRole('status').nth(3)).toContainText('Presque');
+});
+
+test('a learner can answer a multiple-choice item', async ({ page }) => {
+  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  await signInWithGoogle(page);
+
+  const activity = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Choisissez la salutation/ }) });
+  await activity.getByRole('radio', { name: 'Agur' }).check();
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .first()
+    .click();
+  await expect(activity.getByRole('status').first()).toContainText('Correct');
+
+  await activity.getByRole('radio', { name: 'Egun on' }).check();
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(1)
+    .click();
+  await expect(activity.getByRole('status').nth(1)).toContainText('Correct');
+});
+
+test('translation answers accept listed variants and preserve diacritic distinctions', async ({
+  page,
+}) => {
+  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await signInWithGoogle(page);
+
+  const activity = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Traduisez/ }) });
+  await activity.getByRole('textbox').nth(0).fill('  Ni Baionakoa  naiz!! ');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(0)
+    .click();
+  await expect(activity.getByRole('status').nth(0)).toContainText('Correct');
+
+  await activity.getByRole('textbox').nth(1).fill('J’habite a Bilbao.');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(1)
+    .click();
+  await expect(activity.getByRole('status').nth(1)).toContainText('Incorrect');
+
+  await activity.getByRole('textbox').nth(1).fill('Jhabite à Bilbao.');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(1)
+    .click();
+  await expect(activity.getByRole('status').nth(1)).toContainText('Incorrect');
+
+  await activity.getByRole('textbox').nth(1).fill('J’habite a\u0300 Bilbao');
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(1)
+    .click();
+  await expect(activity.getByRole('status').nth(1)).toContainText('Correct');
+});
+
+test('a learner can build a word-order answer from the offered words', async ({ page }) => {
+  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await signInWithGoogle(page);
+
+  const activity = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Remettez les mots dans l’ordre/ }) });
+  await activity.getByRole('button', { name: 'Zu' }).click();
+  await activity.getByRole('button', { name: 'nongoa' }).click();
+  await activity.getByRole('button', { name: 'zara' }).click();
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .first()
+    .click();
+  await expect(activity.getByRole('status').first()).toContainText('Correct');
+
+  await activity.getByRole('button', { name: 'Bilbon' }).click();
+  await activity.getByRole('button', { name: 'bizi' }).click();
+  await activity.getByRole('button', { name: 'naiz' }).click();
+  await activity
+    .getByRole('button', { name: /Vérifier/ })
+    .nth(1)
+    .click();
+  await expect(activity.getByRole('status').nth(1)).toContainText('Correct');
 });
 
 test('unknown curriculum addresses show an explicit not-found state', async ({ page }) => {

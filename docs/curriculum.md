@@ -60,6 +60,15 @@ avec leur chemin JSON. Aucune écriture n’a lieu si le fichier est invalide.
   jamais être acquis.
 - Au plus 400 documents publiés (limite d’un lot Firestore atomique).
 
+## Correction des réponses
+
+Une réponse libre est correcte si elle correspond à l'une des réponses acceptées après
+normalisation Unicode NFC, passage en minuscules, réduction des espaces répétés et retrait
+de la ponctuation finale. Les accents, les lettres, les suffixes et la ponctuation interne
+restent significatifs. Une seule transposition de deux lettres adjacentes, à l'intérieur
+d'un mot d'au moins cinq caractères et avant ses deux derniers caractères, peut afficher
+« Presque ! » ; elle reste incorrecte et ne fournit aucun indice de maîtrise.
+
 ## Données publiées
 
 | Document         | Contenu                                                                         |

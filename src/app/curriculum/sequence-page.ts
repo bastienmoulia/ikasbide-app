@@ -2,6 +2,7 @@ import { Component, computed, inject, input, resource } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
+import { ActivityPlayer } from './activity-player';
 import { chapterColor } from './chapter-color';
 import {
   contentKindLabels,
@@ -13,7 +14,7 @@ import { CurriculumService } from './curriculum.service';
 
 @Component({
   selector: 'app-sequence-page',
-  imports: [BilingualText, MatProgressBarModule, RouterLink],
+  imports: [ActivityPlayer, BilingualText, MatProgressBarModule, RouterLink],
   styleUrls: ['./curriculum.css', './sequence-page.css'],
   host: { '[style.--chapter-accent]': 'accent()' },
   template: `
@@ -106,68 +107,7 @@ import { CurriculumService } from './curriculum.service';
                       [fr]="content.instructions.fr"
                     />
                   </p>
-                  <ol class="items">
-                    @switch (content.kind) {
-                      @case ('gap-fill') {
-                        @for (item of content.items; track item.id) {
-                          <li>
-                            <app-bilingual-text [eu]="item.prompt.eu" [fr]="item.prompt.fr" />
-                          </li>
-                        }
-                      }
-                      @case ('translation') {
-                        @for (item of content.items; track item.id) {
-                          <li class="stack">
-                            @if (item.direction === 'eu-fr') {
-                              <app-bilingual-text
-                                class="muted"
-                                eu="Euskaratik frantsesera"
-                                fr="Du basque vers le français"
-                              />
-                              <span lang="eu">{{ item.source }}</span>
-                            } @else {
-                              <app-bilingual-text
-                                class="muted"
-                                eu="Frantsesetik euskarara"
-                                fr="Du français vers le basque"
-                              />
-                              <span lang="fr">{{ item.source }}</span>
-                            }
-                          </li>
-                        }
-                      }
-                      @case ('multiple-choice') {
-                        @for (item of content.items; track item.id) {
-                          <li class="stack">
-                            <app-bilingual-text [eu]="item.prompt.eu" [fr]="item.prompt.fr" />
-                            <span class="chips">
-                              @for (choice of item.choices; track choice.id) {
-                                <span class="chip" [lang]="choice.lang">{{ choice.text }}</span>
-                              }
-                            </span>
-                          </li>
-                        }
-                      }
-                      @case ('word-order') {
-                        @for (item of content.items; track item.id) {
-                          <li class="stack">
-                            <app-bilingual-text [eu]="item.prompt.eu" [fr]="item.prompt.fr" />
-                            <span class="chips">
-                              @for (word of item.words; track $index) {
-                                <span class="chip" lang="eu">{{ word }}</span>
-                              }
-                            </span>
-                          </li>
-                        }
-                      }
-                    }
-                  </ol>
-                  <p class="muted">
-                    <app-bilingual-text
-                      eu="Laster jarduera honi erantzun ahal izango diozu."
-                      fr="Vous pourrez bientôt répondre à cette activité."
-                    />
-                  </p>
+                  <app-activity-player [activity]="content" />
                 }
               }
             </article>

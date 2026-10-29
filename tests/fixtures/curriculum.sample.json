@@ -85,6 +85,12 @@
                       "objectiveIds": ["greet-and-introduce"],
                       "prompt": { "eu": "Egun ___!", "fr": "Bonjour ! (le matin)" },
                       "acceptedAnswers": ["on"]
+                    },
+                    {
+                      "id": "greetings-gap-4",
+                      "objectiveIds": ["greet-and-introduce"],
+                      "prompt": { "eu": "___, Miren!", "fr": "Bonjour, Miren !" },
+                      "acceptedAnswers": ["Kaixo"]
                     }
                   ]
                 },
