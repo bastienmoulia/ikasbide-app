@@ -6,11 +6,18 @@ Projet de compagnon web et mobile pour s'entraîner au basque en suivant la prog
 
 Le socle du ticket [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) est livré
 et déployé : **Angular PWA, Angular Material, connexion/déconnexion Google via Firebase
-Authentication et accueil de parcours vide**, responsive et bilingue, avec le basque
-en premier et la traduction française en dessous. L’application est disponible sur
+Authentication**, responsive et bilingue, avec le basque en premier et la traduction
+française en dessous. L’application est disponible sur
 [ikasbide-app.web.app](https://ikasbide-app.web.app) et peut être installée depuis le
-navigateur. Aucun contenu du livre n’est embarqué. Le curriculum et la progression
-restent à réaliser dans les tickets suivants.
+navigateur.
+
+Le ticket [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) ajoute
+l’**import et la navigation du curriculum** : une commande valide les sources JSON du
+dépôt privé `bastienmoulia/ikasbide-content` et les publie dans Firestore ; les
+apprenants connectés parcourent unités, chapitres colorés, objectifs et séquences.
+Aucun contenu du livre n’est embarqué dans ce dépôt ; voir
+[docs/curriculum.md](docs/curriculum.md). Les activités interactives et la progression
+restent à réaliser.
 
 ### Démarrer sans compte Firebase
 
@@ -101,14 +108,14 @@ Pour le chapitre 1, l'application proposera uniquement un lien vers la [page aud
 
 ## Feuille de route
 
-Seul le socle du ticket #2 est implémenté ; les autres fonctionnalités ci-dessous
+Les tickets #2 et #3 sont implémentés ; les autres fonctionnalités ci-dessous
 restent **à réaliser**. La [spec V1](https://github.com/bastienmoulia/ikasbide-app/issues/1)
 reste la référence détaillée.
 
 | Ticket                                                       | Livrable                                       | État       | Dépend de |
 | ------------------------------------------------------------ | ---------------------------------------------- | ---------- | --------- |
 | [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) | PWA authentifiée et premier socle déployable   | Livré      | —         |
-| [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum             | À réaliser | #2        |
+| [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum             | Livré      | #2        |
 | [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées       | À réaliser | #3        |
 | [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | À réaliser | #3        |
 | [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives   | À réaliser | #4, #5    |

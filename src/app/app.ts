@@ -2,11 +2,19 @@ import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './auth.service';
 import { BilingualText } from './bilingual-text';
 
 @Component({
-  imports: [MatButtonModule, MatCardModule, MatProgressBarModule, BilingualText],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatProgressBarModule,
+    RouterLink,
+    RouterOutlet,
+    BilingualText,
+  ],
   selector: 'app-root',
   styleUrl: './app.css',
   template: `
@@ -14,7 +22,7 @@ import { BilingualText } from './bilingual-text';
       <app-bilingual-text eu="Edukira joan" fr="Aller au contenu" />
     </a>
     <header>
-      <a class="brand" href="/">
+      <a class="brand" routerLink="/">
         <span class="brand-mark" aria-hidden="true">i</span>
         Ikasbide
       </a>
@@ -64,37 +72,7 @@ import { BilingualText } from './bilingual-text';
             <app-bilingual-text eu="Amaitu saioa" fr="Se déconnecter" />
           </button>
         </div>
-        <p class="eyebrow">
-          <app-bilingual-text eu="Zure ikasteko gunea" fr="Votre espace d’apprentissage" />
-        </p>
-        <h1>
-          <app-bilingual-text eu="Zure ibilbidea" fr="Votre parcours" />
-        </h1>
-        <p class="lead">
-          <app-bilingual-text
-            eu="Zure ibilbideko unitateak, kapituluak eta sekuentziak hemen aurkituko dituzu."
-            fr="Retrouvez ici les unités, chapitres et séquences de votre parcours."
-          />
-        </p>
-        <mat-card appearance="outlined">
-          <mat-card-content>
-            <h2>
-              <app-bilingual-text eu="Ibilbidea prestatzen ari gara" fr="Le parcours se prépare" />
-            </h2>
-            <p>
-              <app-bilingual-text
-                eu="Oraindik ez dago argitaratutako kapitulurik."
-                fr="Aucun chapitre publié pour le moment."
-              />
-            </p>
-            <p class="muted">
-              <app-bilingual-text
-                eu="Edukiak laster gehituko ditugu. Aplikazioa instala dezakezu dagoeneko, erraz aurkitzeko."
-                fr="Les premiers contenus seront ajoutés prochainement. Vous pouvez déjà installer l’application pour la retrouver facilement."
-              />
-            </p>
-          </mat-card-content>
-        </mat-card>
+        <router-outlet />
       } @else {
         <section class="intro">
           <p class="eyebrow">

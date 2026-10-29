@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import type { Auth, User } from 'firebase/auth';
-import { loadFirebaseConfig } from './firebase-config';
+import { loadFirebaseApp } from './firebase-app';
 
 interface AuthMessage {
   eu: string;
@@ -44,12 +44,11 @@ export class AuthService {
 
   private async initialize(): Promise<void> {
     try {
-      const config = await loadFirebaseConfig();
-      const [{ initializeApp }, sdk] = await Promise.all([
-        import('firebase/app'),
+      const [{ app, config }, sdk] = await Promise.all([
+        loadFirebaseApp(),
         import('firebase/auth'),
       ]);
-      const auth = sdk.getAuth(initializeApp(config));
+      const auth = sdk.getAuth(app);
       if (config.useEmulators) {
         sdk.connectAuthEmulator(auth, 'http://127.0.0.1:9099');
       }

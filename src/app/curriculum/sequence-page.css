@@ -1,0 +1,79 @@
+.contents {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+article {
+  padding: 1.25rem;
+  border: 1px solid #e6e1dd;
+  border-top: 4px solid var(--chapter-accent);
+  border-radius: 0.75rem;
+  background: white;
+  overflow-wrap: anywhere;
+}
+
+article h2 {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.kind {
+  margin: 0;
+  color: var(--chapter-accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dialogue {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+}
+
+.dialogue dt {
+  font-weight: 700;
+}
+
+.dialogue dd {
+  margin: 0;
+}
+
+.items {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #d6cec8;
+  border-radius: 1rem;
+  background: #faf8f5;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.pager a {
+  color: inherit;
+}
+
+.pager .next {
+  margin-left: auto;
+  text-align: right;
+}

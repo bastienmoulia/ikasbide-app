@@ -8,11 +8,13 @@
     "watch": "ng build --watch --configuration development",
     "typecheck": "ngc --noEmit -p tsconfig.app.json && tsc -p tsconfig.e2e.json",
     "build:e2e": "npm run build && node scripts/prepare-e2e.mjs",
-    "emulators": "firebase emulators:start --project demo-ikasbide --only auth,hosting",
+    "emulators": "firebase emulators:start --project demo-ikasbide --only auth,firestore,hosting",
     "test": "npm run test:e2e",
-    "test:e2e": "npm run build:e2e && firebase emulators:exec --project demo-ikasbide --only auth,hosting \"playwright test\"",
+    "test:e2e": "npm run build:e2e && firebase emulators:exec --project demo-ikasbide --only auth,firestore,hosting \"playwright test\"",
     "format:check": "prettier --check .",
-    "deploy": "npm run build && node scripts/check-deploy.mjs && firebase deploy --project default --only hosting"
+    "curriculum:validate": "node tools/curriculum/cli.ts validate",
+    "curriculum:import": "node tools/curriculum/cli.ts import",
+    "deploy": "npm run build && node scripts/check-deploy.mjs && firebase deploy --project default --only hosting,firestore:rules"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
@@ -30,6 +32,7 @@
     "@angular/forms": "^22.2.0",
     "@angular/material": "^22.2.5",
     "@angular/platform-browser": "^22.2.0",
+    "@angular/router": "^22.2.3",
     "@angular/service-worker": "^22.2.0",
     "firebase": "^13.1.0",
     "rxjs": "~7.8.0",
@@ -39,8 +42,10 @@
     "@angular/build": "^22.2.5",
     "@angular/cli": "^22.2.5",
     "@angular/compiler-cli": "^22.2.0",
+    "@firebase/rules-unit-testing": "^6.0.0",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.6",
+    "firebase-admin": "^14.5.0",
     "firebase-tools": "^15.34.1",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2"

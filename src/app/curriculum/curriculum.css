@@ -1,0 +1,90 @@
+:host {
+  display: block;
+  --chapter-accent: #9c3434;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: inherit;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--chapter-accent);
+  font-weight: 600;
+}
+
+.chapter-marker,
+.sequence-letter {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--chapter-accent);
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.sequence-letter {
+  border-radius: 0.6rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.12;
+  margin: 0.75rem 0 2rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+  margin: 2rem 0 1rem;
+}
+
+.cards {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cards a {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3rem;
+  padding: 1rem;
+  border: 1px solid #e6e1dd;
+  border-left: 6px solid var(--chapter-accent);
+  border-radius: 0.75rem;
+  background: white;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cards a:hover {
+  background: #f5f0ec;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.muted {
+  color: #655e59;
+  font-size: 0.9rem;
+}
+
+[role='alert'] {
+  padding: 1rem;
+  border-left: 4px solid #9c3434;
+  background: #fff0ef;
+}

@@ -1,9 +1,9 @@
 # Connecter et déployer Firebase
 
-Le socle utilise Firebase Authentication (Google) et Hosting. Aucun contenu pédagogique,
-compte de service ou jeton privé ne doit être ajouté aux fichiers publics. Firestore et
-l’import du curriculum viendront avec le ticket #3 : il n’est pas nécessaire de créer
-une base pour déployer ce socle.
+L’application utilise Firebase Authentication (Google), Firestore et Hosting. Aucun
+contenu pédagogique, compte de service ou jeton privé ne doit être ajouté aux fichiers
+publics. Le curriculum est publié dans Firestore par une commande d’import décrite dans
+[curriculum.md](curriculum.md).
 
 ## Préparer le projet
 
@@ -22,6 +22,9 @@ une base pour déployer ce socle.
 5. Si un écran de consentement OAuth est demandé dans Google Cloud, compléter les
    informations et choisir un mode de publication compatible avec le public visé.
    Un écran limité aux utilisateurs de test ne permet pas l’accès à tous les comptes.
+6. Dans **Firestore Database → Créer une base de données**, choisir l’édition standard,
+   un emplacement européen et le **mode production**. Ne jamais choisir le mode test :
+   les règles du dépôt sont déployées par `npm run deploy`.
 
 ## Configuration locale
 
@@ -64,12 +67,21 @@ Ne pas relancer `firebase init` : `firebase.json` contient déjà le dossier de 
 Angular, la réécriture SPA et les en-têtes de cache. `.firebaserc`, créé par
 `firebase use --add`, reste local. `npm run deploy` reconstruit l’application,
 vérifie que la configuration n’est pas celle des émulateurs et que l’alias `default`
-correspond au projet configuré, puis déploie uniquement Hosting avec `--project default`
+correspond au projet configuré, puis déploie Hosting et les règles Firestore avec
+`--project default`
 (indépendamment du projet actif dans la CLI). Une commande directe
 `firebase deploy` contournerait ces vérifications.
 
-Ouvrir l’URL HTTPS affichée par la CLI. Vérifier la connexion Google, l’accueil vide,
-la persistance après rechargement, puis la déconnexion. Sur un autre appareil,
+Publier ensuite le curriculum depuis le dépôt privé de contenu (voir
+[curriculum.md](curriculum.md#valider-et-importer)) :
+
+```bash
+gcloud auth application-default login
+npm run curriculum:import -- ../ikasbide-content/curriculum.json --project PROJECT_ID
+```
+
+Ouvrir l’URL HTTPS affichée par la CLI. Vérifier la connexion Google, la liste des
+chapitres publiés, la persistance après rechargement, puis la déconnexion. Sur un autre appareil,
 utiliser cette URL HTTPS et non une adresse IP locale en HTTP.
 
 ## Installer la PWA
@@ -92,8 +104,9 @@ npm test
 ```
 
 `npm test` construit la PWA, écrit une configuration fictive **uniquement dans `dist/`**,
-et démarre les émulateurs Authentication (`127.0.0.1:9099`) et Hosting
-(`127.0.0.1:5100`) avec `demo-ikasbide`. La fenêtre Google de l’émulateur crée des
+et démarre les émulateurs Authentication (`127.0.0.1:9099`), Firestore
+(`127.0.0.1:8080`) et Hosting (`127.0.0.1:5100`) avec `demo-ikasbide`. Le curriculum
+fictif `tests/fixtures/curriculum.sample.json` y est importé avant les tests. La fenêtre Google de l’émulateur crée des
 identités synthétiques `example.test` ; aucun compte Google ou accès à la production
 n’est nécessaire. Les émulateurs sont arrêtés à la fin, même en cas d’échec.
 Ne saisir aucun compte réel dans cette fenêtre. Un test ne modifie jamais
@@ -110,11 +123,20 @@ Ouvrir `http://127.0.0.1:5100`, puis arrêter les émulateurs avec Ctrl-C.
 Pour exécuter un seul fichier après construction :
 
 ```bash
-npx firebase emulators:exec --project demo-ikasbide --only auth,hosting \
-  "playwright test e2e/auth.spec.ts --project=desktop"
+npx firebase emulators:exec --project demo-ikasbide --only auth,firestore,hosting \
+  "playwright test e2e/curriculum.spec.ts --project=desktop"
 ```
 
-Les tests couvrent les vues mobile et bureau, le parcours Google émulé, la persistance,
+Les règles Firestore et l’import se testent sans construire l’application :
+
+```bash
+npx firebase emulators:exec --project demo-ikasbide --only firestore \
+  "playwright test --project=firestore"
+```
+
+Les tests couvrent les vues mobile et bureau, le parcours Google émulé, la navigation
+dans les unités, chapitres et séquences, les droits de lecture Firestore, l’import et
+ses refus de fichiers invalides, la persistance,
 la déconnexion, l’annulation de la fenêtre, les configurations absentes/invalides et
 l’installabilité Chromium de la PWA réellement servie par Hosting. Ils ne valident
 pas l’écran OAuth Google de production ni les menus d’installation propres à iOS.
@@ -122,15 +144,18 @@ La CI exécute les mêmes commandes sans secrets.
 
 ## Dépannage
 
-| Symptôme                               | Action                                                                                                                                  |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Connexion indisponible dès l’ouverture | Vérifier le JSON, sa présence dans `public/`, l’accès réseau, puis reconstruire. Le détail technique est dans la console du navigateur. |
-| `auth/operation-not-allowed`           | Activer le fournisseur Google dans Authentication.                                                                                      |
-| `auth/unauthorized-domain`             | Ajouter le domaine exact dans les domaines autorisés.                                                                                   |
-| Fenêtre de connexion bloquée           | Autoriser les popups pour l’application, puis réessayer.                                                                                |
-| Port déjà occupé pendant les tests     | Arrêter son propre service utilisant 5100 ou 9099 ; ne pas réutiliser un émulateur lié à un vrai projet.                                |
-| Installation non proposée              | Vérifier HTTPS, le navigateur, et que l’application n’est pas déjà installée.                                                           |
+| Symptôme                                          | Action                                                                                                                                  |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Connexion indisponible dès l’ouverture            | Vérifier le JSON, sa présence dans `public/`, l’accès réseau, puis reconstruire. Le détail technique est dans la console du navigateur. |
+| `auth/operation-not-allowed`                      | Activer le fournisseur Google dans Authentication.                                                                                      |
+| `auth/unauthorized-domain`                        | Ajouter le domaine exact dans les domaines autorisés.                                                                                   |
+| Fenêtre de connexion bloquée                      | Autoriser les popups pour l’application, puis réessayer.                                                                                |
+| Port déjà occupé pendant les tests                | Arrêter son propre service utilisant 5100, 8080 ou 9099 ; ne pas réutiliser un émulateur lié à un vrai projet.                          |
+| Import : `Could not load the default credentials` | Exécuter `gcloud auth application-default login` avec un compte ayant accès au projet.                                                  |
+| Chapitres en échec de chargement                  | Vérifier que la base Firestore existe, que les règles sont déployées et que l’import a réussi.                                          |
+| Installation non proposée                         | Vérifier HTTPS, le navigateur, et que l’application n’est pas déjà installée.                                                           |
 
-Ce dépôt ne déploie aucune règle Firestore : ne jamais activer une base en mode test
-pour ce socle. L’authentification de l’interface ne remplace pas les futures règles
-d’accès aux données.
+Les règles Firestore (`firestore.rules`) n’autorisent que la lecture du curriculum par
+les comptes Google connectés et interdisent toute écriture depuis l’application.
+L’authentification de l’interface ne remplace pas ces règles : toujours les déployer
+avec `npm run deploy`.
