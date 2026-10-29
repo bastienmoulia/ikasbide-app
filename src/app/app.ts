@@ -154,8 +154,8 @@ import { BilingualText } from './bilingual-text';
       />
       <p class="legal-note">
         <app-bilingual-text
-          eu="Ikasbide metodoaren liburuaren osagarria da, ez du ordezkatzen; liburua behar da erabiltzeko. Edukiak jatorrizkoak dira edo beharrezko baimenarekin erabiltzen dira."
-          fr="Cette application complète le livre Ikasbide metodoa, mais ne le remplace pas ; le livre est nécessaire pour l’utiliser. Les contenus sont originaux ou utilisés avec les autorisations nécessaires."
+          eu="Ikasbide metodoaren liburuaren osagarria da, ez du ordezkatzen; liburua behar da erabiltzeko."
+          fr="Cette application complète le livre Ikasbide metodoa, mais ne le remplace pas ; le livre est nécessaire pour l’utiliser."
         />
       </p>
       <nav class="org-links" aria-label="Lotura erabilgarriak / Liens utiles">

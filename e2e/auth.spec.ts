@@ -32,6 +32,9 @@ test('a visitor sees a clear Google sign-in entry point', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Se déconnecter' })).toHaveCount(0);
   await expect(page.getByText(/ne le remplace pas ; le livre est nécessaire/)).toBeVisible();
+  await expect(page.locator('.legal-note')).not.toContainText(
+    /autorisations nécessaires|beharrezko baimenarekin/,
+  );
   for (const [name, url] of [
     ['AEK', 'https://www.aek.eus/'],
     ['IKAS', 'https://ikas.eus/'],
