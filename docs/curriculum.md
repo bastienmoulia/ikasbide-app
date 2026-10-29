@@ -15,7 +15,7 @@ Les types TypeScript du contrat sont dans
 
 ```text
 curriculum { schemaVersion: 1, units[] }
-└─ unit { id, number, title, chapters[] }            5 chapitres par unité
+└─ unit { id, number, title, chapters[] }            nombre de chapitres libre
    └─ chapter { id, number, title, objectives[], sequences[] }
       ├─ objective { id, label }
       └─ sequence { id, letter, title, contents[] }
