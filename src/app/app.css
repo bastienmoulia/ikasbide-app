@@ -125,6 +125,19 @@ footer {
   font-size: 0.85rem;
 }
 
+.legal-note {
+  max-width: 46rem;
+  margin: 0.75rem auto;
+  line-height: 1.6;
+}
+
+.org-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 @media (max-width: 36rem) {
   .tagline {
     display: none;

@@ -130,6 +130,16 @@ import { BilingualText } from './bilingual-text';
         eu="Ikasi, praktikatu, konfiantza hartu."
         fr="Apprendre, pratiquer, prendre confiance."
       />
+      <p class="legal-note">
+        <app-bilingual-text
+          eu="Ikasbide metodoaren liburuaren osagarria da, ez du ordezkatzen; liburua behar da erabiltzeko."
+          fr="Cette application complète le livre Ikasbide metodoa, mais ne le remplace pas ; le livre est nécessaire pour l’utiliser."
+        />
+      </p>
+      <nav class="org-links" aria-label="Lotura erabilgarriak / Liens utiles">
+        <a href="https://www.aek.eus/" target="_blank" rel="noopener noreferrer">AEK</a>
+        <a href="https://ikas.eus/" target="_blank" rel="noopener noreferrer">IKAS</a>
+      </nav>
     </footer>
   `,
 })

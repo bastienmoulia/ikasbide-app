@@ -84,6 +84,46 @@ Ouvrir l’URL HTTPS affichée par la CLI. Vérifier la connexion Google, la lis
 chapitres publiés, la persistance après rechargement, puis la déconnexion. Sur un autre appareil,
 utiliser cette URL HTTPS et non une adresse IP locale en HTTP.
 
+## Déployer avec GitHub Actions
+
+Le workflow `.github/workflows/deploy.yml` construit et déploie uniquement Hosting
+depuis `main`. Il est **manuel uniquement** pour commencer : aucun push ni aucune
+pull request ne déclenche de déploiement.
+
+Dans **Settings → Secrets and variables → Actions** du dépôt, configurer :
+
+- La variable de dépôt `FIREBASE_CONFIG` : le JSON complet de la configuration Web
+  décrit plus haut, avec les vraies valeurs et `"useEmulators": false`. Le workflow
+  accepte aussi l’objet JavaScript `firebaseConfig` fourni par Firebase, avec ou sans
+  déclaration `const` et accolades externes.
+- Le secret de dépôt `FIREBASE_SERVICE_ACCOUNT` : le JSON d’une clé de compte de
+  service Google Cloud dédié au déploiement, appartenant au même projet. Lui attribuer
+  les rôles **Firebase Hosting Admin** (`roles/firebasehosting.admin`) et
+  **API Keys Viewer** (`roles/serviceusage.apiKeysViewer`) sur ce projet, plutôt
+  qu’un rôle Owner ou Editor. Ne jamais placer ce JSON dans une variable, le dépôt
+  ou `public/`.
+
+Une fois le workflow présent sur la branche par défaut, ouvrir **Actions →
+Deploy Firebase Hosting → Run workflow**, sélectionner **main**, puis lancer.
+Un lancement sur une autre branche est ignoré. Le workflow récupère `main`, installe
+les dépendances verrouillées avec `npm ci`, génère la configuration locale et
+réutilise `npm run deploy` avec ses vérifications. Le compte de service est écrit
+dans un fichier temporaire privé, utilisé via Application Default Credentials,
+puis supprimé même en cas d’échec. Aucun `firebase login` interactif n’est nécessaire.
+Les déploiements sont sérialisés pour ne pas interrompre une publication en cours.
+
+Pour activer plus tard le déploiement à chaque changement de `main`, ajouter le
+déclencheur suivant sous `on:`, en conservant `workflow_dispatch:` :
+
+```yaml
+push:
+  branches: [main]
+```
+
+Le workflow ne déploie ni règles Firestore ni configuration Authentication.
+Après le premier lancement, vérifier l’application sur son URL HTTPS comme pour
+le déploiement local.
+
 ## Installer la PWA
 
 - Chrome/Edge sur ordinateur ou Android : utiliser l’action **Installer** du navigateur.

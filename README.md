@@ -100,9 +100,11 @@ Les tests utiliseront des contenus fictifs originaux et des comptes simulés. Il
 
 ## Contenu et droits
 
+Cette application est un compagnon pédagogique du livre _Ikasbide metodoa_ : elle ne le remplace pas et doit être utilisée avec le livre. Elle n'est pas conçue pour enseigner la méthode de façon autonome. Pour en savoir plus sur les organismes liés au basque, consulter les sites d'[AEK](https://www.aek.eus/) et d'[IKAS](https://ikas.eus/).
+
 Le moteur applicatif et le contenu pédagogique seront séparés. Les sources JSON du curriculum seront conservées dans un **dépôt privé distinct**, puis validées et importées dans Firestore. Ce dépôt privé ne rendra pas le contenu publié confidentiel : celui-ci sera lisible par tout compte Google connecté.
 
-Les cours seront résumés et les exercices adaptés avec des formulations originales. Ni le livre numérisé, ni ses illustrations protégées, ni ses paroles de chansons, ni les fichiers audio ne doivent être ajoutés au dépôt public ou aux fichiers statiques de l'application. Une connexion Google ou un dépôt privé ne constitue pas une autorisation de redistribution.
+Les cours seront résumés et les exercices adaptés avec des formulations originales, sans reproduire le livre. Aucun scan ou extrait substantiel du livre, illustration protégée, parole de chanson ou fichier audio ne sera ajouté au dépôt public ou aux fichiers statiques de l'application sans autorisation explicite. Une connexion Google ou un dépôt privé ne constitue pas une autorisation de redistribution.
 
 Pour le chapitre 1, l'application proposera uniquement un lien vers la [page audio officielle IKAS/AEK](https://www.ikas.eus/spip.php?article3185&lang=eu), sans télécharger, intégrer ou héberger les MP3. Les cartes seront originales et les portraits utilisés seulement avec les droits nécessaires.
 
