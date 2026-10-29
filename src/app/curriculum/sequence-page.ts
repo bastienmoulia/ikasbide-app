@@ -2,12 +2,15 @@ import { Component, computed, inject, input, resource } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
+import { NetworkStatus } from '../network-status';
 import { ActivityPlayer } from './activity-player';
 import { chapterColor } from './chapter-color';
 import {
   contentKindLabels,
   chapterNotPublishedMessage,
-  loadFailedMessage,
+  externalLinkNeedsNetworkMessage,
+  externalLinkOfflineMessage,
+  loadErrorMessage,
   loadingMessage,
 } from './content-labels';
 import { CurriculumService } from './curriculum.service';
@@ -26,9 +29,10 @@ import { CurriculumService } from './curriculum.service';
         <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
       </p>
       <mat-progress-bar mode="indeterminate" aria-labelledby="sequence-loading" />
-    } @else if (chapter.error()) {
+    } @else if (chapter.error(); as error) {
+      @let message = errorMessage(error);
       <p role="alert">
-        <app-bilingual-text [eu]="loadFailed.eu" [fr]="loadFailed.fr" />
+        <app-bilingual-text [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (!chapter.value()) {
       <p role="alert">
@@ -85,6 +89,10 @@ import { CurriculumService } from './curriculum.service';
                       [fr]="content.title.fr + ' (page externe)'"
                     />
                   </a>
+                  <p class="muted">
+                    @let availability = network.online() ? needsNetwork : offlineLink;
+                    <app-bilingual-text [eu]="availability.eu" [fr]="availability.fr" />
+                  </p>
                 }
                 @case ('oral-prompt') {
                   <p>
@@ -146,6 +154,7 @@ export class SequencePage {
   readonly chapterId = input.required<string>();
   readonly sequenceId = input.required<string>();
   private readonly curriculum = inject(CurriculumService);
+  protected readonly network = inject(NetworkStatus);
   protected readonly chapter = resource({
     params: () => this.chapterId(),
     loader: ({ params }) => this.curriculum.chapter(params),
@@ -168,5 +177,7 @@ export class SequencePage {
   protected readonly kindLabels = contentKindLabels;
   protected readonly loading = loadingMessage;
   protected readonly notPublished = chapterNotPublishedMessage;
-  protected readonly loadFailed = loadFailedMessage;
+  protected readonly errorMessage = loadErrorMessage;
+  protected readonly needsNetwork = externalLinkNeedsNetworkMessage;
+  protected readonly offlineLink = externalLinkOfflineMessage;
 }

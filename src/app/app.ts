@@ -5,6 +5,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './auth.service';
 import { BilingualText } from './bilingual-text';
+import { NetworkStatus } from './network-status';
 
 @Component({
   imports: [
@@ -31,6 +32,14 @@ import { BilingualText } from './bilingual-text';
       </span>
     </header>
     <main id="main">
+      @if (!network.online()) {
+        <p class="offline-status" role="status">
+          <app-bilingual-text
+            eu="Konexiorik gabe zaude. Gailu honetan lehendik kontsultatutako edukia bakarrik dago erabilgarri."
+            fr="Vous êtes hors ligne. Seul le contenu déjà consulté sur cet appareil est disponible."
+          />
+        </p>
+      }
       @if (auth.error(); as error) {
         <p role="alert">
           <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
@@ -145,4 +154,5 @@ import { BilingualText } from './bilingual-text';
 })
 export class App {
   protected readonly auth = inject(AuthService);
+  protected readonly network = inject(NetworkStatus);
 }

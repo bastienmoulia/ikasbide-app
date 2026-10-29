@@ -4,7 +4,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
 import { chapterColor } from './chapter-color';
-import { loadFailedMessage, loadingMessage } from './content-labels';
+import { loadErrorMessage, loadingMessage } from './content-labels';
 import { CurriculumService } from './curriculum.service';
 
 @Component({
@@ -23,9 +23,10 @@ import { CurriculumService } from './curriculum.service';
         <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
       </p>
       <mat-progress-bar mode="indeterminate" aria-labelledby="curriculum-loading" />
-    } @else if (units.error()) {
+    } @else if (units.error(); as error) {
+      @let message = errorMessage(error);
       <p role="alert">
-        <app-bilingual-text [eu]="loadFailed.eu" [fr]="loadFailed.fr" />
+        <app-bilingual-text [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (units.value()?.length) {
       <p class="muted">
@@ -82,5 +83,5 @@ export class CurriculumHome {
   protected readonly units = resource({ loader: () => this.curriculum.units() });
   protected readonly color = chapterColor;
   protected readonly loading = loadingMessage;
-  protected readonly loadFailed = loadFailedMessage;
+  protected readonly errorMessage = loadErrorMessage;
 }

@@ -131,9 +131,11 @@ le déploiement local.
 
 Le manifeste comporte les icônes originales, les couleurs et le mode autonome ; le
 service worker Angular distribue le shell de production. L’installation dépend du
-navigateur. La lecture hors ligne du curriculum et la synchronisation sont les
-tickets #5 et #6, pas des fonctionnalités de ce socle. Le cache du shell ne contient
-ni programme pédagogique, ni données personnelles de progression.
+navigateur. Le cache du shell ne contient ni programme pédagogique, ni données
+personnelles de progression. Les chapitres consultés en ligne sont conservés dans le
+cache IndexedDB de Firestore sur l’appareil, et la dernière configuration Firebase
+validée dans le `localStorage`, ce qui permet de les relire hors ligne avec la session
+Google déjà ouverte. La synchronisation des tentatives relève du ticket #6.
 
 ## Vérification sans projet de production
 

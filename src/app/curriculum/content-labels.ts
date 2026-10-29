@@ -1,4 +1,5 @@
 import type { BilingualText, SequenceContent } from './curriculum.model';
+import { CurriculumUnavailableOfflineError } from './curriculum-unavailable-offline';
 
 export const contentKindLabels: Record<SequenceContent['kind'], BilingualText> = {
   note: { eu: 'Oharra', fr: 'Note' },
@@ -25,3 +26,25 @@ export const chapterNotPublishedMessage: BilingualText = {
   eu: 'Kapitulu hau ez dago argitaratuta.',
   fr: 'Ce chapitre n’est pas publié.',
 };
+
+export const externalLinkNeedsNetworkMessage: BilingualText = {
+  eu: 'Interneteko konexioa behar da; ez dago gailu honetan gordeta.',
+  fr: 'Nécessite une connexion Internet ; non enregistré sur cet appareil.',
+};
+
+export const externalLinkOfflineMessage: BilingualText = {
+  eu: 'Ez dago erabilgarri konexiorik gabe: kanpoko orri honek Internet behar du.',
+  fr: 'Indisponible hors ligne : cette page externe nécessite Internet.',
+};
+
+export const unavailableOfflineMessage: BilingualText = {
+  eu: 'Eduki hau ez da oraindik gailu honetan kontsultatu, eta ez dago erabilgarri konexiorik gabe. Konektatu Internetera ikusteko.',
+  fr: 'Ce contenu n’a pas encore été consulté sur cet appareil et n’est pas disponible hors ligne. Connectez-vous à Internet pour l’afficher.',
+};
+
+/** Chooses the learner-facing message for a failed curriculum read. */
+export function loadErrorMessage(error: unknown): BilingualText {
+  return error instanceof CurriculumUnavailableOfflineError
+    ? unavailableOfflineMessage
+    : loadFailedMessage;
+}

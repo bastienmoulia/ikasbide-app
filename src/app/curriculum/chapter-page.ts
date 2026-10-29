@@ -3,7 +3,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
 import { chapterColor } from './chapter-color';
-import { chapterNotPublishedMessage, loadFailedMessage, loadingMessage } from './content-labels';
+import { chapterNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
 import { CurriculumService } from './curriculum.service';
 
 @Component({
@@ -20,9 +20,10 @@ import { CurriculumService } from './curriculum.service';
         <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
       </p>
       <mat-progress-bar mode="indeterminate" aria-labelledby="chapter-loading" />
-    } @else if (chapter.error()) {
+    } @else if (chapter.error(); as error) {
+      @let message = errorMessage(error);
       <p role="alert">
-        <app-bilingual-text [eu]="loadFailed.eu" [fr]="loadFailed.fr" />
+        <app-bilingual-text [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (chapter.value(); as chapter) {
       <p class="eyebrow">
@@ -90,5 +91,5 @@ export class ChapterPage {
   });
   protected readonly loading = loadingMessage;
   protected readonly notPublished = chapterNotPublishedMessage;
-  protected readonly loadFailed = loadFailedMessage;
+  protected readonly errorMessage = loadErrorMessage;
 }

@@ -137,7 +137,7 @@ Selon la [décision d'accès acceptée](docs/adr/0001-authenticated-unit-access.
 
 Les tentatives conserveront uniquement l'item, le résultat, la date et les identifiants techniques nécessaires, pas le texte des réponses saisies.
 
-La PWA permettra de consulter hors ligne le contenu déjà chargé et d'enregistrer des tentatives en attente de synchronisation. Le contenu jamais consulté et les ressources audio externes ne seront pas garantis hors ligne.
+La PWA permet de relire hors ligne, sur le même appareil, les chapitres déjà consultés en ligne (cache persistant Firestore et shell du service worker). Un bandeau signale l'absence de connexion ; un contenu jamais consulté sur l'appareil est indiqué comme indisponible hors ligne, et les liens audio officiels externes restent dépendants du réseau. L'enregistrement des tentatives en attente de synchronisation reste à réaliser (#6).
 
 ## Stack et validation
 
@@ -173,7 +173,7 @@ reste la référence détaillée.
 | [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) | PWA authentifiée et premier socle déployable   | Livré      | —         |
 | [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum             | Livré      | #2        |
 | [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées       | À réaliser | #3        |
-| [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | À réaliser | #3        |
+| [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | Livré      | #3        |
 | [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives   | À réaliser | #4, #5    |
 | [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) | Carte de progression par objectif              | À réaliser | #6        |
 
