@@ -46,6 +46,10 @@ _Avoid_: Compétence (si elle désigne un objectif de chapitre)
 Réponse de l'apprenant à un item, avec son résultat.
 _Avoid_: Session (pour une réponse individuelle)
 
+**Session de pratique** :
+Visite d'une séquence pendant laquelle l'apprenant répond à des items ; ouvrir, recharger ou changer de séquence en démarre une nouvelle.
+_Avoid_: Session (pour la connexion au compte)
+
 **Carte de révision** :
 Élément de vocabulaire ou expression clé à rappeler dans un sens ou dans l'autre entre le basque et le français.
 _Avoid_: Item (pour une carte de mémorisation)

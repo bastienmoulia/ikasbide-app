@@ -1,9 +1,11 @@
-import { Component, computed, inject, input, resource } from '@angular/core';
+import { Component, computed, effect, inject, input, resource, signal } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
 import { NetworkStatus } from '../network-status';
-import { ActivityPlayer } from './activity-player';
+import { ActivityPlayer, type ItemAttempt } from './activity-player';
+import { AttemptService, type AttemptSummary } from './attempt.service';
 import { chapterColor } from './chapter-color';
 import {
   contentKindLabels,
@@ -51,6 +53,21 @@ import { CurriculumService } from './curriculum.service';
       <h1>
         <app-bilingual-text [eu]="sequence.title.eu" [fr]="sequence.title.fr" />
       </h1>
+      @if (attemptSummary(); as summary) {
+        <p class="attempt-summary muted" role="status">
+          <app-bilingual-text
+            [eu]="'Saiakera sinkronizatuak: ' + summary.synced + ' · zain: ' + summary.pending"
+            [fr]="
+              'Tentatives synchronisées : ' + summary.synced + ' · en attente : ' + summary.pending
+            "
+          />
+        </p>
+      }
+      @if (attempts.error(); as error) {
+        <p role="alert">
+          <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+        </p>
+      }
       <ol class="contents">
         @for (content of sequence.contents; track content.id) {
           <li>
@@ -115,7 +132,10 @@ import { CurriculumService } from './curriculum.service';
                       [fr]="content.instructions.fr"
                     />
                   </p>
-                  <app-activity-player [activity]="content" />
+                  <app-activity-player
+                    [activity]="content"
+                    (attempted)="recordAttempt(chapter.id, $event)"
+                  />
                 }
               }
             </article>
@@ -154,6 +174,8 @@ export class SequencePage {
   readonly chapterId = input.required<string>();
   readonly sequenceId = input.required<string>();
   private readonly curriculum = inject(CurriculumService);
+  private readonly auth = inject(AuthService);
+  protected readonly attempts = inject(AttemptService);
   protected readonly network = inject(NetworkStatus);
   protected readonly chapter = resource({
     params: () => this.chapterId(),
@@ -174,10 +196,50 @@ export class SequencePage {
     const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
     return chapter ? chapterColor(chapter.number) : null;
   });
+  /** A practice session lasts one visit to a sequence: opening, reloading or changing it starts a new one. */
+  private readonly practiceSession = computed(() => {
+    this.chapterId();
+    this.sequenceId();
+    return crypto.randomUUID();
+  });
+  protected readonly attemptSummary = signal<AttemptSummary | null>(null);
   protected readonly kindLabels = contentKindLabels;
   protected readonly loading = loadingMessage;
   protected readonly notPublished = chapterNotPublishedMessage;
   protected readonly errorMessage = loadErrorMessage;
   protected readonly needsNetwork = externalLinkNeedsNetworkMessage;
   protected readonly offlineLink = externalLinkOfflineMessage;
+
+  constructor() {
+    effect((onCleanup) => {
+      const learner = this.auth.user();
+      const position = this.position();
+      this.attemptSummary.set(null);
+      if (!learner || !position) return;
+      const itemIds = new Set(
+        position.sequence.contents.flatMap((content) =>
+          content.type === 'activity' && 'items' in content
+            ? content.items.map(({ id }) => id)
+            : [],
+        ),
+      );
+      if (!itemIds.size) return;
+      onCleanup(
+        this.attempts.watch(learner.uid, position.chapter.id, itemIds, (summary) =>
+          this.attemptSummary.set(summary),
+        ),
+      );
+    });
+  }
+
+  protected recordAttempt(chapterId: string, { itemId, outcome }: ItemAttempt): void {
+    const learner = this.auth.user();
+    if (!learner) return;
+    void this.attempts.record(learner.uid, {
+      chapterId,
+      itemId,
+      outcome,
+      sessionId: this.practiceSession(),
+    });
+  }
 }

@@ -1,0 +1,7 @@
+# Attempt evidence and practice sessions
+
+Each corrected Item is stored as an immutable attempt in `learners/{uid}/attempts/{attemptId}` with only `chapterId` and `itemId` (Item ids are unique per chapter), `outcome`, `occurredAt` and `sessionId`; the submitted answer is never kept. Security rules allow only the owning Google account to read and create them; an update is accepted only when it is identical, so a write resent after a lost acknowledgement succeeds without becoming a second piece of evidence, while deletion and changes are refused.
+
+Writes go through Firestore's persistent cache (see [ADR 0003](0003-device-cache-for-offline-reading.md)) rather than a custom queue: offline attempts survive reloads, are kept per account, and are sent on reconnection. The client-generated document id is the synchronization identifier, so retries never duplicate evidence. Attempts queued by one account stay on the device until that account signs in online again.
+
+A practice session is one visit to a sequence page: a random id is created when the sequence is opened and replaced on reload or when navigating to another sequence. Re-answering an Item within a visit therefore shares a session id, while practising it on another visit or device does not. This simple, observable boundary is what the "two distinct practice sessions" mastery criterion counts; time-based windows were rejected as harder to test and to explain.

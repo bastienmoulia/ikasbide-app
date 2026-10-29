@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export async function expectBilingualPresentation(page: Page): Promise<void> {
   await expect(page.locator('html')).toHaveAttribute('lang', 'eu');
@@ -26,18 +26,96 @@ export async function expectBilingualPresentation(page: Page): Promise<void> {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
 
-/** Signs in through the Auth emulator's Google popup with a synthetic identity. */
+/**
+ * Signs in through the Auth emulator's Google popup with a synthetic identity.
+ * Reuse the returned email to sign the same account in from another browser context.
+ */
 export async function signInWithGoogle(
   page: Page,
   displayName = 'Apprenant fictif',
-): Promise<void> {
+  email = `learner-${crypto.randomUUID()}@example.test`,
+): Promise<string> {
   const popupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Se connecter avec Google' }).click();
   const popup = await popupPromise;
   await expect(popup).toHaveURL(/^http:\/\/127\.0\.0\.1:9099\//);
   await popup.waitForLoadState('domcontentloaded');
   await popup.getByRole('button', { name: 'Add new account' }).click();
-  await popup.locator('#email-input').fill(`learner-${crypto.randomUUID()}@example.test`);
+  await popup.locator('#email-input').fill(email);
   await popup.locator('#display-name-input').fill(displayName);
   await popup.getByRole('button', { name: /Sign in with Google/i }).click();
+  return email;
+}
+
+const projectId = 'demo-ikasbide';
+const firestoreEmulator = `http://${process.env['FIRESTORE_EMULATOR_HOST'] ?? '127.0.0.1:8080'}`;
+
+/** Looks up an emulator account by email; tests use it to inspect their own learner data. */
+export async function learnerId(email: string): Promise<string> {
+  const response = await fetch(
+    `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/${projectId}/accounts:lookup`,
+    {
+      method: 'POST',
+      headers: { authorization: 'Bearer owner', 'content-type': 'application/json' },
+      body: JSON.stringify({ email: [email] }),
+    },
+  );
+  const { users } = (await response.json()) as { users?: { localId: string }[] };
+  if (!users?.length) throw new Error(`No emulator account for ${email}.`);
+  return users[0].localId;
+}
+
+export interface StoredAttempt {
+  id: string;
+  fields: Record<string, string>;
+}
+
+/** Reads a learner's stored attempts from the emulator, bypassing security rules. */
+export async function storedAttempts(uid: string): Promise<StoredAttempt[]> {
+  const response = await fetch(
+    `${firestoreEmulator}/v1/projects/${projectId}/databases/(default)/documents/learners/${uid}/attempts?pageSize=300`,
+    { headers: { authorization: 'Bearer owner' } },
+  );
+  const { documents = [] } = (await response.json()) as {
+    documents?: { name: string; fields: Record<string, Record<string, string>> }[];
+  };
+  return documents.map(({ name, fields }) => ({
+    id: name.split('/').at(-1)!,
+    fields: Object.fromEntries(
+      Object.entries(fields).map(([key, value]) => [key, Object.values(value)[0]]),
+    ),
+  }));
+}
+
+/** Waits until the service worker controls the page and has cached the app shell. */
+export async function waitForOfflineShell(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await expect
+    .poll(() => page.evaluate(async () => (await fetch('/ngsw/state')).text()), {
+      timeout: 30_000,
+    })
+    .toMatch(/Driver state: NORMAL[\s\S]*Latest manifest hash: [0-9a-f]+/);
+}
+
+/** An Item of the greetings gap-fill activity in the sample curriculum. */
+export function gapFillItem(page: Page, index: number): Locator {
+  return page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Complétez les phrases/ }) })
+    .getByRole('listitem')
+    .nth(index);
+}
+
+/** Answers an Item of the greetings gap-fill activity and waits for its correction. */
+export async function answerGap(page: Page, index: number, answer: string): Promise<void> {
+  const item = gapFillItem(page, index);
+  await item.getByRole('textbox').fill(answer);
+  await item.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(item.getByRole('status')).toBeVisible();
+}
+
+export function attemptSummary(page: Page): Locator {
+  return page.getByRole('status').filter({ hasText: 'Tentatives synchronisées' });
 }

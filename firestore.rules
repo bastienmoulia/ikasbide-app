@@ -14,5 +14,30 @@ service cloud.firestore {
     match /chapters/{chapterId} {
       allow read: if isGoogleLearner();
     }
+
+    // Attempt evidence: owner-only, never the submitted answer (ADR 0004).
+    match /learners/{learnerId}/attempts/{attemptId} {
+      function isOwner() {
+        return isGoogleLearner() && request.auth.uid == learnerId;
+      }
+
+      function isIdentifier(value) {
+        return value is string && value.size() > 0 && value.size() <= 128;
+      }
+
+      function isAttempt(data) {
+        return data.keys().hasOnly(['chapterId', 'itemId', 'outcome', 'occurredAt', 'sessionId'])
+          && isIdentifier(data.chapterId)
+          && isIdentifier(data.itemId)
+          && data.outcome in ['correct', 'almost', 'incorrect']
+          && data.occurredAt is timestamp
+          && isIdentifier(data.sessionId);
+      }
+
+      allow read: if isOwner();
+      allow create: if isOwner() && isAttempt(request.resource.data);
+      // A reconnection may resend an already applied write; evidence itself never changes.
+      allow update: if isOwner() && request.resource.data == resource.data;
+    }
   }
 }

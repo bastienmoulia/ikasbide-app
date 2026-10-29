@@ -135,7 +135,8 @@ navigateur. Le cache du shell ne contient ni programme pédagogique, ni données
 personnelles de progression. Les chapitres consultés en ligne sont conservés dans le
 cache IndexedDB de Firestore sur l’appareil, et la dernière configuration Firebase
 validée dans le `localStorage`, ce qui permet de les relire hors ligne avec la session
-Google déjà ouverte. La synchronisation des tentatives relève du ticket #6.
+Google déjà ouverte. Les tentatives faites hors ligne attendent dans la file d’écriture
+de ce même cache, puis sont synchronisées au retour du réseau.
 
 ## Vérification sans projet de production
 
@@ -198,6 +199,8 @@ La CI exécute les mêmes commandes sans secrets.
 | Installation non proposée                         | Vérifier HTTPS, le navigateur, et que l’application n’est pas déjà installée.                                                           |
 
 Les règles Firestore (`firestore.rules`) n’autorisent que la lecture du curriculum par
-les comptes Google connectés et interdisent toute écriture depuis l’application.
+les comptes Google connectés, et la seule écriture depuis l’application est la création
+des tentatives d’un compte dans `learners/{uid}/attempts`, lisibles uniquement par ce
+compte et non modifiables.
 L’authentification de l’interface ne remplace pas ces règles : toujours les déployer
 avec `npm run deploy`.

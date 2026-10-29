@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { loadFirebaseApp } from '../firebase-app';
+import { loadFirestore } from '../firestore';
 import type { Chapter, PublishedChapter, PublishedUnit } from './curriculum.model';
 import { CurriculumUnavailableOfflineError } from './curriculum-unavailable-offline';
 
@@ -13,13 +13,8 @@ export interface UnitOverview extends PublishedUnit {
  */
 @Injectable({ providedIn: 'root' })
 export class CurriculumService {
-  private firestore?: Promise<{
-    db: import('firebase/firestore').Firestore;
-    sdk: typeof import('firebase/firestore');
-  }>;
-
   async units(): Promise<UnitOverview[]> {
-    const { db, sdk } = await this.connect();
+    const { db, sdk } = await loadFirestore();
     const query = sdk.query(sdk.collection(db, 'units'), sdk.orderBy('number'));
     const snapshot = await (navigator.onLine ? sdk.getDocs(query) : sdk.getDocsFromCache(query));
     // An empty cached result means "never loaded here", not "nothing published".
@@ -31,7 +26,7 @@ export class CurriculumService {
 
   /** Returns `null` when no chapter with this identifier is published. */
   async chapter(id: string): Promise<(Chapter & { unitId: string }) | null> {
-    const { db, sdk } = await this.connect();
+    const { db, sdk } = await loadFirestore();
     const ref = sdk.doc(db, 'chapters', id);
     let snapshot: import('firebase/firestore').DocumentSnapshot;
     try {
@@ -45,23 +40,5 @@ export class CurriculumService {
     }
     // A cache miss throws above; a cached absence was confirmed by the server earlier.
     return snapshot.exists() ? { id, ...(snapshot.data() as PublishedChapter) } : null;
-  }
-
-  private connect() {
-    this.firestore ??= (async () => {
-      const [{ app, config }, sdk] = await Promise.all([
-        loadFirebaseApp(),
-        import('firebase/firestore'),
-      ]);
-      const db = sdk.initializeFirestore(app, {
-        localCache: sdk.persistentLocalCache({
-          tabManager: sdk.persistentMultipleTabManager(),
-        }),
-      });
-      if (config.useEmulators) sdk.connectFirestoreEmulator(db, '127.0.0.1', 8080);
-      return { db, sdk };
-    })();
-    this.firestore.catch(() => (this.firestore = undefined));
-    return this.firestore;
   }
 }

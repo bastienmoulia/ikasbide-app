@@ -17,8 +17,9 @@ dépôt privé `bastienmoulia/ikasbide-content` et les publie dans Firestore ; l
 apprenants connectés parcourent unités, chapitres colorés, objectifs et séquences.
 Aucun contenu du livre n’est embarqué dans ce dépôt ; voir
 [docs/curriculum.md](docs/curriculum.md). Les quatre formats autocorrigés et les
-consignes orales facultatives sont interactifs ; le suivi de progression reste à
-réaliser. Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié
+consignes orales facultatives sont interactifs, et chaque correction est enregistrée
+comme tentative synchronisée entre les appareils du compte ; la carte de progression
+reste à réaliser. Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié
 pour essayer la navigation ; il ne constitue pas le contenu du livre.
 
 ### Démarrer sans compte Firebase
@@ -135,9 +136,9 @@ Il n'y aura ni note chiffrée, ni classement, ni série quotidienne imposée.
 
 Selon la [décision d'accès acceptée](docs/adr/0001-authenticated-unit-access.md), **tout compte Google connecté pourra lire le contenu publié**. Il ne s'agit pas d'un accès réservé à une liste d'invités. La progression et les tentatives de chaque personne resteront privées à son compte.
 
-Les tentatives conserveront uniquement l'item, le résultat, la date et les identifiants techniques nécessaires, pas le texte des réponses saisies.
+Chaque item corrigé enregistre une tentative qui conserve uniquement la référence de l'item, le résultat, la date et les identifiants techniques (compte, session de pratique, synchronisation), jamais le texte de la réponse. Une session de pratique correspond à une visite d'une séquence : l'ouvrir, la recharger ou en changer en démarre une nouvelle. Voir la [décision sur les tentatives](docs/adr/0004-attempt-evidence-and-practice-sessions.md).
 
-La PWA permet de relire hors ligne, sur le même appareil, les chapitres déjà consultés en ligne (cache persistant Firestore et shell du service worker). Un bandeau signale l'absence de connexion ; un contenu jamais consulté sur l'appareil est indiqué comme indisponible hors ligne, et les liens audio officiels externes restent dépendants du réseau. L'enregistrement des tentatives en attente de synchronisation reste à réaliser (#6).
+La PWA permet de relire hors ligne, sur le même appareil, les chapitres déjà consultés en ligne (cache persistant Firestore et shell du service worker). Un bandeau signale l'absence de connexion ; un contenu jamais consulté sur l'appareil est indiqué comme indisponible hors ligne, et les liens audio officiels externes restent dépendants du réseau. Les tentatives faites hors ligne sont mises en file sur l'appareil, conservées au rechargement et envoyées une seule fois au retour du réseau ; la séquence affiche le nombre de tentatives synchronisées et en attente.
 
 ## Stack et validation
 
@@ -164,17 +165,17 @@ Pour le chapitre 1, l'application proposera uniquement un lien vers la [page aud
 
 ## Feuille de route
 
-Les tickets #2 et #3 sont implémentés ; les autres fonctionnalités ci-dessous
-restent **à réaliser**. La [spec V1](https://github.com/bastienmoulia/ikasbide-app/issues/1)
+Les tickets #2 à #6 sont implémentés ; la carte de progression (#7) reste
+**à réaliser**. La [spec V1](https://github.com/bastienmoulia/ikasbide-app/issues/1)
 reste la référence détaillée.
 
 | Ticket                                                       | Livrable                                       | État       | Dépend de |
 | ------------------------------------------------------------ | ---------------------------------------------- | ---------- | --------- |
 | [#2](https://github.com/bastienmoulia/ikasbide-app/issues/2) | PWA authentifiée et premier socle déployable   | Livré      | —         |
 | [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) | Import et navigation du curriculum             | Livré      | #2        |
-| [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées       | À réaliser | #3        |
+| [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) | Quatre formats d'activités autocorrigées       | Livré      | #3        |
 | [#5](https://github.com/bastienmoulia/ikasbide-app/issues/5) | Consultation du contenu déjà chargé hors ligne | Livré      | #3        |
-| [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives   | À réaliser | #4, #5    |
+| [#6](https://github.com/bastienmoulia/ikasbide-app/issues/6) | Sauvegarde et synchronisation des tentatives   | Livré      | #4, #5    |
 | [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) | Carte de progression par objectif              | À réaliser | #6        |
 
 La répétition espacée viendra plus tard, à partir du vocabulaire et des expressions clés dans les deux sens basque–français. Les applications natives via Capacitor, la reconnaissance vocale et les moteurs dédiés aux jeux oraux ne font pas partie de cette V1.

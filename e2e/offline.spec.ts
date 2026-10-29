@@ -1,19 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
-import { expectBilingualPresentation, signInWithGoogle } from './support.ts';
+import { expect, test } from '@playwright/test';
+import { expectBilingualPresentation, signInWithGoogle, waitForOfflineShell } from './support.ts';
 
 test.use({ serviceWorkers: 'allow' });
-
-/** Waits until the service worker controls the page and has cached the app shell. */
-async function waitForOfflineShell(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
-  await expect
-    .poll(() => page.evaluate(async () => (await fetch('/ngsw/state')).text()), {
-      timeout: 30_000,
-    })
-    .toMatch(/Driver state: NORMAL[\s\S]*Latest manifest hash: [0-9a-f]+/);
-}
 
 test('a learner reads previously consulted curriculum offline', async ({ page, context }) => {
   await page.goto('/');

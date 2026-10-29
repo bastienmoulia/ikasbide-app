@@ -1,5 +1,6 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { BilingualText } from '../bilingual-text';
+import type { AttemptOutcome } from './attempt.service';
 import type {
   Activity,
   GapFillItem,
@@ -8,7 +9,12 @@ import type {
   WordOrderItem,
 } from './curriculum.model';
 
-type ItemResult = 'correct' | 'almost' | 'incorrect';
+type ItemResult = AttemptOutcome;
+
+export interface ItemAttempt {
+  itemId: string;
+  outcome: ItemResult;
+}
 type GradedItem = GapFillItem | TranslationItem | MultipleChoiceItem | WordOrderItem;
 
 @Component({
@@ -189,6 +195,8 @@ class ActivityFeedback {
 })
 export class ActivityPlayer {
   readonly activity = input.required<Activity>();
+  /** Emitted each time an Item is corrected; the answer itself is never emitted. */
+  readonly attempted = output<ItemAttempt>();
   protected readonly answers = signal<Record<string, string>>({});
   protected readonly results = signal<Record<string, ItemResult>>({});
   protected readonly selectedWords = signal<Record<string, number[]>>({});
@@ -222,6 +230,8 @@ export class ActivityPlayer {
   }
 
   protected grade(item: GradedItem): void {
+    // Editing an answer clears its result, so an existing result means the answer is unchanged.
+    if (this.results()[item.id]) return;
     const answer = this.answers()[item.id] ?? '';
     const result =
       'correctChoiceIds' in item
@@ -230,6 +240,7 @@ export class ActivityPlayer {
           : 'incorrect'
         : gradeFreeResponse(answer, item.acceptedAnswers);
     this.results.update((results) => ({ ...results, [item.id]: result }));
+    this.attempted.emit({ itemId: item.id, outcome: result });
   }
 
   private setWordOrderAnswer(itemId: string, indices: number[], words: string[]): void {
