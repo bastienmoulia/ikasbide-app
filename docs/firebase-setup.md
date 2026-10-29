@@ -81,7 +81,9 @@ pull request ne déclenche de déploiement.
 Dans **Settings → Secrets and variables → Actions** du dépôt, configurer :
 
 - La variable de dépôt `FIREBASE_CONFIG` : le JSON complet de la configuration Web
-  décrit plus haut, avec les vraies valeurs et `"useEmulators": false`.
+  décrit plus haut, avec les vraies valeurs et `"useEmulators": false`. Le workflow
+  accepte aussi l’objet JavaScript `firebaseConfig` fourni par Firebase, avec ou sans
+  déclaration `const` et accolades externes.
 - Le secret de dépôt `FIREBASE_SERVICE_ACCOUNT` : le JSON d’une clé de compte de
   service Google Cloud dédié au déploiement, appartenant au même projet. Lui attribuer
   les rôles **Firebase Hosting Admin** (`roles/firebasehosting.admin`) et

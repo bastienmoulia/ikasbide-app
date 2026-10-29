@@ -33,8 +33,9 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import { writeFileSync } from 'node:fs';
+          import { parseFirebaseConfig } from './scripts/parse-firebase-config.mjs';
 
-          const config = JSON.parse(process.env.FIREBASE_CONFIG);
+          const config = parseFirebaseConfig(process.env.FIREBASE_CONFIG);
           const credentials = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
           if (!config.projectId || credentials.project_id !== config.projectId) {
             throw new Error('The service account must belong to the configured Firebase project.');
