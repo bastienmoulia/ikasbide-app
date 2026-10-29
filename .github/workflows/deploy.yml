@@ -1,0 +1,51 @@
+name: Deploy Firebase Hosting
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-hosting-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build and deploy Hosting
+        env:
+          FIREBASE_CONFIG: ${{ vars.FIREBASE_CONFIG }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+
+          const config = JSON.parse(process.env.FIREBASE_CONFIG);
+          const credentials = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          if (!config.projectId || credentials.project_id !== config.projectId) {
+            throw new Error('The service account must belong to the configured Firebase project.');
+          }
+          writeFileSync('public/firebase-config.json', JSON.stringify(config));
+          writeFileSync('.firebaserc', JSON.stringify({ projects: { default: config.projectId } }));
+          writeFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, JSON.stringify(credentials), {
+            mode: 0o600,
+          });
+          NODE
+          npm run deploy -- --non-interactive
+      - name: Remove deployment credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-service-account.json"
