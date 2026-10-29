@@ -16,6 +16,10 @@ _Avoid_: Unité
 Couleur d'accent qui identifie un chapitre selon sa position dans l'unité, en suivant le cycle du livre : rouge, violet, bleu, vert, orange (chapitres 1 et 6 en rouge, 2 et 7 en violet, etc.).
 _Avoid_: Couleur d'unité
 
+**Mode d'affichage** :
+Préférence de présentation visuelle de l'application, réglée sur Clair, Sombre ou Système.
+_Avoid_: Thème (pour désigner la préférence de l'apprenant)
+
 **Séquence** :
 Rubrique lettrée d'un chapitre du livre qui rassemble des ressources et des activités autour d'un apprentissage.
 _Avoid_: Leçon (quand il s'agit d'une partie du parcours)
