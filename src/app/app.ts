@@ -1,7 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './auth.service';
 import { BilingualText } from './bilingual-text';
@@ -11,8 +13,10 @@ import { NetworkStatus } from './network-status';
 @Component({
   imports: [
     MatButtonModule,
+    MatButtonToggleModule,
     MatCardModule,
     MatProgressBarModule,
+    MatTooltipModule,
     RouterLink,
     RouterOutlet,
     BilingualText,
@@ -28,25 +32,22 @@ import { NetworkStatus } from './network-status';
         <span class="brand-mark" aria-hidden="true">i</span>
         Ikasbide
       </a>
-      <fieldset class="display-mode-control">
-        <legend>
+      <div class="display-mode-control">
+        <span class="display-mode-label" id="display-mode-label">
           <app-bilingual-text eu="Bistaratzeko modua" fr="Mode d’affichage" />
-        </legend>
-        <div class="display-mode-options">
+        </span>
+        <mat-button-toggle-group
+          aria-labelledby="display-mode-label"
+          [value]="displayMode.mode()"
+          (change)="displayMode.setMode($event.value)"
+        >
           @for (option of displayModes; track option.value) {
-            <label>
-              <input
-                type="radio"
-                name="display-mode"
-                [value]="option.value"
-                [checked]="displayMode.mode() === option.value"
-                (change)="displayMode.setMode(option.value)"
-              />
+            <mat-button-toggle [value]="option.value">
               <app-bilingual-text [eu]="option.eu" [fr]="option.fr" />
-            </label>
+            </mat-button-toggle>
           }
-        </div>
-      </fieldset>
+        </mat-button-toggle-group>
+      </div>
       @if (auth.status() === 'ready' && auth.user()) {
         <div class="account">
           <span class="account-name">
@@ -57,12 +58,19 @@ import { NetworkStatus } from './network-status';
             }
           </span>
           <button
-            mat-stroked-button
+            class="logout-button"
+            mat-icon-button
             type="button"
+            aria-label="Se déconnecter"
+            matTooltip="Se déconnecter"
             [disabled]="auth.pending()"
             (click)="auth.signOut()"
           >
-            <app-bilingual-text eu="Amaitu saioa" fr="Se déconnecter" />
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zm-5 4h8a2 2 0 0 0 2-2v-3h-2v3H5V5h8v3h2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"
+              />
+            </svg>
           </button>
         </div>
       }

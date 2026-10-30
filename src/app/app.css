@@ -27,34 +27,14 @@ header {
 }
 
 .display-mode-control {
-  min-width: 0;
-  margin: 0;
-  padding: 0.4rem 0.65rem 0.5rem;
-  border: 1px solid var(--app-border);
-  border-radius: 0.65rem;
-}
-
-.display-mode-control legend {
-  padding-inline: 0.2rem;
-  font-size: 0.8rem;
-}
-
-.display-mode-options {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.7rem;
-}
-
-.display-mode-options label {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.3rem;
-  cursor: pointer;
+  min-width: 0;
 }
 
-.display-mode-options input {
-  accent-color: var(--app-focus);
-  margin: 0;
+.display-mode-label {
+  font-size: 0.8rem;
 }
 
 .brand {
@@ -153,6 +133,18 @@ a[mat-stroked-button] {
 
 .account button {
   flex-shrink: 0;
+}
+
+.account .logout-button {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+}
+
+.logout-button svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentColor;
 }
 
 [role='alert'] {
