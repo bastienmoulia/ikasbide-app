@@ -59,6 +59,10 @@ html[data-display-mode='dark'] {
   --mat-sys-outline: #96979b;
 }
 
+.mat-mdc-card {
+  background-color: var(--app-surface);
+}
+
 body {
   background-color: var(--app-background);
   color: var(--mat-sys-on-surface);

@@ -25,7 +25,7 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await expect(displayModes.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#202124');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
-  await expect(page.getByText('Apprenant fictif')).toBeVisible();
+  await expect(page.getByText('Apprenant', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Nongoa zara? D’où es-tu ?',
   );
