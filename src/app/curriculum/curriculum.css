@@ -97,7 +97,7 @@ h2 {
 
 [role='alert'] {
   padding: 1rem;
-  border-left: 4px solid #9c3434;
+  border-left: 4px solid var(--app-accent);
   background: var(--app-alert-background);
   color: var(--app-alert-foreground);
 }

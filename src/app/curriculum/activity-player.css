@@ -44,6 +44,8 @@
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--app-border-strong);
   border-radius: 0.35rem;
+  background: var(--app-surface);
+  color: var(--mat-sys-on-surface);
   font: inherit;
 }
 
@@ -94,6 +96,8 @@
   padding: 0.35rem 0.5rem;
   border: 1px solid var(--app-border-strong);
   border-radius: 0.35rem;
+  background: var(--app-surface);
+  color: var(--mat-sys-on-surface);
   font: inherit;
 }
 

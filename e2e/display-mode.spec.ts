@@ -1,10 +1,44 @@
 import { expect, test } from '@playwright/test';
+import { chapterColor } from '../src/app/curriculum/chapter-color';
 import { signInWithGoogle } from './support.ts';
 
 const groupName = /Mode d’affichage/;
 
+function colorChannels(color: string): number[] {
+  if (color.startsWith('#')) {
+    const hex = color.slice(1);
+    const expanded = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex;
+    return [0, 2, 4].map((index) => Number.parseInt(expanded.slice(index, index + 2), 16));
+  }
+  return (color.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+}
+
+function contrastRatio(foreground: string, background: string): number {
+  const luminance = (color: string) => {
+    const [red, green, blue] = colorChannels(color).map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const [lighter, darker] = [luminance(foreground), luminance(background)].sort(
+    (first, second) => second - first,
+  );
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 function displayModeControl(page: import('@playwright/test').Page) {
   return page.getByRole('group', { name: groupName });
+}
+
+async function setDisplayMode(
+  page: import('@playwright/test').Page,
+  mode: 'light' | 'dark',
+): Promise<void> {
+  const names = { light: /Argia Clair/, dark: /Iluna Sombre/ };
+  await displayModeControl(page).getByRole('radio', { name: names[mode] }).check();
+  await expectAppearance(page, mode);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
 
 async function expectAppearance(page: import('@playwright/test').Page, mode: 'light' | 'dark') {
@@ -23,6 +57,26 @@ async function expectAppearance(page: import('@playwright/test').Page, mode: 'li
       mode === 'dark' ? 'rgb(43, 44, 47)' : 'rgb(255, 255, 255)',
     );
   }
+}
+
+async function expectContrast(
+  foreground: import('@playwright/test').Locator,
+  background: import('@playwright/test').Locator,
+  minimum: number,
+  foregroundProperty = 'color',
+  backgroundProperty = 'backgroundColor',
+): Promise<void> {
+  const [foregroundColor, backgroundColor] = await Promise.all([
+    foreground.evaluate(
+      (element, property) => getComputedStyle(element).getPropertyValue(property),
+      foregroundProperty,
+    ),
+    background.evaluate(
+      (element, property) => getComputedStyle(element).getPropertyValue(property),
+      backgroundProperty,
+    ),
+  ]);
+  expect(contrastRatio(foregroundColor, backgroundColor)).toBeGreaterThanOrEqual(minimum);
 }
 
 test('system mode follows the initial and changing device preference', async ({ page }) => {
@@ -89,6 +143,128 @@ test('the device choice remains available across sign-in and sign-out', async ({
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeVisible();
   await expect(displayModeControl(page).getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expectAppearance(page, 'dark');
+});
+
+test('the learner journey keeps answers and progress usable in both modes', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto('/');
+  await signInWithGoogle(page);
+
+  const homeChapter = page.getByRole('link', { name: /Chapitre 1/ });
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await expect(homeChapter).toBeVisible();
+    await expectContrast(page.locator('body'), page.locator('body'), 4.5);
+    await expectContrast(page.getByRole('heading', { level: 1 }), page.locator('body'), 3);
+    const focusColor = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--app-focus'),
+    );
+    const pageBackground = await page
+      .locator('body')
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(contrastRatio(focusColor, pageBackground)).toBeGreaterThanOrEqual(3);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+
+  await homeChapter.click();
+  const progressMap = page.getByRole('region', { name: /Carte de progression/ });
+  await expect(progressMap.getByRole('listitem').first()).toContainText('À découvrir');
+  const initialStatus = progressMap.getByRole('listitem').first().locator('.objective-status');
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await expect(progressMap).toBeVisible();
+    await expectContrast(initialStatus, progressMap.getByRole('listitem').first(), 4.5);
+  }
+
+  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  const gapArticle = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Complétez les phrases/ }) });
+  const gap = gapArticle.getByRole('listitem').first();
+  const gapAnswer = gap.getByRole('textbox');
+  await gapAnswer.fill('naiz');
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await expect(gapAnswer).toHaveValue('naiz');
+    await expectContrast(gapAnswer, gapAnswer, 3, 'borderTopColor');
+  }
+  await gap.getByRole('button', { name: /Vérifier/ }).click();
+  const feedback = gap.getByRole('status');
+  await expect(feedback).toContainText('Correct');
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await expect(feedback).toContainText('Correct');
+    await expectContrast(feedback, gapArticle, 4.5);
+  }
+  await expectContrast(
+    gap.getByRole('button', { name: /Vérifier/ }),
+    gap.getByRole('button', { name: /Vérifier/ }),
+    4.5,
+  );
+  const choice = page.getByRole('radio', { name: 'Agur' });
+  await choice.check();
+  await setDisplayMode(page, 'light');
+  await setDisplayMode(page, 'dark');
+  await expect(choice).toBeChecked();
+
+  await page.goto('/chapitres/chapter-1/sequences/origin');
+  const resourceArticle = page.getByRole('article').first();
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await expect(resourceArticle).toHaveCSS(
+      'background-color',
+      mode === 'dark' ? 'rgb(43, 44, 47)' : 'rgb(255, 255, 255)',
+    );
+  }
+  const translation = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Traduisez/ }) });
+  const translationAnswer = translation.getByRole('textbox').first();
+  await translationAnswer.fill('Ni Baionakoa naiz.');
+  await setDisplayMode(page, 'light');
+  await expect(translationAnswer).toHaveValue('Ni Baionakoa naiz.');
+  await setDisplayMode(page, 'dark');
+  await expect(translationAnswer).toHaveValue('Ni Baionakoa naiz.');
+
+  const wordOrder = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: /Remettez les mots dans l’ordre/ }) });
+  await wordOrder.getByRole('button', { name: 'Zu' }).click();
+  await wordOrder.getByRole('button', { name: 'nongoa' }).click();
+  await setDisplayMode(page, 'light');
+  await expect(wordOrder.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
+  await setDisplayMode(page, 'dark');
+  await expect(wordOrder.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
+
+  await page.goto('/chapitres/chapter-1');
+  const greetingObjective = progressMap
+    .getByRole('listitem')
+    .filter({ hasText: /Saluer et se présenter/ });
+  await expect(greetingObjective).toContainText('En cours');
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await expect(greetingObjective).toContainText('En cours');
+    await expectContrast(greetingObjective.locator('.objective-status'), greetingObjective, 4.5);
+  }
+
+  for (let chapterNumber = 1; chapterNumber <= 5; chapterNumber += 1) {
+    expect(contrastRatio('#ffffff', chapterColor(chapterNumber))).toBeGreaterThanOrEqual(4.5);
+    const darkAccent = colorChannels(chapterColor(chapterNumber)).map((channel) =>
+      Math.round((channel + 255) / 2),
+    );
+    const darkAccentHex = `#${darkAccent.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+    expect(contrastRatio(darkAccentHex, '#2b2c2f')).toBeGreaterThanOrEqual(4.5);
+  }
+
+  await page.goto('/chapitres/chapter-99');
+  const notPublishedError = page.getByRole('alert');
+  await expect(notPublishedError).toBeVisible();
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await expectContrast(notPublishedError, notPublishedError, 4.5);
+  }
 });
 
 test('the selector is keyboard-operable and fits a narrow mobile viewport', async ({ page }) => {
