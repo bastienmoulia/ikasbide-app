@@ -1,6 +1,21 @@
 @use '@angular/material' as mat;
 
 html {
+  --app-background: #faf8f5;
+  --app-surface: #fff;
+  --app-surface-muted: #f5f0ec;
+  --app-border: #e6e1dd;
+  --app-border-strong: #8a817a;
+  --app-border-subtle: #d6cec8;
+  --app-text-muted: #655e59;
+  --app-offline-background: #f4ece6;
+  --app-alert-background: #fff0ef;
+  --app-alert-foreground: #3b302b;
+  --app-feedback-correct: #176b3a;
+  --app-feedback-almost: #785600;
+  --app-feedback-incorrect: #9c2a22;
+  --app-accent: #9c3434;
+  --app-focus: #9c3434;
   height: 100%;
   @include mat.theme(
     (
@@ -13,9 +28,39 @@ html {
   );
 }
 
-body {
+html[data-display-mode='light'] {
   color-scheme: light;
-  background-color: #faf8f5;
+}
+
+html[data-display-mode='dark'] {
+  color-scheme: dark;
+  --app-background: #202124;
+  --app-surface: #2b2c2f;
+  --app-surface-muted: #343539;
+  --app-border: #55565a;
+  --app-border-strong: #96979b;
+  --app-border-subtle: #55565a;
+  --app-text-muted: #c1c1c4;
+  --app-offline-background: #343539;
+  --app-alert-background: #452b2a;
+  --app-alert-foreground: #ffe2de;
+  --app-feedback-correct: #8bd5a5;
+  --app-feedback-almost: #f0cd78;
+  --app-feedback-incorrect: #ffaaa0;
+  --app-accent: #ffb4a9;
+  --app-focus: #ffb4a9;
+  --mat-sys-primary: #ffb4a9;
+  --mat-sys-on-primary: #690005;
+  --mat-sys-surface: #202124;
+  --mat-sys-surface-container: #2b2c2f;
+  --mat-sys-surface-container-low: #2b2c2f;
+  --mat-sys-on-surface: #f1f0ee;
+  --mat-sys-on-surface-variant: #c1c1c4;
+  --mat-sys-outline: #96979b;
+}
+
+body {
+  background-color: var(--app-background);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
 
@@ -28,6 +73,6 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid #9c3434;
+  outline: 3px solid var(--app-focus);
   outline-offset: 4px;
 }

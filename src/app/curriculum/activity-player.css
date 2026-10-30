@@ -42,7 +42,7 @@
 .answer input {
   width: min(28rem, 75vw);
   padding: 0.45rem 0.6rem;
-  border: 1px solid #8a817a;
+  border: 1px solid var(--app-border-strong);
   border-radius: 0.35rem;
   font: inherit;
 }
@@ -62,21 +62,21 @@
 
 .item .word {
   padding: 0.3rem 0.65rem;
-  border: 1px solid #8a817a;
+  border: 1px solid var(--app-border-strong);
   border-radius: 1rem;
-  background: #faf8f5;
+  background: var(--app-background);
   color: inherit;
   font-weight: 400;
 }
 
 .word-actions .secondary {
-  border: 1px solid #8a817a;
+  border: 1px solid var(--app-border-strong);
   background: transparent;
   color: inherit;
 }
 
 .empty-answer {
-  color: #665e58;
+  color: var(--app-text-muted);
   font-size: 0.9rem;
 }
 
@@ -92,7 +92,7 @@
   width: 7rem;
   min-width: 3rem;
   padding: 0.35rem 0.5rem;
-  border: 1px solid #8a817a;
+  border: 1px solid var(--app-border-strong);
   border-radius: 0.35rem;
   font: inherit;
 }
@@ -115,13 +115,13 @@ app-activity-feedback {
 }
 
 app-activity-feedback[data-result='correct'] {
-  color: #176b3a;
+  color: var(--app-feedback-correct);
 }
 
 app-activity-feedback[data-result='almost'] {
-  color: #785600;
+  color: var(--app-feedback-almost);
 }
 
 app-activity-feedback[data-result='incorrect'] {
-  color: #9c2a22;
+  color: var(--app-feedback-incorrect);
 }

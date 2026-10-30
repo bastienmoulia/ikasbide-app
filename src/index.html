@@ -8,11 +8,38 @@
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
     <meta name="theme-color" content="#9c3434" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
       content="Votre compagnon pour apprendre et pratiquer le basque à votre rythme."
     />
     <link rel="manifest" href="manifest.webmanifest" />
+    <script>
+      (() => {
+        let mode = 'system';
+        try {
+          const saved = localStorage.getItem('ikasbide.display-mode');
+          if (saved === 'light' || saved === 'dark') mode = saved;
+        } catch {}
+
+        const preference = window.matchMedia('(prefers-color-scheme: dark)');
+        const apply = () => {
+          const effectiveMode = mode === 'system' ? (preference.matches ? 'dark' : 'light') : mode;
+          document.documentElement.dataset.displayMode = effectiveMode;
+          document.documentElement.style.colorScheme = effectiveMode;
+          document
+            .querySelector('meta[name="color-scheme"]')
+            ?.setAttribute('content', effectiveMode);
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute('content', effectiveMode === 'dark' ? '#202124' : '#faf8f5');
+        };
+        apply();
+        preference.addEventListener('change', () => {
+          if (mode === 'system') apply();
+        });
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>
