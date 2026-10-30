@@ -16,9 +16,15 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await expect(page.getByRole('status').filter({ hasText: 'hors ligne' })).toHaveCount(0);
 
   await context.setOffline(true);
+  const displayModes = page.getByRole('group', { name: /Mode d’affichage/ });
+  await displayModes.getByRole('radio', { name: /Iluna Sombre/ }).check();
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.reload();
 
   await expect(page.getByRole('status').filter({ hasText: 'Vous êtes hors ligne' })).toBeVisible();
+  await expect(displayModes.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#202124');
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await expect(page.getByText('Apprenant fictif')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Nongoa zara? D’où es-tu ?',
