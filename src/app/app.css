@@ -8,7 +8,7 @@
   position: absolute;
   top: -5rem;
   padding: 1rem;
-  background: white;
+  background: var(--app-surface);
   z-index: 1;
 }
 
@@ -23,7 +23,38 @@ header {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.25rem clamp(1rem, 5vw, 4rem);
-  border-bottom: 1px solid #e6e1dd;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.display-mode-control {
+  min-width: 0;
+  margin: 0;
+  padding: 0.4rem 0.65rem 0.5rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.65rem;
+}
+
+.display-mode-control legend {
+  padding-inline: 0.2rem;
+  font-size: 0.8rem;
+}
+
+.display-mode-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+}
+
+.display-mode-options label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.display-mode-options input {
+  accent-color: var(--app-focus);
+  margin: 0;
 }
 
 .brand {
@@ -49,7 +80,7 @@ header {
 
 .muted,
 footer {
-  color: #655e59;
+  color: var(--app-text-muted);
 }
 
 main {
@@ -60,7 +91,7 @@ main {
 }
 
 .eyebrow {
-  color: #9c3434;
+  color: var(--app-accent);
   font-weight: 600;
 }
 
@@ -126,8 +157,13 @@ a[mat-stroked-button] {
 
 [role='alert'] {
   padding: 1rem;
-  border-left: 4px solid #9c3434;
-  background: #fff0ef;
+  border-left: 4px solid var(--app-accent);
+  background: var(--app-alert-background);
+  color: var(--app-alert-foreground);
+}
+
+.persistence-warning {
+  margin-top: 0;
 }
 
 footer {
@@ -152,8 +188,8 @@ footer {
 .offline-status {
   margin: 0 0 1.5rem;
   padding: 0.75rem 1rem;
-  border-left: 4px solid #9c3434;
+  border-left: 4px solid var(--app-accent);
   border-radius: 0.5rem;
-  background: #f4ece6;
-  color: #3b302b;
+  background: var(--app-offline-background);
+  color: inherit;
 }

@@ -5,6 +5,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './auth.service';
 import { BilingualText } from './bilingual-text';
+import { DisplayModeService } from './display-mode.service';
 import { NetworkStatus } from './network-status';
 
 @Component({
@@ -27,6 +28,25 @@ import { NetworkStatus } from './network-status';
         <span class="brand-mark" aria-hidden="true">i</span>
         Ikasbide
       </a>
+      <fieldset class="display-mode-control">
+        <legend>
+          <app-bilingual-text eu="Bistaratzeko modua" fr="Mode d’affichage" />
+        </legend>
+        <div class="display-mode-options">
+          @for (option of displayModes; track option.value) {
+            <label>
+              <input
+                type="radio"
+                name="display-mode"
+                [value]="option.value"
+                [checked]="displayMode.mode() === option.value"
+                (change)="displayMode.setMode(option.value)"
+              />
+              <app-bilingual-text [eu]="option.eu" [fr]="option.fr" />
+            </label>
+          }
+        </div>
+      </fieldset>
       @if (auth.status() === 'ready' && auth.user()) {
         <div class="account">
           <span class="account-name">
@@ -48,6 +68,14 @@ import { NetworkStatus } from './network-status';
       }
     </header>
     <main id="main">
+      @if (displayMode.persistenceUnavailable()) {
+        <p class="persistence-warning" role="alert">
+          <app-bilingual-text
+            eu="Ezin izan da aukera gorde gailu honetan. Uneko saioan aktibo dago, baina hurrengoan berriro aukeratu beharko duzu."
+            fr="Le choix n’a pas pu être enregistré sur cet appareil. Il reste actif pour cette session, mais vous devrez le choisir à nouveau la prochaine fois."
+          />
+        </p>
+      }
       @if (!network.online()) {
         <p class="offline-status" role="status">
           <app-bilingual-text
@@ -153,6 +181,12 @@ import { NetworkStatus } from './network-status';
 })
 export class App {
   protected readonly auth = inject(AuthService);
+  protected readonly displayMode = inject(DisplayModeService);
+  protected readonly displayModes = [
+    { value: 'light', eu: 'Argia', fr: 'Clair' },
+    { value: 'dark', eu: 'Iluna', fr: 'Sombre' },
+    { value: 'system', eu: 'Sistema', fr: 'Système' },
+  ] as const;
   protected readonly network = inject(NetworkStatus);
   protected readonly firstName = computed(
     () => this.auth.user()?.displayName?.trim().split(/\s+/)[0] ?? '',

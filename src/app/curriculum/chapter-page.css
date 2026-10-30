@@ -11,9 +11,9 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid #e6e1dd;
+  border: 1px solid var(--app-border);
   border-radius: 0.75rem;
-  background: white;
+  background: var(--app-surface);
 }
 
 /* Three-stage track: filled stages and the status text, not colour, tell objectives apart. */
@@ -40,10 +40,14 @@
   font-weight: 600;
 }
 
+:host-context(html[data-display-mode='dark']) .objective-status {
+  color: color-mix(in srgb, var(--chapter-accent) 50%, white);
+}
+
 .acquired {
   border-left: 6px solid var(--chapter-accent);
 }
 
 .to-discover .objective-status {
-  color: #655e59;
+  color: var(--app-text-muted);
 }
