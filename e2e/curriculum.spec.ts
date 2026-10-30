@@ -207,8 +207,11 @@ test('a learner can build a word-order answer from the offered words', async ({ 
 
   await page.getByRole('button', { name: 'Zu', exact: true }).click();
   await page.getByRole('button', { name: 'nongoa', exact: true }).click();
-  await page.getByRole('button', { name: 'zara', exact: true }).click();
-  await page.getByRole('button', { name: /Vérifier/ }).focus();
+  await page.getByRole('button', { name: 'zara', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  const verify = page.getByRole('button', { name: /Vérifier/ });
+  await expect(verify).toBeFocused();
+  await expect(page.locator('app-activity-feedback')).toHaveCount(0);
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
   await page.clock.fastForward(600);

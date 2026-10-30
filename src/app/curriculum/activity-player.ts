@@ -1,4 +1,4 @@
-import { Component, effect, input, output, signal } from '@angular/core';
+import { Component, effect, ElementRef, input, output, signal, ViewChild } from '@angular/core';
 import { BilingualText } from '../bilingual-text';
 import type { AttemptOutcome } from './attempt.service';
 import type {
@@ -190,7 +190,7 @@ class ActivityFeedback {
                   <button
                     class="word"
                     type="button"
-                    (click)="selectWord($index, currentQuestion.item.words)"
+                    (click)="selectWord($index, currentQuestion.item.words, $event)"
                   >
                     <span lang="eu">{{ word }}</span>
                   </button>
@@ -201,7 +201,12 @@ class ActivityFeedback {
               <button class="secondary" type="button" (click)="resetWords()">
                 <app-bilingual-text eu="Hasi berriz" fr="Recommencer" />
               </button>
-              <button type="button" (click)="grade(currentQuestion.item)" [disabled]="!canSubmit()">
+              <button
+                #wordSubmitButton
+                type="button"
+                (click)="grade(currentQuestion.item)"
+                [disabled]="!canSubmit()"
+              >
                 <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
               </button>
             </div>
@@ -266,6 +271,8 @@ export class ActivityPlayer {
   protected readonly answer = signal('');
   protected readonly selectedWords = signal<number[]>([]);
   protected readonly canSubmit = () => this.answer().trim().length > 0;
+  @ViewChild('wordSubmitButton', { read: ElementRef })
+  private wordSubmitButton?: ElementRef<HTMLButtonElement>;
 
   constructor() {
     effect(() => {
@@ -281,13 +288,16 @@ export class ActivityPlayer {
     if (target instanceof HTMLInputElement) this.answer.set(target.value);
   }
 
-  protected selectWord(wordIndex: number, words: string[]): void {
+  protected selectWord(wordIndex: number, words: string[], event: MouseEvent): void {
     this.selectedWords.update((indices) => [...indices, wordIndex]);
     this.answer.set(
       this.selectedWords()
         .map((index) => words[index])
         .join(' '),
     );
+    if (event.detail === 0 && this.selectedWords().length === words.length) {
+      this.wordSubmitButton?.nativeElement.focus();
+    }
   }
 
   protected removeWord(wordIndex: number, words: string[]): void {
