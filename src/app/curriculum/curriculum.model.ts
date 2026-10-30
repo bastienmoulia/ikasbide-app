@@ -89,12 +89,14 @@ interface ItemBase {
 export interface GapFillItem extends ItemBase {
   prompt: BilingualText;
   acceptedAnswers: string[];
+  warningAnswers?: string[];
 }
 
 export interface TranslationItem extends ItemBase {
   direction: 'eu-fr' | 'fr-eu';
   source: string;
   acceptedAnswers: string[];
+  warningAnswers?: string[];
 }
 
 export interface MultipleChoiceItem extends ItemBase {
@@ -107,6 +109,7 @@ export interface WordOrderItem extends ItemBase {
   prompt: BilingualText;
   words: string[];
   acceptedAnswers: string[];
+  warningAnswers?: string[];
 }
 
 export interface GapFillActivity extends ActivityBase {

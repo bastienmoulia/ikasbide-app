@@ -40,7 +40,7 @@ export function objectiveProgress(
       const objective = evidence.get(objectiveId);
       if (!objective) continue;
       objective.practised = true;
-      if (attempt.outcome !== 'correct') continue;
+      if (attempt.outcome !== 'correct' && attempt.outcome !== 'correct-with-warning') continue;
       objective.correctItems.add(attempt.itemId);
       objective.correctSessions.add(attempt.sessionId);
     }

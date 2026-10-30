@@ -90,7 +90,8 @@
                       "id": "greetings-gap-4",
                       "objectiveIds": ["greet-and-introduce"],
                       "prompt": { "eu": "___, Miren!", "fr": "Bonjour, Miren !" },
-                      "acceptedAnswers": ["Kaixo"]
+                      "acceptedAnswers": ["Kaixo"],
+                      "warningAnswers": ["Egun on"]
                     }
                   ]
                 },
@@ -183,7 +184,8 @@
                       "objectiveIds": ["say-origin-and-residence"],
                       "direction": "eu-fr",
                       "source": "Bilbon bizi naiz.",
-                      "acceptedAnswers": ["J’habite à Bilbao.", "Je vis à Bilbao."]
+                      "acceptedAnswers": ["J’habite à Bilbao.", "Je vis à Bilbao."],
+                      "warningAnswers": ["Je réside à Bilbao."]
                     }
                   ]
                 },
@@ -215,7 +217,8 @@
                         "fr": "Dites que vous habitez à Bilbao."
                       },
                       "words": ["bizi", "Bilbon", "naiz"],
-                      "acceptedAnswers": ["Bilbon bizi naiz."]
+                      "acceptedAnswers": ["Bilbon bizi naiz."],
+                      "warningAnswers": ["Bizi naiz Bilbon."]
                     }
                   ]
                 },

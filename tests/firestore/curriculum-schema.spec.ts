@@ -54,6 +54,22 @@ const structuralErrors: [string, (curriculum: any) => void][] = [
     (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].acceptedAnswers = []),
   ],
   [
+    'an empty warning answer list',
+    (c) => (c.units[0].chapters[0].sequences[0].contents[2].items[0].warningAnswers = []),
+  ],
+  [
+    'a blank warning answer',
+    (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].warningAnswers = [' ']),
+  ],
+  [
+    'a warning answer list that is not an array',
+    (c) => (c.units[0].chapters[0].sequences[1].contents[3].items[0].warningAnswers = 'zara'),
+  ],
+  [
+    'warning answers on a multiple-choice item',
+    (c) => (c.units[0].chapters[0].sequences[0].contents[3].items[0].warningAnswers = ['Agur']),
+  ],
+  [
     'an item field from another activity format',
     (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].words = ['a', 'b']),
   ],

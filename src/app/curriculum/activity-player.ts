@@ -75,8 +75,20 @@ export interface ItemResponse {
     role: 'status',
     '[attr.data-result]': 'result()',
   },
+  styles: `
+    :host {
+      display: grid;
+      grid-template-columns: 1.5rem minmax(0, 1fr);
+      align-items: start;
+      gap: 0.6rem;
+    }
+
+    .feedback-icon {
+      text-align: center;
+    }
+  `,
   template: `
-    <span aria-hidden="true">{{ symbols[result()] }}</span>
+    <span class="feedback-icon" aria-hidden="true">{{ symbols[result()] }}</span>
     <app-bilingual-text [eu]="labels[result()].eu" [fr]="labels[result()].fr" />
   `,
 })
@@ -84,11 +96,16 @@ class ActivityFeedback {
   readonly result = input.required<AttemptOutcome>();
   protected readonly symbols = {
     correct: '✓',
+    'correct-with-warning': '⚠',
     almost: '≈',
     incorrect: '✕',
   };
   protected readonly labels = {
     correct: { eu: 'Zuzena.', fr: 'Correct.' },
+    'correct-with-warning': {
+      eu: 'Erantzuna onartua da, baina beste bat espero zen.',
+      fr: 'Réponse acceptée, mais une autre était attendue.',
+    },
     almost: { eu: 'Ia!', fr: 'Presque !' },
     incorrect: { eu: 'Saiatu berriro.', fr: 'Incorrect.' },
   };
@@ -364,7 +381,7 @@ export class ActivityPlayer {
         ? item.correctChoiceIds.includes(answer)
           ? 'correct'
           : 'incorrect'
-        : gradeFreeResponse(answer, item.acceptedAnswers);
+        : gradeFreeResponse(answer, item.acceptedAnswers, item.warningAnswers);
     this.attempted.emit({
       itemId: item.id,
       outcome,
@@ -396,10 +413,15 @@ export class ActivityPlayer {
   }
 }
 
-function gradeFreeResponse(answer: string, acceptedAnswers: string[]): AttemptOutcome {
+function gradeFreeResponse(
+  answer: string,
+  acceptedAnswers: string[],
+  warningAnswers: string[] = [],
+): AttemptOutcome {
   const normalizedAnswer = normalizeAnswer(answer);
   const normalizedAccepted = acceptedAnswers.map(normalizeAnswer);
   if (normalizedAccepted.includes(normalizedAnswer)) return 'correct';
+  if (warningAnswers.map(normalizeAnswer).includes(normalizedAnswer)) return 'correct-with-warning';
   return normalizedAccepted.some((accepted) => isNearMatch(normalizedAnswer, accepted))
     ? 'almost'
     : 'incorrect';

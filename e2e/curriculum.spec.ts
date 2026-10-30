@@ -1,11 +1,33 @@
-import { expect, test, type Locator } from '@playwright/test';
-import { expectBilingualPresentation, signInWithGoogle } from './support.ts';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import {
+  answerCurrentChoice,
+  answerCurrentText,
+  attemptSummary,
+  expectBilingualPresentation,
+  learnerId,
+  signInWithGoogle,
+  skipReadings,
+  startPractice,
+  storedAttempts,
+} from './support.ts';
 
 const red = 'rgb(179, 38, 30)';
 const purple = 'rgb(107, 63, 160)';
 
 function accent(marker: Locator): Promise<string> {
   return marker.evaluate((element) => getComputedStyle(element).backgroundColor);
+}
+
+async function expectFeedbackIconBesideText(page: Page): Promise<void> {
+  const layout = await page.locator('app-activity-feedback').evaluate((element) => {
+    const icon = element.querySelector<HTMLElement>('[aria-hidden="true"]')!;
+    const text = element.querySelector<HTMLElement>('app-bilingual-text')!;
+    return {
+      iconRight: icon.getBoundingClientRect().right,
+      textLeft: text.getBoundingClientRect().left,
+    };
+  });
+  expect(layout.textLeft).toBeGreaterThan(layout.iconRight);
 }
 
 test('a learner browses units, chapters and sequences in book order', async ({ page }) => {
@@ -47,10 +69,10 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
     'Nongoa zara? D’où es-tu ?',
   );
   await expect(page.getByRole('article')).toHaveText([
-    /Note.*Le suffixe -ko.*on ajoute -ko au nom de la ville/,
+    /Note.*Le suffixe -ko/,
     /Ressource externe.*Enregistrements audio/,
-    /Traduction.*Traduisez.*2 questions dans la série/,
-    /Remise en ordre.*Remettez les mots dans l’ordre.*2 questions dans la série/,
+    /Traduction.*2 questions dans la série/,
+    /Remise en ordre.*2 questions dans la série/,
     /Activité orale facultative.*Dialogue à deux/,
   ]);
   const oralPrompt = page
@@ -59,10 +81,7 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
   await expect(oralPrompt.getByRole('textbox')).toHaveCount(0);
   await expect(oralPrompt.getByRole('radio')).toHaveCount(0);
   await expect(oralPrompt.getByRole('button')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /Enregistrements audio/ })).toHaveAttribute(
-    'href',
-    'https://example.org/ikasbide-audio',
-  );
+  await expect(page.getByRole('link', { name: /Enregistrements audio/ })).toHaveCount(0);
   // Accepted answers are never revealed while browsing.
   await expect(page.getByText('Baionakoa naiz.')).toHaveCount(0);
   await expectBilingualPresentation(page);
@@ -71,7 +90,7 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Kaixo! Bonjour !');
   await expect(page.getByRole('article')).toHaveText([
     /Note.*Les salutations/,
-    /Dialogue.*Miren.*Bonjour ! Je suis Miren\. Et toi \?.*Jon/,
+    /Dialogue.*Modèle de dialogue/,
     /Texte à trous.*Complétez les phrases.*4 questions dans la série/,
     /QCM.*Choisissez la salutation.*2 questions dans la série/,
   ]);
@@ -85,12 +104,13 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
 test('a learner gets item-level feedback for gap-fill answers', async ({ page }) => {
   await page.goto('/chapitres/chapter-1/sequences/greetings');
   await signInWithGoogle(page);
-  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  await startPractice(page);
 
   await page.getByRole('textbox').fill('faux');
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
   await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('✕');
+  await expectFeedbackIconBesideText(page);
   await expect(page.getByText('faux', { exact: true })).toBeVisible();
   await expect(page.getByText('naiz', { exact: true })).toBeVisible();
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '0');
@@ -106,9 +126,9 @@ test('a learner starts a sequence practice with one item and advances after a co
   await signInWithGoogle(page);
 
   await expect(
-    page.getByRole('button', { name: /Hasi ariketak|Commencer les exercices/ }),
+    page.getByRole('button', { name: /Hasi ibilbidea|Commencer le parcours/ }),
   ).toBeVisible();
-  await page.getByRole('button', { name: /Hasi ariketak|Commencer les exercices/ }).click();
+  await startPractice(page);
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '0');
   await expect(page.getByRole('progressbar')).toHaveAttribute('max', '6');
   await expect(page.getByRole('heading', { name: /Complétez les phrases/ })).toBeVisible();
@@ -120,6 +140,7 @@ test('a learner starts a sequence practice with one item and advances after a co
   await page.getByRole('button', { name: /Egiaztatu|Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: /Zuzena|Correct/ })).toBeVisible();
   await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('✓');
+  await expectFeedbackIconBesideText(page);
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '1');
   await page.clock.fastForward(600);
   await expect(page.getByText('Je suis de Bayonne.')).toBeVisible();
@@ -127,12 +148,99 @@ test('a learner starts a sequence practice with one item and advances after a co
   await expect(page.getByRole('textbox')).toHaveCount(1);
 });
 
+test('a warning waits for Continue, survives reload and resolves without retrying', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  const email = await signInWithGoogle(page);
+  await startPractice(page);
+  for (const answer of ['naiz', 'koa', 'on']) await answerCurrentText(page, answer);
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 3');
+  const uid = await learnerId(email);
+
+  await page.getByRole('textbox').fill('  EGUN   ON!! ');
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  const warning = page.locator('app-activity-feedback[data-result="correct-with-warning"]');
+  await expect(warning).toContainText('Réponse acceptée, mais une autre était attendue.');
+  await expect(warning.locator('[aria-hidden="true"]')).toHaveText('⚠');
+  await expect(page.locator('.correction')).toContainText('Kaixo');
+  await expectFeedbackIconBesideText(page);
+  await expectBilingualPresentation(page);
+  await page.clock.fastForward(2_000);
+  await expect(warning).toBeVisible();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
+  expect(await storedAttempts(uid)).toHaveLength(3);
+
+  await page.reload();
+  await startPractice(page);
+  await expect(warning).toBeVisible();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
+  expect(await storedAttempts(uid)).toHaveLength(3);
+
+  await page.getByRole('button', { name: /Continuer/ }).click();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '4');
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4');
+  const attempts = await storedAttempts(uid);
+  expect(
+    attempts.filter(({ fields }) => fields['outcome'] === 'correct-with-warning'),
+  ).toHaveLength(1);
+  for (const { fields } of attempts) expect(fields).not.toHaveProperty('answer');
+
+  await answerCurrentChoice(page, 'Agur');
+  await answerCurrentChoice(page, 'Egun on');
+  await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '6');
+  await page.reload();
+  await startPractice(page);
+  await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 6');
+});
+
+test('translation and word-order warning variants show the canonical expected answer', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await signInWithGoogle(page);
+  await startPractice(page);
+  await answerCurrentText(page, 'Ni Baionakoa naiz.');
+  await page.getByRole('textbox').fill('Je réside à Bilbao.');
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  const warning = page.locator('app-activity-feedback[data-result="correct-with-warning"]');
+  await expect(warning).toBeVisible();
+  await expect(page.locator('.correction > span')).toHaveText('J’habite à Bilbao.');
+  await expect(page.locator('.correction > span')).toHaveAttribute('lang', 'fr');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '1');
+  await page.getByRole('button', { name: /Continuer/ }).click();
+
+  for (const word of ['Zu', 'nongoa', 'zara']) {
+    await page.getByRole('button', { name: word, exact: true }).click();
+  }
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await page.clock.fastForward(600);
+  for (const word of ['bizi', 'naiz', 'Bilbon']) {
+    await page.getByRole('button', { name: word, exact: true }).click();
+  }
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(warning).toBeVisible();
+  await expect(page.locator('.correction > span')).toHaveText('Bilbon bizi naiz.');
+  await expect(page.locator('.correction > span')).toHaveAttribute('lang', 'eu');
+  await page.clock.fastForward(2_000);
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
+  await page.getByRole('button', { name: /Continuer/ }).click();
+  await expect(page.locator('app-reading-player')).toBeVisible();
+  await skipReadings(page);
+  await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4');
+});
+
 test('a learner can answer a multiple-choice item', async ({ page }) => {
   await page.clock.install();
   await page.goto('/chapitres/chapter-1/sequences/greetings');
   await signInWithGoogle(page);
 
-  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  await startPractice(page);
   for (const answer of ['naiz', 'koa', 'on', 'Kaixo']) {
     await page.getByRole('textbox').fill(answer);
     await page.getByRole('button', { name: /Vérifier/ }).click();
@@ -173,7 +281,7 @@ test('translation answers accept listed variants and preserve diacritic distinct
   await page.clock.install();
   await page.goto('/chapitres/chapter-1/sequences/origin');
   await signInWithGoogle(page);
-  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  await startPractice(page);
 
   const answer = page.getByRole('textbox');
   await expect(page.locator('app-activity-player .source')).toHaveAttribute('lang', 'fr');
@@ -196,7 +304,7 @@ test('a learner can build a word-order answer from the offered words', async ({ 
   await page.clock.install();
   await page.goto('/chapitres/chapter-1/sequences/origin');
   await signInWithGoogle(page);
-  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  await startPractice(page);
 
   for (const answer of ['Ni Baionakoa naiz.', 'J’habite à Bilbao.']) {
     await page.getByRole('textbox').fill(answer);
@@ -222,6 +330,8 @@ test('a learner can build a word-order answer from the offered words', async ({ 
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
   await page.clock.fastForward(600);
+  await expect(page.locator('app-reading-player')).toBeVisible();
+  await skipReadings(page);
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
 });
 

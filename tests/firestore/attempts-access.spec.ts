@@ -58,6 +58,16 @@ test('a learner records and reads their own attempts', async () => {
   await assertSucceeds(getDocs(collection(learner, `learners/${uid}/attempts`)));
 });
 
+test('a learner can record an accepted answer with a warning', async () => {
+  const uid = uniqueLearner('warning');
+  const ref = doc(googleLearner(uid), `learners/${uid}/attempts/${crypto.randomUUID()}`);
+  const recorded = { ...attempt(), outcome: 'correct-with-warning' };
+  await assertSucceeds(setDoc(ref, recorded));
+  await assertSucceeds(getDoc(ref));
+  await assertSucceeds(setDoc(ref, recorded));
+  await assertFails(updateDoc(ref, { outcome: 'correct' }));
+});
+
 test('another account cannot read or change a learner’s attempts', async () => {
   const owner = uniqueLearner('owner');
   const attemptPath = `learners/${owner}/attempts/${crypto.randomUUID()}`;

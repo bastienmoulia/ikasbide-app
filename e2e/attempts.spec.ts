@@ -78,8 +78,8 @@ test('attempts stay immutable and shared while local practice progress stays on 
     await otherPage.goto(sequenceUrl);
     await signInWithGoogle(otherPage, 'Apprenant fictif', email);
     await expect(attemptSummary(otherPage)).toContainText('Tentatives synchronisées : 5');
-    await expect(otherPage.getByRole('button', { name: /Commencer les exercices/ })).toBeVisible();
-    await expect(otherPage.getByRole('button', { name: /Reprendre les exercices/ })).toHaveCount(0);
+    await expect(otherPage.getByRole('button', { name: /Commencer le parcours/ })).toBeVisible();
+    await expect(otherPage.getByRole('button', { name: /Reprendre le parcours/ })).toHaveCount(0);
 
     await startPractice(otherPage);
     await otherPage.getByRole('button', { name: 'ama', exact: true }).click();

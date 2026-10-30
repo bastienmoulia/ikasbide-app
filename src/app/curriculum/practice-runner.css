@@ -13,12 +13,35 @@
 }
 
 .practice-toolbar,
+.step-navigation,
 .completion-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.step-navigation .continue {
+  margin-left: auto;
+}
+
+app-activity-player[hidden] {
+  display: none;
+}
+
+.question-review {
+  padding: 1.25rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+  background: var(--app-surface);
+  overflow-wrap: anywhere;
 }
 
 .practice-toolbar p {

@@ -58,6 +58,13 @@ test('the maintainer import publishes a curriculum learners can browse in book o
     'Baionakoa naiz.',
     'Ni Baionakoa naiz.',
   ]);
+  expect(chapter?.['sequences'][0].contents[2].items[3].warningAnswers).toEqual(['Egun on']);
+  expect(chapter?.['sequences'][1].contents[2].items[1].warningAnswers).toEqual([
+    'Je réside à Bilbao.',
+  ]);
+  expect(chapter?.['sequences'][1].contents[3].items[1].warningAnswers).toEqual([
+    'Bizi naiz Bilbon.',
+  ]);
 });
 
 async function writeVariant(
@@ -130,6 +137,31 @@ const invalidSources: [string, (curriculum: any) => void, string][] = [
     'an item without accepted answers',
     (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].acceptedAnswers = []),
     `${origin}[2].items[0].acceptedAnswers: must contain at least 1 element(s)`,
+  ],
+  [
+    'an empty warning answer list',
+    (c) => (c.units[0].chapters[0].sequences[0].contents[2].items[0].warningAnswers = []),
+    `${greetings}[2].items[0].warningAnswers: must contain at least 1 element(s)`,
+  ],
+  [
+    'a blank warning answer',
+    (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].warningAnswers = [' ']),
+    `${origin}[2].items[0].warningAnswers[0]: must be a non-empty string`,
+  ],
+  [
+    'a warning answer list that is not an array',
+    (c) => (c.units[0].chapters[0].sequences[1].contents[3].items[0].warningAnswers = 'zara'),
+    `${origin}[3].items[0].warningAnswers: must be an array`,
+  ],
+  [
+    'warning answers on a multiple-choice item',
+    (c) => (c.units[0].chapters[0].sequences[0].contents[3].items[0].warningAnswers = ['Agur']),
+    `${greetings}[3].items[0].warningAnswers: is not allowed`,
+  ],
+  [
+    'a word-order warning answer that uses other words',
+    (c) => (c.units[0].chapters[0].sequences[1].contents[3].items[0].warningAnswers = ['Zira']),
+    `${origin}[3].items[0].warningAnswers[0]: must use exactly the listed words`,
   ],
   [
     'a gap-fill prompt without a gap',

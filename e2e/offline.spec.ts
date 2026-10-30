@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { expectBilingualPresentation, signInWithGoogle, waitForOfflineShell } from './support.ts';
+import {
+  expectBilingualPresentation,
+  signInWithGoogle,
+  startCourse,
+  waitForOfflineShell,
+} from './support.ts';
 
 test.use({ serviceWorkers: 'allow' });
 
@@ -16,8 +21,8 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await expect(page.getByRole('status').filter({ hasText: 'hors ligne' })).toHaveCount(0);
 
   await context.setOffline(true);
-  const displayModes = page.getByRole('group', { name: /Mode d’affichage/ });
-  await displayModes.getByRole('radio', { name: /Iluna Sombre/ }).check();
+  const displayModes = page.getByRole('radiogroup', { name: /Mode d’affichage/ });
+  await displayModes.getByRole('radio', { name: /Iluna Sombre/ }).click();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.reload();
 
@@ -30,11 +35,15 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
     'Nongoa zara? D’où es-tu ?',
   );
   await expect(page.getByRole('article')).toHaveCount(5);
+  await startCourse(page);
+  await expect(page.getByRole('heading', { name: /Le suffixe -ko/ })).toBeVisible();
+  await page.getByRole('button', { name: /Hurrengoa Suivant/ }).click();
   const audio = page
     .getByRole('article')
     .filter({ has: page.getByRole('heading', { name: /Enregistrements audio/ }) });
   await expect(audio).toContainText('Indisponible hors ligne');
   await expectBilingualPresentation(page);
+  await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
 
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(

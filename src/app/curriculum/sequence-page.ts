@@ -3,7 +3,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
-import { NetworkStatus } from '../network-status';
 import { Icon } from '../icon';
 import { PracticeLayout } from '../practice-layout';
 import { AttemptService, type Attempt, type AttemptSummary } from './attempt.service';
@@ -11,8 +10,6 @@ import { chapterColor } from './chapter-color';
 import {
   contentKindLabels,
   chapterNotPublishedMessage,
-  externalLinkNeedsNetworkMessage,
-  externalLinkOfflineMessage,
   loadErrorMessage,
   loadingMessage,
 } from './content-labels';
@@ -25,6 +22,7 @@ import {
   type PracticeProgress,
 } from './practice-progress';
 import { practiceItemIds, PracticeRunner } from './practice-runner';
+import { practiceSteps } from './practice-steps';
 
 @Component({
   selector: 'app-sequence-page',
@@ -100,13 +98,13 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
           (exit)="exitPractice()"
         />
       } @else {
-        @if (practiceItemCount()) {
+        @if (practiceStepCount()) {
           <button type="button" class="start-practice" (click)="startPractice()">
             <app-icon name="play" />
             @if (savedPractice()) {
-              <app-bilingual-text eu="Ariketekin jarraitu" fr="Reprendre les exercices" />
+              <app-bilingual-text eu="Ibilbidearekin jarraitu" fr="Reprendre le parcours" />
             } @else {
-              <app-bilingual-text eu="Hasi ariketak" fr="Commencer les exercices" />
+              <app-bilingual-text eu="Hasi ibilbidea" fr="Commencer le parcours" />
             }
           </button>
         }
@@ -115,7 +113,7 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
             <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
           </p>
         }
-        <ol class="contents">
+        <ol class="contents" aria-label="Sekuentziaren aurkibidea / Sommaire de la séquence">
           @for (content of sequence.contents; track content.id) {
             <li>
               <article [attr.aria-labelledby]="'content-' + content.id">
@@ -128,64 +126,13 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
                 <h2 [id]="'content-' + content.id">
                   <app-bilingual-text [eu]="content.title.eu" [fr]="content.title.fr" />
                 </h2>
-                @switch (content.kind) {
-                  @case ('note') {
-                    <p><app-bilingual-text [eu]="content.body.eu" [fr]="content.body.fr" /></p>
-                  }
-                  @case ('dialogue') {
-                    <dl class="dialogue">
-                      @for (line of content.lines; track $index) {
-                        <dt>{{ line.speaker }}</dt>
-                        <dd><app-bilingual-text [eu]="line.text.eu" [fr]="line.text.fr" /></dd>
-                      }
-                    </dl>
-                  }
-                  @case ('external-link') {
-                    <p>
-                      <app-bilingual-text
-                        [eu]="content.description.eu"
-                        [fr]="content.description.fr"
-                      />
-                    </p>
-                    <a [href]="content.url" target="_blank" rel="noopener noreferrer">
-                      <app-bilingual-text
-                        [eu]="content.title.eu + ' (kanpoko orria)'"
-                        [fr]="content.title.fr + ' (page externe)'"
-                      />
-                    </a>
-                    <p class="muted">
-                      @let availability = network.online() ? needsNetwork : offlineLink;
-                      <app-bilingual-text [eu]="availability.eu" [fr]="availability.fr" />
-                    </p>
-                  }
-                  @case ('oral-prompt') {
-                    <p>
-                      <app-bilingual-text
-                        [eu]="content.instructions.eu"
-                        [fr]="content.instructions.fr"
-                      />
-                    </p>
-                    <p class="muted">
-                      <app-bilingual-text
-                        eu="Nahi baduzu egiteko jarduera; ez da automatikoki zuzentzen."
-                        fr="Activité à faire si vous le souhaitez ; elle n’est pas corrigée automatiquement."
-                      />
-                    </p>
-                  }
-                  @default {
-                    <p>
-                      <app-bilingual-text
-                        [eu]="content.instructions.eu"
-                        [fr]="content.instructions.fr"
-                      />
-                    </p>
-                    <p class="muted">
-                      <app-bilingual-text
-                        [eu]="content.items.length + ' item'"
-                        [fr]="content.items.length + ' questions dans la série'"
-                      />
-                    </p>
-                  }
+                @if (content.type === 'activity' && 'items' in content) {
+                  <p class="muted">
+                    <app-bilingual-text
+                      [eu]="content.items.length + ' item'"
+                      [fr]="content.items.length + ' questions dans la série'"
+                    />
+                  </p>
                 }
               </article>
             </li>
@@ -228,16 +175,15 @@ export class SequencePage {
   private readonly curriculum = inject(CurriculumService);
   private readonly auth = inject(AuthService);
   protected readonly attempts = inject(AttemptService);
-  protected readonly network = inject(NetworkStatus);
   protected readonly practiceLayout = inject(PracticeLayout);
   protected readonly learnerId = computed(() => this.auth.user()?.uid ?? null);
   protected readonly practiceActive = signal(false);
   protected readonly activeProgress = signal<PracticeProgress | null>(null);
   protected readonly savedPractice = signal<PracticeProgress | null>(null);
   protected readonly practiceStorageError = signal<{ eu: string; fr: string } | null>(null);
-  protected readonly practiceItemCount = computed(() => {
+  protected readonly practiceStepCount = computed(() => {
     const position = this.position();
-    return position ? practiceItemIds(position.sequence).size : 0;
+    return position ? practiceSteps(position.sequence).length : 0;
   });
   protected readonly chapter = resource({
     params: () => this.chapterId(),
@@ -269,8 +215,6 @@ export class SequencePage {
   protected readonly loading = loadingMessage;
   protected readonly notPublished = chapterNotPublishedMessage;
   protected readonly errorMessage = loadErrorMessage;
-  protected readonly needsNetwork = externalLinkNeedsNetworkMessage;
-  protected readonly offlineLink = externalLinkOfflineMessage;
 
   constructor() {
     effect((onCleanup) => {
@@ -299,9 +243,13 @@ export class SequencePage {
       this.activeProgress.set(null);
       this.savedPractice.set(null);
       this.practiceStorageError.set(null);
-      if (!learner || !position || !practiceItemIds(position.sequence).size) return;
+      if (!learner || !position || !practiceSteps(position.sequence).length) return;
       const key = practiceProgressKey(learner.uid, position.chapter.id, position.sequence.id);
-      const result = readPracticeProgress(key, practiceItemIds(position.sequence));
+      const result = readPracticeProgress(
+        key,
+        practiceItemIds(position.sequence),
+        new Set(practiceSteps(position.sequence).map(({ id }) => id)),
+      );
       this.savedPractice.set(result.progress);
       this.practiceStorageError.set(result.error);
     });
@@ -309,7 +257,7 @@ export class SequencePage {
 
   protected startPractice(): void {
     const position = this.position();
-    if (!position || !this.learnerId() || !this.practiceItemCount()) return;
+    if (!position || !this.learnerId() || !this.practiceStepCount()) return;
     this.activeProgress.set(
       this.savedPractice() ??
         createPracticeProgress(

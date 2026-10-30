@@ -29,7 +29,7 @@ service cloud.firestore {
         return data.keys().hasOnly(['chapterId', 'itemId', 'outcome', 'occurredAt', 'sessionId'])
           && isIdentifier(data.chapterId)
           && isIdentifier(data.itemId)
-          && data.outcome in ['correct', 'almost', 'incorrect']
+          && data.outcome in ['correct', 'correct-with-warning', 'almost', 'incorrect']
           && data.occurredAt is timestamp
           && isIdentifier(data.sessionId);
       }

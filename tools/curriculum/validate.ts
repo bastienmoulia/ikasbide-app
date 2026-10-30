@@ -175,11 +175,17 @@ export function validateCurriculum(value: unknown): ValidationResult {
         fields: string[],
         check: (item: JsonObject) => void,
       ): void {
-        const record = object(value, path, ['id', 'objectiveIds', ...fields]);
+        const record = object(
+          value,
+          path,
+          ['id', 'objectiveIds', ...fields],
+          fields.includes('acceptedAnswers') ? ['warningAnswers'] : [],
+        );
         if (!record) return;
         id(record['id'], `${path}.id`, itemIds);
         objectiveReferences(record['objectiveIds'], `${path}.objectiveIds`);
         check(record);
+        if ('warningAnswers' in record) texts(record['warningAnswers'], `${path}.warningAnswers`);
       }
 
       function activityItems(activity: JsonObject, path: string): void {
@@ -251,6 +257,16 @@ export function validateCurriculum(value: unknown): ValidationResult {
                     }
                   },
                 );
+                if (Array.isArray(record['warningAnswers'])) {
+                  record['warningAnswers'].forEach((answer, index) => {
+                    if (typeof answer === 'string' && wordBag(answer.split(/\s+/)) !== expected) {
+                      fail(
+                        `${itemPath}.warningAnswers[${index}]`,
+                        'must use exactly the listed words',
+                      );
+                    }
+                  });
+                }
               });
               break;
           }

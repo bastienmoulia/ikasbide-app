@@ -218,7 +218,8 @@
                   "eu": { "pattern": "^(?:(?!___)[\\s\\S])*___(?:(?!___)[\\s\\S])*$" }
                 }
               },
-              "acceptedAnswers": { "$ref": "#/$defs/texts" }
+              "acceptedAnswers": { "$ref": "#/$defs/texts" },
+              "warningAnswers": { "$ref": "#/$defs/texts" }
             }
           }
         }
@@ -239,7 +240,8 @@
             "properties": {
               "direction": { "enum": ["eu-fr", "fr-eu"] },
               "source": { "$ref": "#/$defs/text" },
-              "acceptedAnswers": { "$ref": "#/$defs/texts" }
+              "acceptedAnswers": { "$ref": "#/$defs/texts" },
+              "warningAnswers": { "$ref": "#/$defs/texts" }
             }
           }
         }
@@ -294,7 +296,8 @@
             "properties": {
               "prompt": { "$ref": "#/$defs/bilingual" },
               "words": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/text" } },
-              "acceptedAnswers": { "$ref": "#/$defs/texts" }
+              "acceptedAnswers": { "$ref": "#/$defs/texts" },
+              "warningAnswers": { "$ref": "#/$defs/texts" }
             }
           }
         }

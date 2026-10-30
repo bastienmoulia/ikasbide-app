@@ -84,6 +84,23 @@ restent significatifs. Une seule transposition de deux lettres adjacentes, à l'
 d'un mot d'au moins cinq caractères et avant ses deux derniers caractères, peut afficher
 « Presque ! » ; elle reste incorrecte et ne fournit aucun indice de maîtrise.
 
+Les items `gap-fill`, `translation` et `word-order` peuvent ajouter un champ facultatif
+`warningAnswers`, une liste non vide de variantes acceptées avec avertissement. Par exemple :
+`"acceptedAnswers": ["zara"], "warningAnswers": ["zira"]`. Les réponses déjà présentes dans
+`acceptedAnswers` restent correctes sans avertissement, même si elles figurent aussi dans
+`warningAnswers` : aucun changement implicite de leur équivalence.
+
+Une correspondance exacte avec `warningAnswers`, après la même normalisation, affiche un
+avertissement distinct et la réponse attendue (`acceptedAnswers[0]`), en conservant le basque
+en premier et le français en dessous pour les libellés. La réponse attendue conserve sa
+langue propre. Le résultat `correct-with-warning` compte comme correct pour la maîtrise,
+mais la tentative n’est enregistrée et l’item n’est terminé qu’au clic sur « Continuer ».
+L’item ne sera pas reposé. Avant ce clic, recharger ou reprendre la série restaure
+l’avertissement sans enregistrer la tentative. Les approximations de ces variantes ne
+sont pas acceptées : « Presque ! » reste calculé uniquement à partir d’`acceptedAnswers`.
+Pour une remise en ordre, les variantes de `warningAnswers` doivent elles aussi utiliser
+exactement les mots proposés. Sans ce champ, le comportement existant reste inchangé.
+
 ## Données publiées
 
 | Document         | Contenu                                                                         |

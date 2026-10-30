@@ -18,20 +18,31 @@ import { PracticeLayout } from '../practice-layout';
 import { ActivityPlayer, type ExerciseQuestion, type ItemResponse } from './activity-player';
 import type { Sequence } from './curriculum.model';
 import {
+  createPracticeProgress,
   type PracticeFeedback,
   type PracticeProgress,
   practiceProgressKey,
   writePracticeProgress,
 } from './practice-progress';
+import { advancePracticeStep, practiceSteps, withPracticeSteps } from './practice-steps';
+import { ReadingPlayer } from './reading-player';
 
 @Component({
   selector: 'app-practice-runner',
-  imports: [ActivityPlayer, BilingualText, DisplayModeControl, Icon, MatTooltipModule, RouterLink],
+  imports: [
+    ActivityPlayer,
+    BilingualText,
+    DisplayModeControl,
+    Icon,
+    MatTooltipModule,
+    RouterLink,
+    ReadingPlayer,
+  ],
   styleUrls: ['./practice-runner.css'],
   template: `
     @if (progress(); as state) {
-      @if (currentQuestion()) {
-        <section class="practice" aria-label="Ariketa sorta / Série d’exercices">
+      @if (displayedStep(); as step) {
+        <section class="practice" aria-label="Ikasketa ibilbidea / Parcours de la séquence">
           <div class="practice-toolbar">
             <button
               type="button"
@@ -44,25 +55,84 @@ import {
             </button>
             <p class="progress-label">
               <app-bilingual-text
-                [eu]="state.completedItemIds.length + ' / ' + questions().length + ' item'"
-                [fr]="state.completedItemIds.length + ' / ' + questions().length + ' questions'"
+                [eu]="state.completedItemIds.length + ' / ' + questions().length + ' ariketa'"
+                [fr]="
+                  state.completedItemIds.length + ' / ' + questions().length + ' exercices réussis'
+                "
+              />
+              <app-bilingual-text
+                [eu]="visitedReadingCount() + ' / ' + readingCount() + ' irakurgai'"
+                [fr]="visitedReadingCount() + ' / ' + readingCount() + ' lectures parcourues'"
               />
             </p>
             <app-display-mode-control />
           </div>
           <progress
-            [value]="state.completedItemIds.length"
-            [max]="questions().length"
-            aria-label="Ariketen aurrerapena / Progression des exercices"
+            [value]="questions().length ? state.completedItemIds.length : visitedReadingCount()"
+            [max]="questions().length || readingCount()"
+            [attr.aria-label]="
+              questions().length
+                ? 'Ariketen aurrerapena / Progression des exercices'
+                : 'Irakurketaren aurrerapena / Progression des lectures'
+            "
           ></progress>
           @for (presentation of presentedQuestions(); track presentation.key) {
             <app-activity-player
               [question]="presentation.question"
               [feedback]="state.feedback"
+              [hidden]="reviewing()"
               (attempted)="submit($event)"
             />
           }
-          @if (state.feedback && state.feedback.outcome !== 'correct') {
+          @for (reading of presentedReadings(); track reading.key) {
+            <app-reading-player [content]="reading.content" />
+          }
+          @if (reviewing() && step.kind === 'question') {
+            <article class="question-review" tabindex="-1" #reviewHeading>
+              <h2>
+                <app-bilingual-text [eu]="step.question.title.eu" [fr]="step.question.title.fr" />
+              </h2>
+              <p>
+                <app-bilingual-text
+                  [eu]="step.question.instructions.eu"
+                  [fr]="step.question.instructions.fr"
+                />
+              </p>
+              @if (step.question.kind === 'translation') {
+                <p [attr.lang]="step.question.item.direction === 'eu-fr' ? 'eu' : 'fr'">
+                  {{ step.question.item.source }}
+                </p>
+              } @else {
+                <p>
+                  <app-bilingual-text
+                    [eu]="step.question.item.prompt.eu"
+                    [fr]="step.question.item.prompt.fr"
+                  />
+                </p>
+              }
+              <p>
+                <app-bilingual-text
+                  eu="Ariketa hau jada egin duzu. Berrikusteak ez du beste saiakerarik erregistratzen."
+                  fr="Vous avez déjà répondu à cet exercice. La relecture n’enregistre aucune nouvelle tentative."
+                />
+              </p>
+            </article>
+          }
+          <nav class="step-navigation" aria-label="Edukien nabigazioa / Navigation des contenus">
+            @if (canGoBack()) {
+              <button type="button" class="exit" (click)="previous()">
+                <app-icon name="previous" />
+                <app-bilingual-text eu="Aurrekoa" fr="Précédent" />
+              </button>
+            }
+            @if (reviewing() || step.kind === 'reading') {
+              <button type="button" class="continue" (click)="next()">
+                <app-bilingual-text eu="Hurrengoa" fr="Suivant" />
+                <app-icon name="next" />
+              </button>
+            }
+          </nav>
+          @if (!reviewing() && state.feedback && state.feedback.outcome !== 'correct') {
             <button type="button" class="continue" (click)="continue()">
               <app-bilingual-text eu="Jarraitu" fr="Continuer" />
               <app-icon name="next" />
@@ -81,19 +151,30 @@ import {
           </h2>
           <p class="progress-label">
             <app-bilingual-text
-              [eu]="state.completedItemIds.length + ' / ' + questions().length + ' item'"
-              [fr]="state.completedItemIds.length + ' / ' + questions().length + ' questions'"
+              [eu]="state.completedItemIds.length + ' / ' + questions().length + ' ariketa'"
+              [fr]="
+                state.completedItemIds.length + ' / ' + questions().length + ' exercices réussis'
+              "
             />
           </p>
           <progress
-            [value]="state.completedItemIds.length"
-            [max]="questions().length"
-            aria-label="Ariketen aurrerapena / Progression des exercices"
+            [value]="questions().length ? state.completedItemIds.length : visitedReadingCount()"
+            [max]="questions().length || readingCount()"
+            [attr.aria-label]="
+              questions().length
+                ? 'Ariketen aurrerapena / Progression des exercices'
+                : 'Irakurketaren aurrerapena / Progression des lectures'
+            "
           ></progress>
           <p>
+            <app-bilingual-text eu="Ibilbidea amaitu duzu." fr="Vous avez terminé le parcours." />
+          </p>
+          <p>
             <app-bilingual-text
-              [eu]="questions().length + ' itemak amaitu dituzu.'"
-              [fr]="questions().length + ' questions terminées.'"
+              [eu]="visitedReadingCount() + ' / ' + readingCount() + ' irakurgai'"
+              [fr]="
+                visitedReadingCount() + ' / ' + readingCount() + ' lectures parcourues, sans score.'
+              "
             />
           </p>
           <nav class="completion-actions">
@@ -110,12 +191,18 @@ import {
             }
             <button type="button" class="secondary" (click)="exit.emit()">
               <app-icon name="previous" />
-              <app-bilingual-text eu="Baliabideetara itzuli" fr="Revenir aux ressources" />
+              <app-bilingual-text eu="Aurkibidera itzuli" fr="Revenir au sommaire" />
             </button>
             <button type="button" class="secondary" (click)="restart()">
               <app-icon name="restart" />
               <app-bilingual-text eu="Berriro hasi" fr="Recommencer" />
             </button>
+            @if (canGoBack()) {
+              <button type="button" class="secondary" (click)="previous()">
+                <app-icon name="previous" />
+                <app-bilingual-text eu="Berrikusi" fr="Relire le parcours" />
+              </button>
+            }
           </nav>
           @if (storageError(); as error) {
             <p role="alert">
@@ -139,14 +226,46 @@ export class PracticeRunner {
   readonly exit = output<void>();
   readonly progressChanged = output<PracticeProgress>();
   protected readonly questions = computed(() => flattenQuestions(this.sequence()));
+  protected readonly steps = computed(() => practiceSteps(this.sequence()));
+  protected readonly readingCount = computed(
+    () => this.steps().filter((step) => step.kind === 'reading').length,
+  );
+  protected readonly visitedReadingCount = computed(
+    () => this.progress()?.journey?.visited.filter((id) => id.startsWith('content:')).length ?? 0,
+  );
+  protected readonly reviewing = computed(() => this.progress()?.journey?.reviewIndex != null);
+  protected readonly currentStep = computed(
+    () => this.steps().find(({ id }) => id === this.progress()?.journey?.queue[0]) ?? null,
+  );
+  protected readonly displayedStep = computed(() => {
+    const journey = this.progress()?.journey;
+    if (!journey) return null;
+    const id =
+      journey.reviewIndex === null ? journey.queue[0] : journey.visited[journey.reviewIndex];
+    return this.steps().find((step) => step.id === id) ?? null;
+  });
+  protected readonly canGoBack = computed(() => {
+    const journey = this.progress()?.journey;
+    return (
+      !!journey &&
+      (journey.reviewIndex === null ? journey.visited.length > 0 : journey.reviewIndex > 0)
+    );
+  });
   protected readonly progress = signal<PracticeProgress | null>(null);
   protected readonly storageError = signal<{ eu: string; fr: string } | null>(null);
   private readonly presentation = signal(0);
   private readonly practiceLayout = inject(PracticeLayout);
   protected readonly currentQuestion = computed(() => {
-    const id = this.progress()?.queue[0];
-    return this.questions().find((question) => question.item.id === id) ?? null;
+    const step = this.currentStep();
+    return step?.kind === 'question' ? step.question : null;
   });
+  protected readonly presentedReadings = computed(() => {
+    const step = this.displayedStep();
+    return step?.kind === 'reading'
+      ? [{ key: step.id + ':' + this.progress()?.journey?.reviewIndex, content: step.content }]
+      : [];
+  });
+  private readonly feedback = computed(() => this.progress()?.feedback);
   protected readonly presentedQuestions = computed(() => {
     const question = this.currentQuestion();
     // Even a retry of the same item needs a fresh view, shuffle and focus.
@@ -154,27 +273,44 @@ export class PracticeRunner {
   });
   @ViewChild('completionHeading', { read: ElementRef })
   private completionHeading?: ElementRef<HTMLElement>;
+  @ViewChild('reviewHeading', { read: ElementRef })
+  private reviewHeading?: ElementRef<HTMLElement>;
+  @ViewChild(ActivityPlayer, { read: ElementRef })
+  private activityElement?: ElementRef<HTMLElement>;
 
   constructor() {
     effect(() => {
-      this.progress.set(this.initialProgress());
+      const progress = withPracticeSteps(this.initialProgress(), this.steps());
+      this.progress.set(progress);
       this.storageError.set(this.initialStorageError());
+      if (!this.initialProgress().journey) this.save(progress);
     });
     effect(() => {
-      const feedback = this.progress()?.feedback;
-      if (feedback) this.attempted.emit(feedback);
+      const feedback = this.feedback();
+      if (feedback && feedback.outcome !== 'correct-with-warning') this.attempted.emit(feedback);
     });
     effect((onCleanup) => {
-      this.practiceLayout.active.set(!!this.currentQuestion());
+      this.practiceLayout.active.set(!!this.displayedStep());
       onCleanup(() => this.practiceLayout.active.set(false));
     });
     effect((onCleanup) => {
-      if (this.currentQuestion()) return;
-      const timer = setTimeout(() => this.completionHeading?.nativeElement.focus(), 0);
+      const step = this.displayedStep();
+      const reviewing = this.reviewing();
+      if (step?.kind === 'reading') return;
+      const timer = setTimeout(() => {
+        const element = !step
+          ? this.completionHeading?.nativeElement
+          : reviewing
+            ? this.reviewHeading?.nativeElement
+            : (this.activityElement?.nativeElement.querySelector<HTMLElement>('input') ??
+              this.activityElement?.nativeElement);
+        element?.focus();
+        element?.scrollIntoView({ block: 'start' });
+      }, 0);
       onCleanup(() => clearTimeout(timer));
     });
     effect((onCleanup) => {
-      if (this.progress()?.feedback?.outcome !== 'correct') return;
+      if (this.reviewing() || this.feedback()?.outcome !== 'correct') return;
       const timer = setTimeout(() => this.advance(), 600);
       onCleanup(() => clearTimeout(timer));
     });
@@ -182,7 +318,13 @@ export class PracticeRunner {
 
   protected submit(response: ItemResponse): void {
     const current = this.progress();
-    if (!current || current.feedback || current.queue[0] !== response.itemId) return;
+    if (
+      !current ||
+      this.reviewing() ||
+      current.feedback ||
+      this.currentQuestion()?.item.id !== response.itemId
+    )
+      return;
     const feedback: PracticeFeedback = {
       ...response,
       sessionId: this.practiceSessionId(),
@@ -195,27 +337,58 @@ export class PracticeRunner {
   }
 
   protected continue(): void {
+    const feedback = this.progress()?.feedback;
+    if (!feedback || this.reviewing()) return;
+    if (feedback.outcome === 'correct-with-warning') this.attempted.emit(feedback);
     this.advance();
   }
 
   protected restart(): void {
     this.presentation.update((value) => value + 1);
+    this.save(
+      withPracticeSteps(
+        createPracticeProgress(this.questions().map(({ item }) => item.id)),
+        this.steps(),
+      ),
+    );
+  }
+
+  protected previous(): void {
+    const current = this.progress();
+    const journey = current?.journey;
+    if (!current || !journey || !this.canGoBack()) return;
     this.save({
-      version: 1,
-      queue: this.questions().map(({ item }) => item.id),
-      completedItemIds: [],
-      feedback: null,
+      ...current,
+      journey: {
+        ...journey,
+        reviewIndex:
+          journey.reviewIndex === null ? journey.visited.length - 1 : journey.reviewIndex - 1,
+      },
     });
+  }
+
+  protected next(): void {
+    const current = this.progress();
+    const journey = current?.journey;
+    if (!current || !journey) return;
+    if (journey.reviewIndex !== null) {
+      const index = journey.reviewIndex + 1;
+      this.save({
+        ...current,
+        journey: { ...journey, reviewIndex: index < journey.visited.length ? index : null },
+      });
+    } else if (this.currentStep()?.kind === 'reading') {
+      this.advance();
+    }
   }
 
   private advance(): void {
     const current = this.progress();
-    const feedback = current?.feedback;
-    if (!current || !feedback || !current.queue.length) return;
-    const nextQueue = current.queue.slice(1);
-    if (feedback.outcome !== 'correct') nextQueue.push(feedback.itemId);
+    if (!current) return;
+    const next = advancePracticeStep(current);
+    if (next === current) return;
     this.presentation.update((value) => value + 1);
-    this.save({ ...current, queue: nextQueue, feedback: null });
+    this.save(next);
   }
 
   private save(progress: PracticeProgress): void {
@@ -231,39 +404,9 @@ export class PracticeRunner {
 }
 
 export function flattenQuestions(sequence: Sequence): ExerciseQuestion[] {
-  return sequence.contents.flatMap((content): ExerciseQuestion[] => {
-    if (content.type !== 'activity' || !('items' in content)) return [];
-    switch (content.kind) {
-      case 'gap-fill':
-        return content.items.map((item) => ({
-          kind: 'gap-fill' as const,
-          title: content.title,
-          instructions: content.instructions,
-          item,
-        }));
-      case 'translation':
-        return content.items.map((item) => ({
-          kind: 'translation' as const,
-          title: content.title,
-          instructions: content.instructions,
-          item,
-        }));
-      case 'multiple-choice':
-        return content.items.map((item) => ({
-          kind: 'multiple-choice' as const,
-          title: content.title,
-          instructions: content.instructions,
-          item,
-        }));
-      case 'word-order':
-        return content.items.map((item) => ({
-          kind: 'word-order' as const,
-          title: content.title,
-          instructions: content.instructions,
-          item,
-        }));
-    }
-  });
+  return practiceSteps(sequence).flatMap((step) =>
+    step.kind === 'question' ? [step.question] : [],
+  );
 }
 
 export function practiceItemIds(sequence: Sequence): Set<string> {

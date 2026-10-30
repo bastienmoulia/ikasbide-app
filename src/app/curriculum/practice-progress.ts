@@ -14,6 +14,11 @@ export interface PracticeProgress {
   queue: string[];
   completedItemIds: string[];
   feedback: PracticeFeedback | null;
+  journey?: {
+    queue: string[];
+    visited: string[];
+    reviewIndex: number | null;
+  };
 }
 
 export interface PracticeProgressResult {
@@ -22,8 +27,8 @@ export interface PracticeProgressResult {
 }
 
 const invalidProgressMessage = {
-  eu: 'Ariketaren aurrerapena ezin izan da irakurri. Berriro has zaitezke.',
-  fr: 'La progression de la série n’a pas pu être lue. Vous pouvez recommencer.',
+  eu: 'Ibilbidearen aurrerapena ezin izan da irakurri. Berriro has zaitezke.',
+  fr: 'La progression du parcours n’a pas pu être lue. Vous pouvez recommencer.',
 };
 
 const unavailableStorageMessage = {
@@ -43,6 +48,7 @@ export function practiceProgressKey(learnerId: string, chapterId: string, sequen
 export function readPracticeProgress(
   key: string,
   itemIds: ReadonlySet<string>,
+  stepIds?: ReadonlySet<string>,
 ): PracticeProgressResult {
   let stored: string | null;
   try {
@@ -53,7 +59,7 @@ export function readPracticeProgress(
   if (stored === null) return { progress: null, error: null };
   try {
     const value: unknown = JSON.parse(stored);
-    return isPracticeProgress(value, itemIds)
+    return isPracticeProgress(value, itemIds, stepIds)
       ? { progress: value, error: null }
       : { progress: null, error: invalidProgressMessage };
   } catch {
@@ -80,6 +86,7 @@ export function createPracticeProgress(itemIds: string[]): PracticeProgress {
 function isPracticeProgress(
   value: unknown,
   itemIds: ReadonlySet<string>,
+  stepIds?: ReadonlySet<string>,
 ): value is PracticeProgress {
   if (!value || typeof value !== 'object') return false;
   const progress = value as Partial<PracticeProgress>;
@@ -97,6 +104,39 @@ function isPracticeProgress(
   const queue = progress.queue;
   const completedItemIds = progress.completedItemIds;
   const feedback = progress.feedback;
+  if (progress.journey !== undefined) {
+    const journey = progress.journey;
+    if (
+      !journey ||
+      typeof journey !== 'object' ||
+      !Array.isArray(journey.queue) ||
+      !Array.isArray(journey.visited) ||
+      ![...journey.queue, ...journey.visited].every(
+        (id) => typeof id === 'string' && (!stepIds || stepIds.has(id)),
+      ) ||
+      new Set(journey.queue).size !== journey.queue.length ||
+      (journey.reviewIndex !== null &&
+        (!Number.isInteger(journey.reviewIndex) ||
+          journey.reviewIndex < 0 ||
+          journey.reviewIndex >= journey.visited.length))
+    ) {
+      return false;
+    }
+    const questionQueue = journey.queue
+      .filter((id) => id.startsWith('item:'))
+      .map((id) => id.slice(5));
+    const visitedReadings = journey.visited.filter((id) => id.startsWith('content:'));
+    if (
+      questionQueue.length !== queue.length ||
+      questionQueue.some((id, index) => id !== queue[index]) ||
+      new Set(visitedReadings).size !== visitedReadings.length ||
+      visitedReadings.some((id) => journey.queue.includes(id)) ||
+      (stepIds && new Set([...journey.queue, ...journey.visited]).size !== stepIds.size) ||
+      (feedback && journey.queue[0] !== 'item:' + feedback.itemId)
+    ) {
+      return false;
+    }
+  }
   const representedItemIds = new Set([...queue, ...completedItemIds]);
   if (representedItemIds.size !== itemIds.size) return false;
   if (feedback === null) {
@@ -106,7 +146,7 @@ function isPracticeProgress(
     !!feedback &&
     typeof feedback === 'object' &&
     feedback.itemId === queue[0] &&
-    ['correct', 'almost', 'incorrect'].includes(feedback.outcome) &&
+    ['correct', 'correct-with-warning', 'almost', 'incorrect'].includes(feedback.outcome) &&
     typeof feedback.answer === 'string' &&
     typeof feedback.attemptId === 'string' &&
     feedback.attemptId.length > 0 &&

@@ -44,6 +44,7 @@ export async function signInWithGoogle(
   await popup.locator('#email-input').fill(email);
   await popup.locator('#display-name-input').fill(displayName);
   await popup.getByRole('button', { name: /Sign in with Google/i }).click();
+  await expect(page.getByRole('button', { name: 'Se déconnecter' })).toBeVisible();
   return email;
 }
 
@@ -99,12 +100,28 @@ export async function waitForOfflineShell(page: Page): Promise<void> {
     .toMatch(/Driver state: NORMAL[\s\S]*Latest manifest hash: [0-9a-f]+/);
 }
 
-export async function startPractice(page: Page): Promise<void> {
+export async function startCourse(page: Page): Promise<void> {
   const start = page.getByRole('button', {
-    name: /Commencer les exercices|Reprendre les exercices/,
+    name: /Commencer le parcours|Reprendre le parcours/,
   });
   await expect(start).toBeVisible();
   await start.click();
+  await expect(page.locator('.practice, .completion')).toBeVisible();
+}
+
+export async function skipReadings(page: Page): Promise<void> {
+  while (await page.locator('app-reading-player').isVisible()) {
+    const reading = await page.locator('app-reading-player').elementHandle();
+    await page.getByRole('button', { name: /Hurrengoa Suivant/ }).click();
+    await page.waitForFunction((element) => !element?.isConnected, reading);
+    await reading?.dispose();
+  }
+}
+
+/** Existing correction tests start at the first unanswered Item, after any introductory readings. */
+export async function startPractice(page: Page): Promise<void> {
+  await startCourse(page);
+  await skipReadings(page);
 }
 
 /** Submits a free-response Item and advances through its brief correct-answer feedback. */
@@ -113,6 +130,8 @@ export async function answerCurrentText(
   answer: string,
   useEnter = false,
 ): Promise<void> {
+  await expect(page.locator('app-activity-player:visible, app-reading-player')).toBeVisible();
+  await skipReadings(page);
   const input = page.getByRole('textbox');
   await input.fill(answer);
   if (useEnter) {
@@ -122,13 +141,19 @@ export async function answerCurrentText(
   }
   await expect(page.getByRole('status').filter({ hasText: /Correct|Zuzena/ })).toBeVisible();
   await page.clock.fastForward(600);
+  await expect(page.locator('app-activity-feedback')).toHaveCount(0);
+  await skipReadings(page);
 }
 
 /** Submits a multiple-choice Item and advances through its brief correct-answer feedback. */
 export async function answerCurrentChoice(page: Page, choice: string): Promise<void> {
+  await expect(page.locator('app-activity-player:visible, app-reading-player')).toBeVisible();
+  await skipReadings(page);
   await page.getByRole('button', { name: choice, exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: /Correct|Zuzena/ })).toBeVisible();
   await page.clock.fastForward(600);
+  await expect(page.locator('app-activity-feedback')).toHaveCount(0);
+  await skipReadings(page);
 }
 
 export function attemptSummary(page: Page): Locator {

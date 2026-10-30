@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { chapterColor } from '../src/app/curriculum/chapter-color';
-import { signInWithGoogle } from './support.ts';
+import { signInWithGoogle, startPractice } from './support.ts';
 
 const groupName = /Mode d’affichage/;
 
@@ -183,7 +183,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   }
 
   await page.goto('/chapitres/chapter-1/sequences/greetings');
-  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  await startPractice(page);
   const player = page.locator('app-activity-player');
   const gapAnswer = player.getByRole('textbox');
   await gapAnswer.fill('naiz');
@@ -228,7 +228,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
       mode === 'dark' ? 'rgb(43, 44, 47)' : 'rgb(255, 255, 255)',
     );
   }
-  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  await startPractice(page);
   const translationAnswer = page.locator('app-activity-player').getByRole('textbox');
   await translationAnswer.fill('Ni Baionakoa naiz.');
   await setDisplayMode(page, 'light');

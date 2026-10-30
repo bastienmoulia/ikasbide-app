@@ -13,6 +13,7 @@ html {
   --app-alert-foreground: #3b302b;
   --app-feedback-correct: #176b3a;
   --app-feedback-almost: #785600;
+  --app-feedback-warning: #855000;
   --app-feedback-incorrect: #9c2a22;
   --app-accent: #9c3434;
   --app-focus: #9c3434;
@@ -47,6 +48,7 @@ html[data-display-mode='dark'] {
   --app-alert-foreground: #ffe2de;
   --app-feedback-correct: #8bd5a5;
   --app-feedback-almost: #f0cd78;
+  --app-feedback-warning: #ffd18a;
   --app-feedback-incorrect: #ffaaa0;
   --app-accent: #ffb4a9;
   --app-focus: #ffb4a9;

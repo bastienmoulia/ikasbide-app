@@ -3,7 +3,7 @@ import { loadFirestore } from '../firestore';
 import type { ItemAttempt } from './activity-player';
 import type { BilingualText } from './curriculum.model';
 
-export type AttemptOutcome = 'correct' | 'almost' | 'incorrect';
+export type AttemptOutcome = 'correct' | 'correct-with-warning' | 'almost' | 'incorrect';
 
 /** A corrected response, without the submitted answer. */
 export interface Attempt extends ItemAttempt {

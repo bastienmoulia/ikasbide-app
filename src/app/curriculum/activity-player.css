@@ -197,7 +197,6 @@ button:disabled {
 }
 
 app-activity-feedback {
-  display: block;
   margin: 0;
   font-weight: 700;
 }
@@ -208,6 +207,10 @@ app-activity-feedback[data-result='correct'] {
 
 app-activity-feedback[data-result='almost'] {
   color: var(--app-feedback-almost);
+}
+
+app-activity-feedback[data-result='correct-with-warning'] {
+  color: var(--app-feedback-warning);
 }
 
 app-activity-feedback[data-result='incorrect'] {

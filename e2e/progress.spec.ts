@@ -123,3 +123,28 @@ test('objective mastery still needs three distinct correct Items across two prac
   await expect(page.getByText(/\d+ ?(%|points?|\/)/)).toHaveCount(0);
   await expectBilingualPresentation(page);
 });
+
+test('a confirmed warning counts as a correct Item for objective mastery', async ({ page }) => {
+  await page.clock.install();
+  await page.goto(sequenceUrl);
+  await signInWithGoogle(page);
+  await startPractice(page);
+  for (const answer of ['naiz', 'koa', 'on']) await answerCurrentText(page, answer);
+  await expectSynced(page, 3);
+  await openChapter(page);
+  await expect(greet(page)).toContainText('En cours');
+
+  await page.goto(sequenceUrl);
+  await startPractice(page);
+  await page.getByRole('textbox').fill('Egun on');
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(page.locator('app-activity-feedback')).toHaveAttribute(
+    'data-result',
+    'correct-with-warning',
+  );
+  await expectSynced(page, 3);
+  await page.getByRole('button', { name: /Continuer/ }).click();
+  await expectSynced(page, 4);
+  await openChapter(page);
+  await expect(greet(page)).toContainText('Acquis');
+});
