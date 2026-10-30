@@ -7,6 +7,7 @@ export interface BilingualText {
 }
 
 export interface CurriculumSource {
+  $schema?: string;
   schemaVersion: 1;
   units: UnitSource[];
 }

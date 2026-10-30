@@ -214,6 +214,16 @@ test('validation accepts the synthetic sample without touching Firestore', async
   });
 });
 
+test('validation accepts a $schema reference for editors', async ({}, testInfo) => {
+  const file = await writeVariant(
+    'with-schema-reference',
+    (c) => (c.$schema = '../ikasbide-app/tools/curriculum/curriculum.schema.json'),
+    testInfo,
+  );
+  const result = await runCurriculumCli('validate', file);
+  expect(result.code).toBe(0);
+});
+
 test('validation takes unit membership from the nesting, not from chapter numbers', async ({}, testInfo) => {
   const file = await writeVariant(
     'six-chapters-in-unit',

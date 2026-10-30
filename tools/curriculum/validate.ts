@@ -108,8 +108,10 @@ export function validateCurriculum(value: unknown): ValidationResult {
     }
   }
 
-  const root = object(value, '$', ['schemaVersion', 'units']);
+  // `$schema` lets editors validate the source against curriculum.schema.json; it is never published.
+  const root = object(value, '$', ['schemaVersion', 'units'], ['$schema']);
   if (!root) return { valid: false, errors };
+  if ('$schema' in root) text(root['$schema'], '$.$schema');
   if ('schemaVersion' in root && root['schemaVersion'] !== 1) fail('$.schemaVersion', 'must be 1');
 
   const unitIds = new Set<string>();

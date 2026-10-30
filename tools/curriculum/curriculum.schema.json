@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bastienmoulia/ikasbide-app/tools/curriculum/curriculum.schema.json",
+  "title": "Ikasbide curriculum",
+  "description": "Structural contract of docs/curriculum.md. Cross-reference rules (unique ids, objective references, ordering, word-order answers, minimum items per objective) are only checked by npm run curriculum:validate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "units"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "units": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/unit" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "text": { "type": "string", "pattern": "\\S" },
+    "texts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/text" } },
+    "positiveInteger": { "type": "integer", "minimum": 1 },
+    "bilingual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eu", "fr"],
+      "properties": { "eu": { "$ref": "#/$defs/text" }, "fr": { "$ref": "#/$defs/text" } }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "number", "title", "chapters"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "number": { "$ref": "#/$defs/positiveInteger" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "chapters": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/chapter" } }
+      }
+    },
+    "chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "number", "title", "objectives", "sequences"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "number": { "$ref": "#/$defs/positiveInteger" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "label": { "$ref": "#/$defs/bilingual" }
+            }
+          }
+        },
+        "sequences": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sequence" } }
+      }
+    },
+    "sequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "letter", "title", "contents"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "letter": { "type": "string", "pattern": "^[A-Z]$" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "contents": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/content" } }
+      }
+    },
+    "content": {
+      "type": "object",
+      "required": ["type", "kind", "id", "title"],
+      "properties": {
+        "type": { "enum": ["resource", "activity"] },
+        "kind": {
+          "enum": [
+            "note",
+            "dialogue",
+            "external-link",
+            "gap-fill",
+            "translation",
+            "multiple-choice",
+            "word-order",
+            "oral-prompt"
+          ]
+        },
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/bilingual" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "resource" } } },
+          "then": { "properties": { "kind": { "enum": ["note", "dialogue", "external-link"] } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "activity" } } },
+          "then": {
+            "properties": {
+              "kind": {
+                "enum": ["gap-fill", "translation", "multiple-choice", "word-order", "oral-prompt"]
+              }
+            }
+          }
+        },
+        { "if": { "$ref": "#/$defs/kindIs/note" }, "then": { "$ref": "#/$defs/note" } },
+        { "if": { "$ref": "#/$defs/kindIs/dialogue" }, "then": { "$ref": "#/$defs/dialogue" } },
+        {
+          "if": { "$ref": "#/$defs/kindIs/external-link" },
+          "then": { "$ref": "#/$defs/externalLink" }
+        },
+        { "if": { "$ref": "#/$defs/kindIs/gap-fill" }, "then": { "$ref": "#/$defs/gapFill" } },
+        {
+          "if": { "$ref": "#/$defs/kindIs/translation" },
+          "then": { "$ref": "#/$defs/translation" }
+        },
+        {
+          "if": { "$ref": "#/$defs/kindIs/multiple-choice" },
+          "then": { "$ref": "#/$defs/multipleChoice" }
+        },
+        { "if": { "$ref": "#/$defs/kindIs/word-order" }, "then": { "$ref": "#/$defs/wordOrder" } },
+        { "if": { "$ref": "#/$defs/kindIs/oral-prompt" }, "then": { "$ref": "#/$defs/oralPrompt" } }
+      ]
+    },
+    "kindIs": {
+      "note": { "required": ["kind"], "properties": { "kind": { "const": "note" } } },
+      "dialogue": { "required": ["kind"], "properties": { "kind": { "const": "dialogue" } } },
+      "external-link": {
+        "required": ["kind"],
+        "properties": { "kind": { "const": "external-link" } }
+      },
+      "gap-fill": { "required": ["kind"], "properties": { "kind": { "const": "gap-fill" } } },
+      "translation": { "required": ["kind"], "properties": { "kind": { "const": "translation" } } },
+      "multiple-choice": {
+        "required": ["kind"],
+        "properties": { "kind": { "const": "multiple-choice" } }
+      },
+      "word-order": { "required": ["kind"], "properties": { "kind": { "const": "word-order" } } },
+      "oral-prompt": { "required": ["kind"], "properties": { "kind": { "const": "oral-prompt" } } }
+    },
+    "note": {
+      "additionalProperties": false,
+      "required": ["body"],
+      "properties": {
+        "type": { "const": "resource" },
+        "kind": true,
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "body": { "$ref": "#/$defs/bilingual" }
+      }
+    },
+    "dialogue": {
+      "additionalProperties": false,
+      "required": ["lines"],
+      "properties": {
+        "type": { "const": "resource" },
+        "kind": true,
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["speaker", "text"],
+            "properties": {
+              "speaker": { "$ref": "#/$defs/text" },
+              "text": { "$ref": "#/$defs/bilingual" }
+            }
+          }
+        }
+      }
+    },
+    "externalLink": {
+      "additionalProperties": false,
+      "required": ["description", "url"],
+      "properties": {
+        "type": { "const": "resource" },
+        "kind": true,
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "description": { "$ref": "#/$defs/bilingual" },
+        "url": { "type": "string", "pattern": "^https://\\S+$" }
+      }
+    },
+    "activity": {
+      "required": ["instructions"],
+      "properties": {
+        "type": { "const": "activity" },
+        "kind": true,
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "instructions": { "$ref": "#/$defs/bilingual" }
+      }
+    },
+    "itemBase": {
+      "type": "object",
+      "required": ["id", "objectiveIds"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "objectiveIds": { "$ref": "#/$defs/texts" } }
+    },
+    "gapFill": {
+      "$ref": "#/$defs/activity",
+      "unevaluatedProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/itemBase",
+            "unevaluatedProperties": false,
+            "required": ["prompt", "acceptedAnswers"],
+            "properties": {
+              "prompt": {
+                "$ref": "#/$defs/bilingual",
+                "properties": {
+                  "eu": { "pattern": "^(?:(?!___)[\\s\\S])*___(?:(?!___)[\\s\\S])*$" }
+                }
+              },
+              "acceptedAnswers": { "$ref": "#/$defs/texts" }
+            }
+          }
+        }
+      }
+    },
+    "translation": {
+      "$ref": "#/$defs/activity",
+      "unevaluatedProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/itemBase",
+            "unevaluatedProperties": false,
+            "required": ["direction", "source", "acceptedAnswers"],
+            "properties": {
+              "direction": { "enum": ["eu-fr", "fr-eu"] },
+              "source": { "$ref": "#/$defs/text" },
+              "acceptedAnswers": { "$ref": "#/$defs/texts" }
+            }
+          }
+        }
+      }
+    },
+    "multipleChoice": {
+      "$ref": "#/$defs/activity",
+      "unevaluatedProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/itemBase",
+            "unevaluatedProperties": false,
+            "required": ["prompt", "choices", "correctChoiceIds"],
+            "properties": {
+              "prompt": { "$ref": "#/$defs/bilingual" },
+              "choices": {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "lang", "text"],
+                  "properties": {
+                    "id": { "$ref": "#/$defs/id" },
+                    "lang": { "enum": ["eu", "fr"] },
+                    "text": { "$ref": "#/$defs/text" }
+                  }
+                }
+              },
+              "correctChoiceIds": { "$ref": "#/$defs/texts" }
+            }
+          }
+        }
+      }
+    },
+    "wordOrder": {
+      "$ref": "#/$defs/activity",
+      "unevaluatedProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/itemBase",
+            "unevaluatedProperties": false,
+            "required": ["prompt", "words", "acceptedAnswers"],
+            "properties": {
+              "prompt": { "$ref": "#/$defs/bilingual" },
+              "words": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/text" } },
+              "acceptedAnswers": { "$ref": "#/$defs/texts" }
+            }
+          }
+        }
+      }
+    },
+    "oralPrompt": {
+      "additionalProperties": false,
+      "required": ["instructions"],
+      "properties": {
+        "type": { "const": "activity" },
+        "kind": true,
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/bilingual" },
+        "instructions": { "$ref": "#/$defs/bilingual" }
+      }
+    }
+  }
+}

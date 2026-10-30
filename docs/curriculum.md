@@ -14,7 +14,7 @@ Les types TypeScript du contrat sont dans
 ## Hiérarchie
 
 ```text
-curriculum { schemaVersion: 1, units[] }
+curriculum { $schema?, schemaVersion: 1, units[] }
 └─ unit { id, number, title, chapters[] }            nombre de chapitres libre
    └─ chapter { id, number, title, objectives[], sequences[] }
       ├─ objective { id, label }
@@ -59,6 +59,21 @@ avec leur chemin JSON. Aucune écriture n’a lieu si le fichier est invalide.
 - Chaque objectif est évalué par au moins trois items corrigés, sans quoi il ne pourrait
   jamais être acquis.
 - Au plus 400 documents publiés (limite d’un lot Firestore atomique).
+
+## Schéma JSON
+
+[`tools/curriculum/curriculum.schema.json`](../tools/curriculum/curriculum.schema.json)
+décrit la structure ci-dessus (JSON Schema 2020-12) pour la complétion et les erreurs dans
+l’éditeur. Le fichier source peut le référencer par une clé racine facultative, ignorée à
+la publication :
+
+```json
+{ "$schema": "../ikasbide-app/tools/curriculum/curriculum.schema.json", "schemaVersion": 1, … }
+```
+
+Le schéma ne vérifie pas les règles croisées (unicité des identifiants, références aux
+objectifs et aux choix, ordre du livre, mots des remises en ordre, trois items par
+objectif) : `npm run curriculum:validate` reste la référence avant tout import.
 
 ## Correction des réponses
 
