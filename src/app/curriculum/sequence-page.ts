@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
 import { NetworkStatus } from '../network-status';
+import { Icon } from '../icon';
+import { PracticeLayout } from '../practice-layout';
 import { AttemptService, type Attempt, type AttemptSummary } from './attempt.service';
 import { chapterColor } from './chapter-color';
 import {
@@ -26,13 +28,16 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
 
 @Component({
   selector: 'app-sequence-page',
-  imports: [BilingualText, MatProgressBarModule, PracticeRunner, RouterLink],
+  imports: [BilingualText, Icon, MatProgressBarModule, PracticeRunner, RouterLink],
   styleUrls: ['./curriculum.css', './sequence-page.css'],
   host: { '[style.--chapter-accent]': 'accent()' },
   template: `
-    <a class="back" [routerLink]="['/chapitres', chapterId()]">
-      <app-bilingual-text eu="Kapitulura itzuli" fr="Retour au chapitre" />
-    </a>
+    @if (!practiceLayout.active()) {
+      <a class="back" [routerLink]="['/chapitres', chapterId()]">
+        <app-icon name="previous" />
+        <app-bilingual-text eu="Kapitulura itzuli" fr="Retour au chapitre" />
+      </a>
+    }
     @if (chapter.isLoading()) {
       <p id="sequence-loading" role="status">
         <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
@@ -50,18 +55,24 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
     } @else if (position(); as position) {
       @let chapter = position.chapter;
       @let sequence = position.sequence;
-      <p class="eyebrow">
-        <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
-        <app-bilingual-text
-          [eu]="chapter.number + '. kapitulua · ' + sequence.letter + ' sekuentzia'"
-          [fr]="'Chapitre ' + chapter.number + ' · Séquence ' + sequence.letter"
-        />
-      </p>
-      <h1>
-        <app-bilingual-text [eu]="sequence.title.eu" [fr]="sequence.title.fr" />
-      </h1>
+      <div [hidden]="practiceLayout.active()">
+        <p class="eyebrow">
+          <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
+          <app-bilingual-text
+            [eu]="chapter.number + '. kapitulua · ' + sequence.letter + ' sekuentzia'"
+            [fr]="'Chapitre ' + chapter.number + ' · Séquence ' + sequence.letter"
+          />
+        </p>
+        <h1>
+          <app-bilingual-text [eu]="sequence.title.eu" [fr]="sequence.title.fr" />
+        </h1>
+      </div>
       @if (attemptSummary(); as summary) {
-        <p class="attempt-summary muted" role="status">
+        <p
+          class="attempt-summary muted"
+          [class.visually-hidden]="practiceLayout.active()"
+          role="status"
+        >
           <app-bilingual-text
             [eu]="'Saiakera sinkronizatuak: ' + summary.synced + ' · zain: ' + summary.pending"
             [fr]="
@@ -91,6 +102,7 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
       } @else {
         @if (practiceItemCount()) {
           <button type="button" class="start-practice" (click)="startPractice()">
+            <app-icon name="play" />
             @if (savedPractice()) {
               <app-bilingual-text eu="Ariketekin jarraitu" fr="Reprendre les exercices" />
             } @else {
@@ -182,6 +194,7 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
         <nav class="pager">
           @if (position.previous; as previous) {
             <a [routerLink]="['/chapitres', chapter.id, 'sequences', previous.id]">
+              <app-icon name="previous" />
               <app-bilingual-text
                 [eu]="'Aurreko sekuentzia: ' + previous.letter"
                 [fr]="'Séquence précédente : ' + previous.letter"
@@ -194,6 +207,7 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
                 [eu]="'Hurrengo sekuentzia: ' + next.letter"
                 [fr]="'Séquence suivante : ' + next.letter"
               />
+              <app-icon name="next" />
             </a>
           }
         </nav>
@@ -215,6 +229,7 @@ export class SequencePage {
   private readonly auth = inject(AuthService);
   protected readonly attempts = inject(AttemptService);
   protected readonly network = inject(NetworkStatus);
+  protected readonly practiceLayout = inject(PracticeLayout);
   protected readonly learnerId = computed(() => this.auth.user()?.uid ?? null);
   protected readonly practiceActive = signal(false);
   protected readonly activeProgress = signal<PracticeProgress | null>(null);

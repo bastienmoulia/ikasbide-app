@@ -166,6 +166,9 @@ input:focus-visible {
 
 .word-actions button,
 form > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0.55rem 0.9rem;
   border: 0;
@@ -220,11 +223,26 @@ app-activity-feedback[data-result='incorrect'] {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  :host {
+    animation: question-enter 180ms ease-out;
+  }
+
   .choice,
   .word {
     transition:
       background-color 120ms ease,
       transform 120ms ease;
+  }
+
+  @keyframes question-enter {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .choice:active,

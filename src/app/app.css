@@ -26,17 +26,6 @@ header {
   border-bottom: 1px solid var(--app-border);
 }
 
-.display-mode-control {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-.display-mode-label {
-  font-size: 0.8rem;
-}
-
 .brand {
   display: flex;
   align-items: center;
@@ -68,6 +57,10 @@ main {
   width: min(100% - 2rem, 48rem);
   margin: 0 auto;
   padding: clamp(2rem, 8vw, 5rem) 0;
+}
+
+main.practice-mode {
+  padding-block: 0.75rem;
 }
 
 .eyebrow {

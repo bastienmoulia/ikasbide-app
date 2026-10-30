@@ -1,6 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -8,12 +7,14 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './auth.service';
 import { BilingualText } from './bilingual-text';
 import { DisplayModeService } from './display-mode.service';
+import { DisplayModeControl } from './display-mode-control';
 import { NetworkStatus } from './network-status';
+import { PracticeLayout } from './practice-layout';
 
 @Component({
   imports: [
     MatButtonModule,
-    MatButtonToggleModule,
+    DisplayModeControl,
     MatCardModule,
     MatProgressBarModule,
     MatTooltipModule,
@@ -27,55 +28,42 @@ import { NetworkStatus } from './network-status';
     <a class="skip-link" href="#main">
       <app-bilingual-text eu="Edukira joan" fr="Aller au contenu" />
     </a>
-    <header>
-      <a class="brand" routerLink="/">
-        <span class="brand-mark" aria-hidden="true">i</span>
-        Ikasbide
-      </a>
-      <div class="display-mode-control">
-        <span class="display-mode-label" id="display-mode-label">
-          <app-bilingual-text eu="Bistaratzeko modua" fr="Mode d’affichage" />
-        </span>
-        <mat-button-toggle-group
-          aria-labelledby="display-mode-label"
-          [value]="displayMode.mode()"
-          (change)="displayMode.setMode($event.value)"
-        >
-          @for (option of displayModes; track option.value) {
-            <mat-button-toggle [value]="option.value">
-              <app-bilingual-text [eu]="option.eu" [fr]="option.fr" />
-            </mat-button-toggle>
-          }
-        </mat-button-toggle-group>
-      </div>
-      @if (auth.status() === 'ready' && auth.user()) {
-        <div class="account">
-          <span class="account-name">
-            @if (firstName(); as name) {
-              {{ name }}
-            } @else {
-              <app-bilingual-text eu="Kontua" fr="Compte" />
-            }
-          </span>
-          <button
-            class="logout-button"
-            mat-icon-button
-            type="button"
-            aria-label="Se déconnecter"
-            matTooltip="Se déconnecter"
-            [disabled]="auth.pending()"
-            (click)="auth.signOut()"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zm-5 4h8a2 2 0 0 0 2-2v-3h-2v3H5V5h8v3h2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"
-              />
-            </svg>
-          </button>
-        </div>
-      }
-    </header>
-    <main id="main">
+    @if (!practiceLayout.active()) {
+      <header>
+        <a class="brand" routerLink="/">
+          <span class="brand-mark" aria-hidden="true">i</span>
+          Ikasbide
+        </a>
+        <app-display-mode-control />
+        @if (auth.status() === 'ready' && auth.user()) {
+          <div class="account">
+            <span class="account-name">
+              @if (firstName(); as name) {
+                {{ name }}
+              } @else {
+                <app-bilingual-text eu="Kontua" fr="Compte" />
+              }
+            </span>
+            <button
+              class="logout-button"
+              mat-icon-button
+              type="button"
+              aria-label="Se déconnecter"
+              matTooltip="Se déconnecter"
+              [disabled]="auth.pending()"
+              (click)="auth.signOut()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zm-5 4h8a2 2 0 0 0 2-2v-3h-2v3H5V5h8v3h2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"
+                />
+              </svg>
+            </button>
+          </div>
+        }
+      </header>
+    }
+    <main id="main" [class.practice-mode]="practiceLayout.active()">
       @if (displayMode.persistenceUnavailable()) {
         <p class="persistence-warning" role="alert">
           <app-bilingual-text
@@ -169,32 +157,30 @@ import { NetworkStatus } from './network-status';
         </mat-card>
       }
     </main>
-    <footer>
-      <app-bilingual-text
-        eu="Ikasi, praktikatu, konfiantza hartu."
-        fr="Apprendre, pratiquer, prendre confiance."
-      />
-      <p class="legal-note">
+    @if (!practiceLayout.active()) {
+      <footer>
         <app-bilingual-text
-          eu="Ikasbide metodoaren liburuaren osagarria da, ez du ordezkatzen; liburua behar da erabiltzeko."
-          fr="Cette application complète le livre Ikasbide metodoa, mais ne le remplace pas ; le livre est nécessaire pour l’utiliser."
+          eu="Ikasi, praktikatu, konfiantza hartu."
+          fr="Apprendre, pratiquer, prendre confiance."
         />
-      </p>
-      <nav class="org-links" aria-label="Lotura erabilgarriak / Liens utiles">
-        <a href="https://www.aek.eus/" target="_blank" rel="noopener noreferrer">AEK</a>
-        <a href="https://ikas.eus/" target="_blank" rel="noopener noreferrer">IKAS</a>
-      </nav>
-    </footer>
+        <p class="legal-note">
+          <app-bilingual-text
+            eu="Ikasbide metodoaren liburuaren osagarria da, ez du ordezkatzen; liburua behar da erabiltzeko."
+            fr="Cette application complète le livre Ikasbide metodoa, mais ne le remplace pas ; le livre est nécessaire pour l’utiliser."
+          />
+        </p>
+        <nav class="org-links" aria-label="Lotura erabilgarriak / Liens utiles">
+          <a href="https://www.aek.eus/" target="_blank" rel="noopener noreferrer">AEK</a>
+          <a href="https://ikas.eus/" target="_blank" rel="noopener noreferrer">IKAS</a>
+        </nav>
+      </footer>
+    }
   `,
 })
 export class App {
   protected readonly auth = inject(AuthService);
   protected readonly displayMode = inject(DisplayModeService);
-  protected readonly displayModes = [
-    { value: 'light', eu: 'Argia', fr: 'Clair' },
-    { value: 'dark', eu: 'Iluna', fr: 'Sombre' },
-    { value: 'system', eu: 'Sistema', fr: 'Système' },
-  ] as const;
+  protected readonly practiceLayout = inject(PracticeLayout);
   protected readonly network = inject(NetworkStatus);
   protected readonly firstName = computed(
     () => this.auth.user()?.displayName?.trim().split(/\s+/)[0] ?? '',

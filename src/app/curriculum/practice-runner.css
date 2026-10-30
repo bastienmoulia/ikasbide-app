@@ -23,7 +23,14 @@
 
 .practice-toolbar p {
   margin: 0;
+  margin-left: auto;
   font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.practice-toolbar .exit {
+  width: 2.75rem;
+  padding: 0.5rem;
 }
 
 .practice progress {
@@ -60,6 +67,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0.55rem 0.9rem;
   border: 0;

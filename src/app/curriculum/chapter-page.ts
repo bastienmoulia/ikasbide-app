@@ -3,6 +3,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
+import { Icon } from '../icon';
 import { AttemptService, type RecordedAttempt } from './attempt.service';
 import { chapterColor } from './chapter-color';
 import { chapterNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
@@ -15,11 +16,12 @@ import {
 
 @Component({
   selector: 'app-chapter-page',
-  imports: [BilingualText, MatProgressBarModule, RouterLink],
+  imports: [BilingualText, Icon, MatProgressBarModule, RouterLink],
   styleUrls: ['./curriculum.css', './chapter-page.css'],
   host: { '[style.--chapter-accent]': 'accent()' },
   template: `
     <a class="back" routerLink="/">
+      <app-icon name="previous" />
       <app-bilingual-text eu="Ibilbidera itzuli" fr="Retour au parcours" />
     </a>
     @if (chapter.isLoading()) {

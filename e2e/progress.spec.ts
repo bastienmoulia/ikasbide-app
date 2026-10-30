@@ -53,6 +53,7 @@ test('a wrong answer records practice without counting as objective mastery', as
   await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
   await expectSynced(page, 1);
+  await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
   await expect(greet(page)).toContainText('En cours');
   await expect(origin(page)).toContainText('À découvrir');
@@ -81,6 +82,7 @@ test('a near match shows the correction and does not advance the series progress
   await expect(
     page.locator('app-activity-player').getByRole('button', { name: 'Agur' }),
   ).toBeVisible();
+  await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
   await expect(greet(page)).toContainText('En cours');
 });

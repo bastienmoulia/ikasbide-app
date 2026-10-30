@@ -135,6 +135,17 @@ contrôles conservent les deux langues.
 
 ### Correction et progression
 
+Pendant les exercices, l’en-tête et le pied de page habituels laissent place à une
+barre compacte : retour aux ressources, progression et choix du thème par icônes
+avec infobulles bilingues. L’interface normale revient à l’arrêt ou au bilan.
+Les champs gardent un libellé accessible sans afficher « Réponse », reçoivent le
+focus automatiquement et demandent au navigateur de désactiver l’autocomplétion
+(certains navigateurs peuvent ignorer ce réglage).
+Les choix QCM sont mélangés à chaque présentation, y compris au retour d’une
+question ratée, et restent stables pendant la réponse. L’ordre pédagogique des
+questions ne change pas. Une courte transition accompagne chaque nouvelle question,
+sauf si l’appareil demande de réduire les animations.
+
 Les réponses admises sont définies dans le contenu. La comparaison normalise Unicode
 (NFC), la casse, les espaces et la ponctuation finale, tout en préservant les lettres,
 accents, suffixes et la ponctuation interne significative. Une transposition unique de

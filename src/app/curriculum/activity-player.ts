@@ -1,5 +1,17 @@
-import { Component, effect, ElementRef, input, output, signal, ViewChild } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  ViewChild,
+} from '@angular/core';
 import { BilingualText } from '../bilingual-text';
+import { Icon } from '../icon';
 import type { AttemptOutcome } from './attempt.service';
 import type {
   GapFillActivity,
@@ -84,7 +96,7 @@ class ActivityFeedback {
 
 @Component({
   selector: 'app-activity-player',
-  imports: [ActivityFeedback, BilingualText],
+  imports: [ActivityFeedback, BilingualText, Icon],
   styleUrls: ['./activity-player.css'],
   host: {
     role: 'region',
@@ -106,7 +118,7 @@ class ActivityFeedback {
       @switch (currentQuestion.kind) {
         @case ('gap-fill') {
           @let blank = currentQuestion.item.prompt.eu.indexOf('___');
-          <form (submit)="grade(currentQuestion.item, $event)">
+          <form autocomplete="off" (submit)="grade(currentQuestion.item, $event)">
             <p class="prompt">
               <span lang="eu">{{ currentQuestion.item.prompt.eu.slice(0, blank) }}</span>
               @if (feedback(); as result) {
@@ -115,9 +127,11 @@ class ActivityFeedback {
                 }}</span>
               } @else {
                 <label class="inline-answer">
-                  <app-bilingual-text eu="Erantzuna" fr="Réponse" />
+                  <app-bilingual-text class="visually-hidden" eu="Erantzuna" fr="Réponse" />
                   <input
+                    #answerInput
                     type="text"
+                    name="exercise-answer"
                     [value]="answer()"
                     (input)="updateAnswer($event)"
                     autocomplete="off"
@@ -129,6 +143,7 @@ class ActivityFeedback {
             <p class="prompt-translation" lang="fr">{{ currentQuestion.item.prompt.fr }}</p>
             @if (!feedback()) {
               <button type="submit" [disabled]="!canSubmit()">
+                <app-icon name="check" />
                 <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
               </button>
             }
@@ -143,7 +158,7 @@ class ActivityFeedback {
             <legend>
               <app-bilingual-text eu="Aukeratu erantzuna" fr="Choisissez une réponse" />
             </legend>
-            @for (choice of currentQuestion.item.choices; track choice.id) {
+            @for (choice of choices(); track choice.id) {
               <button
                 type="button"
                 class="choice"
@@ -199,6 +214,7 @@ class ActivityFeedback {
             </div>
             <div class="word-actions">
               <button class="secondary" type="button" (click)="resetWords()">
+                <app-icon name="restart" />
                 <app-bilingual-text eu="Hasi berriz" fr="Recommencer" />
               </button>
               <button
@@ -207,6 +223,7 @@ class ActivityFeedback {
                 (click)="grade(currentQuestion.item)"
                 [disabled]="!canSubmit()"
               >
+                <app-icon name="check" />
                 <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
               </button>
             </div>
@@ -233,17 +250,20 @@ class ActivityFeedback {
               {{ result.answer }}
             </p>
           } @else {
-            <form (submit)="grade(currentQuestion.item, $event)">
+            <form autocomplete="off" (submit)="grade(currentQuestion.item, $event)">
               <label class="answer">
-                <app-bilingual-text eu="Erantzuna" fr="Réponse" />
+                <app-bilingual-text class="visually-hidden" eu="Erantzuna" fr="Réponse" />
                 <input
+                  #answerInput
                   type="text"
+                  name="exercise-answer"
                   [value]="answer()"
                   (input)="updateAnswer($event)"
                   autocomplete="off"
                 />
               </label>
               <button type="submit" [disabled]="!canSubmit()">
+                <app-icon name="check" />
                 <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
               </button>
             </form>
@@ -271,10 +291,26 @@ export class ActivityPlayer {
   protected readonly answer = signal('');
   protected readonly selectedWords = signal<number[]>([]);
   protected readonly canSubmit = () => this.answer().trim().length > 0;
+  protected readonly choices = computed(() => {
+    const question = this.question();
+    if (question.kind !== 'multiple-choice') return [];
+    const choices = [...question.item.choices];
+    for (let index = choices.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(Math.random() * (index + 1));
+      [choices[index], choices[other]] = [choices[other], choices[index]];
+    }
+    return choices;
+  });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  @ViewChild('answerInput', { read: ElementRef })
+  private answerInput?: ElementRef<HTMLInputElement>;
   @ViewChild('wordSubmitButton', { read: ElementRef })
   private wordSubmitButton?: ElementRef<HTMLButtonElement>;
 
   constructor() {
+    afterNextRender(() => {
+      (this.answerInput?.nativeElement ?? this.host.nativeElement).focus();
+    });
     effect(() => {
       this.question();
       this.feedback();

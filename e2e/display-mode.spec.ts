@@ -29,7 +29,7 @@ function contrastRatio(foreground: string, background: string): number {
 }
 
 function displayModeControl(page: import('@playwright/test').Page) {
-  return page.getByRole('group', { name: groupName });
+  return page.getByRole('radiogroup', { name: groupName });
 }
 
 async function setDisplayMode(
@@ -37,7 +37,9 @@ async function setDisplayMode(
   mode: 'light' | 'dark',
 ): Promise<void> {
   const names = { light: /Argia Clair/, dark: /Iluna Sombre/ };
-  await displayModeControl(page).getByRole('radio', { name: names[mode] }).check();
+  const option = displayModeControl(page).getByRole('radio', { name: names[mode] });
+  await option.click();
+  await expect(option).toBeChecked();
   await expectAppearance(page, mode);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
@@ -99,7 +101,7 @@ test('manual choices override the device and persist when a page is reopened', a
 
   const control = displayModeControl(page);
   const light = control.getByRole('radio', { name: /Argia Clair/ });
-  await light.check();
+  await light.click();
   await expectAppearance(page, 'light');
   await page.emulateMedia({ colorScheme: 'dark' });
   await expectAppearance(page, 'light');
@@ -111,14 +113,14 @@ test('manual choices override the device and persist when a page is reopened', a
   await expect(reopenedControl.getByRole('radio', { name: /Argia Clair/ })).toBeChecked();
   await expectAppearance(reopenedPage, 'light');
 
-  await reopenedControl.getByRole('radio', { name: /Iluna Sombre/ }).check();
+  await reopenedControl.getByRole('radio', { name: /Iluna Sombre/ }).click();
   await reopenedPage.emulateMedia({ colorScheme: 'light' });
   await expectAppearance(reopenedPage, 'dark');
   await reopenedPage.reload();
   await expect(reopenedControl.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expectAppearance(reopenedPage, 'dark');
 
-  await reopenedControl.getByRole('radio', { name: /Sistema Système/ }).check();
+  await reopenedControl.getByRole('radio', { name: /Sistema Système/ }).click();
   await reopenedPage.emulateMedia({ colorScheme: 'dark' });
   await expectAppearance(reopenedPage, 'dark');
   await reopenedPage.emulateMedia({ colorScheme: 'light' });
@@ -129,7 +131,7 @@ test('the device choice remains available across sign-in and sign-out', async ({
   await page.goto('/');
   await displayModeControl(page)
     .getByRole('radio', { name: /Iluna Sombre/ })
-    .check();
+    .click();
   await signInWithGoogle(page);
 
   await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
@@ -290,6 +292,13 @@ test('the selector is keyboard-operable and fits a narrow mobile viewport', asyn
   const control = displayModeControl(page);
   const system = control.getByRole('radio', { name: /Sistema Système/ });
   await expect(system).toBeFocused();
+  await expect(control.locator('app-icon')).toHaveCount(3);
+  await expect(page.locator('.display-mode-label')).toHaveCount(0);
+  const tooltip = page.getByRole('tooltip');
+  await expect(tooltip.locator('[lang="eu"]')).toHaveText('Sistema');
+  await expect(tooltip.locator('[lang="fr"]')).toHaveText('Système');
+  await page.keyboard.press('Escape');
+  await expect(tooltip).toHaveCount(0);
   await page.keyboard.press('ArrowLeft');
   await expect(control.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
 
@@ -309,7 +318,7 @@ test('a failed local save keeps the current mode and explains the limitation bil
 
   await displayModeControl(page)
     .getByRole('radio', { name: /Iluna Sombre/ })
-    .check();
+    .click();
   await expectAppearance(page, 'dark');
   const warning = page
     .getByRole('alert')

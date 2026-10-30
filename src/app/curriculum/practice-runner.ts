@@ -3,13 +3,18 @@ import {
   computed,
   effect,
   ElementRef,
+  inject,
   input,
   output,
   signal,
   ViewChild,
 } from '@angular/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
+import { DisplayModeControl } from '../display-mode-control';
+import { Icon } from '../icon';
+import { PracticeLayout } from '../practice-layout';
 import { ActivityPlayer, type ExerciseQuestion, type ItemResponse } from './activity-player';
 import type { Sequence } from './curriculum.model';
 import {
@@ -21,15 +26,21 @@ import {
 
 @Component({
   selector: 'app-practice-runner',
-  imports: [ActivityPlayer, BilingualText, RouterLink],
+  imports: [ActivityPlayer, BilingualText, DisplayModeControl, Icon, MatTooltipModule, RouterLink],
   styleUrls: ['./practice-runner.css'],
   template: `
     @if (progress(); as state) {
-      @if (currentQuestion(); as question) {
+      @if (currentQuestion()) {
         <section class="practice" aria-label="Ariketa sorta / Série d’exercices">
           <div class="practice-toolbar">
-            <button type="button" class="exit" (click)="exit.emit()">
-              <app-bilingual-text eu="Utzi oraingoz" fr="Arrêter pour le moment" />
+            <button
+              type="button"
+              class="exit"
+              aria-label="Utzi oraingoz / Arrêter pour le moment"
+              matTooltip="Utzi oraingoz / Arrêter pour le moment"
+              (click)="exit.emit()"
+            >
+              <app-icon name="previous" />
             </button>
             <p class="progress-label">
               <app-bilingual-text
@@ -37,20 +48,24 @@ import {
                 [fr]="state.completedItemIds.length + ' / ' + questions().length + ' questions'"
               />
             </p>
+            <app-display-mode-control />
           </div>
           <progress
             [value]="state.completedItemIds.length"
             [max]="questions().length"
             aria-label="Ariketen aurrerapena / Progression des exercices"
           ></progress>
-          <app-activity-player
-            [question]="question"
-            [feedback]="state.feedback"
-            (attempted)="submit($event)"
-          />
+          @for (presentation of presentedQuestions(); track presentation.key) {
+            <app-activity-player
+              [question]="presentation.question"
+              [feedback]="state.feedback"
+              (attempted)="submit($event)"
+            />
+          }
           @if (state.feedback && state.feedback.outcome !== 'correct') {
             <button type="button" class="continue" (click)="continue()">
               <app-bilingual-text eu="Jarraitu" fr="Continuer" />
+              <app-icon name="next" />
             </button>
           }
           @if (storageError(); as error) {
@@ -85,16 +100,20 @@ import {
             @if (nextSequenceId(); as nextId) {
               <a [routerLink]="['/chapitres', chapterId(), 'sequences', nextId]">
                 <app-bilingual-text eu="Hurrengo sekuentzia" fr="Séquence suivante" />
+                <app-icon name="next" />
               </a>
             } @else {
               <a [routerLink]="['/chapitres', chapterId()]">
+                <app-icon name="previous" />
                 <app-bilingual-text eu="Itzuli kapitulura" fr="Retour au chapitre" />
               </a>
             }
             <button type="button" class="secondary" (click)="exit.emit()">
+              <app-icon name="previous" />
               <app-bilingual-text eu="Baliabideetara itzuli" fr="Revenir aux ressources" />
             </button>
             <button type="button" class="secondary" (click)="restart()">
+              <app-icon name="restart" />
               <app-bilingual-text eu="Berriro hasi" fr="Recommencer" />
             </button>
           </nav>
@@ -122,11 +141,17 @@ export class PracticeRunner {
   protected readonly questions = computed(() => flattenQuestions(this.sequence()));
   protected readonly progress = signal<PracticeProgress | null>(null);
   protected readonly storageError = signal<{ eu: string; fr: string } | null>(null);
+  private readonly presentation = signal(0);
+  private readonly practiceLayout = inject(PracticeLayout);
   protected readonly currentQuestion = computed(() => {
     const id = this.progress()?.queue[0];
     return this.questions().find((question) => question.item.id === id) ?? null;
   });
-  @ViewChild(ActivityPlayer, { read: ElementRef }) private player?: ElementRef<HTMLElement>;
+  protected readonly presentedQuestions = computed(() => {
+    const question = this.currentQuestion();
+    // Even a retry of the same item needs a fresh view, shuffle and focus.
+    return question ? [{ key: question.item.id + ':' + this.presentation(), question }] : [];
+  });
   @ViewChild('completionHeading', { read: ElementRef })
   private completionHeading?: ElementRef<HTMLElement>;
 
@@ -140,13 +165,12 @@ export class PracticeRunner {
       if (feedback) this.attempted.emit(feedback);
     });
     effect((onCleanup) => {
-      const questionId = this.currentQuestion()?.item.id;
-      if (!questionId) {
-        const timer = setTimeout(() => this.completionHeading?.nativeElement.focus(), 0);
-        onCleanup(() => clearTimeout(timer));
-        return;
-      }
-      const timer = setTimeout(() => this.player?.nativeElement.focus(), 0);
+      this.practiceLayout.active.set(!!this.currentQuestion());
+      onCleanup(() => this.practiceLayout.active.set(false));
+    });
+    effect((onCleanup) => {
+      if (this.currentQuestion()) return;
+      const timer = setTimeout(() => this.completionHeading?.nativeElement.focus(), 0);
       onCleanup(() => clearTimeout(timer));
     });
     effect((onCleanup) => {
@@ -175,6 +199,7 @@ export class PracticeRunner {
   }
 
   protected restart(): void {
+    this.presentation.update((value) => value + 1);
     this.save({
       version: 1,
       queue: this.questions().map(({ item }) => item.id),
@@ -189,6 +214,7 @@ export class PracticeRunner {
     if (!current || !feedback || !current.queue.length) return;
     const nextQueue = current.queue.slice(1);
     if (feedback.outcome !== 'correct') nextQueue.push(feedback.itemId);
+    this.presentation.update((value) => value + 1);
     this.save({ ...current, queue: nextQueue, feedback: null });
   }
 
