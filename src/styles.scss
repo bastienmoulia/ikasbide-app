@@ -16,6 +16,7 @@ html {
   --app-feedback-incorrect: #9c2a22;
   --app-accent: #9c3434;
   --app-focus: #9c3434;
+  --mat-card-outlined-container-color: var(--app-surface);
   height: 100%;
   @include mat.theme(
     (

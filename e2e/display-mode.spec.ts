@@ -10,7 +10,8 @@ function colorChannels(color: string): number[] {
     const expanded = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex;
     return [0, 2, 4].map((index) => Number.parseInt(expanded.slice(index, index + 2), 16));
   }
-  return (color.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+  const channels = (color.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+  return color.startsWith('color(srgb ') ? channels.map((channel) => channel * 255) : channels;
 }
 
 function contrastRatio(foreground: string, background: string): number {
@@ -64,7 +65,7 @@ async function expectContrast(
   background: import('@playwright/test').Locator,
   minimum: number,
   foregroundProperty = 'color',
-  backgroundProperty = 'backgroundColor',
+  backgroundProperty = 'background-color',
 ): Promise<void> {
   const [foregroundColor, backgroundColor] = await Promise.all([
     foreground.evaluate(
@@ -188,7 +189,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
     await expect(gapAnswer).toHaveValue('naiz');
-    await expectContrast(gapAnswer, gapAnswer, 3, 'borderTopColor');
+    await expectContrast(gapAnswer, gapAnswer, 3, 'border-top-color');
   }
   await gap.getByRole('button', { name: /Vérifier/ }).click();
   const feedback = gap.getByRole('status');
