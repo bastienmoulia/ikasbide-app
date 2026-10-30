@@ -50,7 +50,7 @@ test('a wrong answer records practice without counting as objective mastery', as
 
   await startPractice(page);
   await page.getByRole('textbox').fill('faux');
-  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
   await expectSynced(page, 1);
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
