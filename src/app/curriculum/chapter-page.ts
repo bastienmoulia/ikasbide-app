@@ -1,15 +1,22 @@
-import { Component, computed, inject, input, resource } from '@angular/core';
+import { Component, computed, effect, inject, input, resource, signal } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
+import { AttemptService, type RecordedAttempt } from './attempt.service';
 import { chapterColor } from './chapter-color';
 import { chapterNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
 import { CurriculumService } from './curriculum.service';
+import {
+  objectiveProgress,
+  objectiveStatusLabels,
+  type ObjectiveStatus,
+} from './objective-progress';
 
 @Component({
   selector: 'app-chapter-page',
   imports: [BilingualText, MatProgressBarModule, RouterLink],
-  styleUrl: './curriculum.css',
+  styleUrls: ['./curriculum.css', './chapter-page.css'],
   host: { '[style.--chapter-accent]': 'accent()' },
   template: `
     <a class="back" routerLink="/">
@@ -38,12 +45,33 @@ import { CurriculumService } from './curriculum.service';
       </h1>
       <section aria-labelledby="objectives-heading">
         <h2 id="objectives-heading">
-          <app-bilingual-text eu="Ikas-helburuak" fr="Objectifs d’apprentissage" />
+          <app-bilingual-text eu="Aurrerapen-mapa" fr="Carte de progression" />
         </h2>
-        <ul>
+        <p class="muted">
+          <app-bilingual-text
+            eu="Zure erantzunetatik ateratako estimazioa, ez nota bat. Helburu bat eskuratua da hiru item ezberdin ondo erantzun dituzunean, gutxienez bi saiotan."
+            fr="Estimation tirée de vos réponses, pas une note. Un objectif est acquis quand trois items différents sont réussis, sur au moins deux sessions de pratique."
+          />
+        </p>
+        @let statuses = progress();
+        <ul class="objective-map">
           @for (objective of chapter.objectives; track objective.id) {
-            <li>
-              <app-bilingual-text [eu]="objective.label.eu" [fr]="objective.label.fr" />
+            @let status = statuses.get(objective.id) ?? 'to-discover';
+            <li [class]="status">
+              <span class="objective-stage" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </span>
+              <span class="stack">
+                <strong>
+                  <app-bilingual-text [eu]="objective.label.eu" [fr]="objective.label.fr" />
+                </strong>
+                <span class="objective-status">
+                  <app-bilingual-text
+                    [eu]="statusLabels[status].eu"
+                    [fr]="statusLabels[status].fr"
+                  />
+                </span>
+              </span>
             </li>
           }
         </ul>
@@ -81,6 +109,8 @@ import { CurriculumService } from './curriculum.service';
 export class ChapterPage {
   readonly chapterId = input.required<string>();
   private readonly curriculum = inject(CurriculumService);
+  private readonly auth = inject(AuthService);
+  private readonly attempts = inject(AttemptService);
   protected readonly chapter = resource({
     params: () => this.chapterId(),
     loader: ({ params }) => this.curriculum.chapter(params),
@@ -89,7 +119,29 @@ export class ChapterPage {
     const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
     return chapter ? chapterColor(chapter.number) : null;
   });
+  private readonly chapterAttempts = signal<RecordedAttempt[]>([]);
+  protected readonly progress = computed(() => {
+    const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
+    return chapter
+      ? objectiveProgress(chapter, this.chapterAttempts())
+      : new Map<string, ObjectiveStatus>();
+  });
+  protected readonly statusLabels = objectiveStatusLabels;
   protected readonly loading = loadingMessage;
   protected readonly notPublished = chapterNotPublishedMessage;
   protected readonly errorMessage = loadErrorMessage;
+
+  constructor() {
+    effect((onCleanup) => {
+      const learner = this.auth.user();
+      const chapterId = this.chapterId();
+      this.chapterAttempts.set([]);
+      if (!learner) return;
+      onCleanup(
+        this.attempts.watchChapter(learner.uid, chapterId, (attempts) =>
+          this.chapterAttempts.set(attempts),
+        ),
+      );
+    });
+  }
 }

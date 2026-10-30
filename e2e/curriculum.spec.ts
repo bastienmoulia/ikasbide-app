@@ -34,7 +34,7 @@ test('a learner browses units, chapters and sequences in book order', async ({ p
   );
   expect(await accent(page.locator('.chapter-marker'))).toBe(red);
   await expect(
-    page.getByRole('region', { name: /Objectifs d’apprentissage/ }).getByRole('listitem'),
+    page.getByRole('region', { name: /Carte de progression/ }).getByRole('listitem'),
   ).toHaveText([/Saluer et se présenter/, /Dire d’où l’on vient et où l’on habite/]);
   const sequences = page.getByRole('region', { name: /Séquences/ }).getByRole('listitem');
   await expect(sequences).toHaveText([/A.*Bonjour !/, /B.*D’où es-tu ?/]);

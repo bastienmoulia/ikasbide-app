@@ -1,0 +1,49 @@
+.objective-map {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.objective-map li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e6e1dd;
+  border-radius: 0.75rem;
+  background: white;
+}
+
+/* Three-stage track: filled stages and the status text, not colour, tell objectives apart. */
+.objective-stage {
+  display: flex;
+  flex: none;
+  gap: 0.25rem;
+}
+
+.objective-stage span {
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid var(--chapter-accent);
+  border-radius: 50%;
+}
+
+.in-progress .objective-stage span:first-child,
+.acquired .objective-stage span {
+  background: var(--chapter-accent);
+}
+
+.objective-status {
+  color: var(--chapter-accent);
+  font-weight: 600;
+}
+
+.acquired {
+  border-left: 6px solid var(--chapter-accent);
+}
+
+.to-discover .objective-status {
+  color: #655e59;
+}

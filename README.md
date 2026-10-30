@@ -18,8 +18,8 @@ apprenants connectés parcourent unités, chapitres colorés, objectifs et séqu
 Aucun contenu du livre n’est embarqué dans ce dépôt ; voir
 [docs/curriculum.md](docs/curriculum.md). Les quatre formats autocorrigés et les
 consignes orales facultatives sont interactifs, et chaque correction est enregistrée
-comme tentative synchronisée entre les appareils du compte ; la carte de progression
-reste à réaliser. Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié
+comme tentative synchronisée entre les appareils du compte. La page de chaque chapitre
+affiche la carte de progression de ses objectifs. Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié
 pour essayer la navigation ; il ne constitue pas le contenu du livre.
 
 ### Démarrer sans compte Firebase
@@ -128,7 +128,7 @@ deux lettres adjacentes dans un mot d'au moins cinq caractères peut afficher «
 elle reste incorrecte et ne fournit aucun indice de maîtrise. Voir
 [docs/curriculum.md](docs/curriculum.md) pour le détail.
 
-Une carte de progression remplacera l'autoévaluation déclarative par une estimation des objectifs de communication : **à découvrir**, **en cours**, **acquis**. Le critère convenu pour « acquis » est une réussite sur au moins **trois items distincts**, répartie sur au moins **deux sessions de pratique distinctes**. Cette estimation n'est pas une évaluation complète des capacités orales.
+La carte de progression, sur la page du chapitre, remplace l'autoévaluation déclarative par une estimation des objectifs de communication : **à découvrir** (aucune tentative), **en cours** (au moins une tentative), **acquis**. Chaque tentative compte uniquement pour les objectifs de son item. Un objectif est « acquis » après une réussite sur au moins **trois items distincts**, répartie sur au moins **deux sessions de pratique distinctes** ; répéter un même item ne compte qu'une fois et « Presque ! » n'est pas une réussite. Les tentatives encore en attente de synchronisation sur l'appareil sont prises en compte. Cette estimation n'est pas une évaluation complète des capacités orales.
 
 Il n'y aura ni note chiffrée, ni classement, ni série quotidienne imposée.
 

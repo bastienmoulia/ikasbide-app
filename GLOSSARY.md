@@ -50,6 +50,10 @@ _Avoid_: Session (pour une réponse individuelle)
 Visite d'une séquence pendant laquelle l'apprenant répond à des items ; ouvrir, recharger ou changer de séquence en démarre une nouvelle.
 _Avoid_: Session (pour la connexion au compte)
 
+**Carte de progression** :
+Vue d'un chapitre qui estime, à partir des tentatives, l'état de chaque objectif d'apprentissage : à découvrir, en cours ou acquis.
+_Avoid_: Score, Note
+
 **Carte de révision** :
 Élément de vocabulaire ou expression clé à rappeler dans un sens ou dans l'autre entre le basque et le français.
 _Avoid_: Item (pour une carte de mémorisation)

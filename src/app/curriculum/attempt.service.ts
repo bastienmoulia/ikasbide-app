@@ -12,6 +12,11 @@ export interface Attempt extends ItemAttempt {
   sessionId: string;
 }
 
+/** Stored attempt evidence; `pending` while it is only queued on this device. */
+export interface RecordedAttempt extends Pick<Attempt, 'itemId' | 'outcome' | 'sessionId'> {
+  pending: boolean;
+}
+
 export interface AttemptSummary {
   synced: number;
   pending: number;
@@ -50,6 +55,23 @@ export class AttemptService {
     itemIds: ReadonlySet<string>,
     onSummary: (summary: AttemptSummary) => void,
   ): () => void {
+    return this.watchChapter(learnerId, chapterId, (attempts) => {
+      const summary = { synced: 0, pending: 0 };
+      for (const attempt of attempts) {
+        if (!itemIds.has(attempt.itemId)) continue;
+        if (attempt.pending) summary.pending += 1;
+        else summary.synced += 1;
+      }
+      onSummary(summary);
+    });
+  }
+
+  /** Follows every attempt of the chapter, including those still queued on this device. */
+  watchChapter(
+    learnerId: string,
+    chapterId: string,
+    onAttempts: (attempts: RecordedAttempt[]) => void,
+  ): () => void {
     let stopped = false;
     let unsubscribe = () => {};
     void loadFirestore().then(({ db, sdk }) => {
@@ -61,15 +83,15 @@ export class AttemptService {
       unsubscribe = sdk.onSnapshot(
         attempts,
         { includeMetadataChanges: true },
-        (snapshot) => {
-          const summary = { synced: 0, pending: 0 };
-          for (const attempt of snapshot.docs) {
-            if (!itemIds.has(attempt.get('itemId'))) continue;
-            if (attempt.metadata.hasPendingWrites) summary.pending += 1;
-            else summary.synced += 1;
-          }
-          onSummary(summary);
-        },
+        (snapshot) =>
+          onAttempts(
+            snapshot.docs.map((attempt) => ({
+              itemId: attempt.get('itemId'),
+              outcome: attempt.get('outcome'),
+              sessionId: attempt.get('sessionId'),
+              pending: attempt.metadata.hasPendingWrites,
+            })),
+          ),
         reportWatchError,
       );
     }, reportWatchError);
