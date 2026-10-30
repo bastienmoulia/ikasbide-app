@@ -16,6 +16,7 @@ html {
   --app-feedback-incorrect: #9c2a22;
   --app-accent: #9c3434;
   --app-focus: #9c3434;
+  --mat-card-outlined-container-color: var(--app-surface);
   height: 100%;
   @include mat.theme(
     (
@@ -57,10 +58,6 @@ html[data-display-mode='dark'] {
   --mat-sys-on-surface: #f1f0ee;
   --mat-sys-on-surface-variant: #c1c1c4;
   --mat-sys-outline: #96979b;
-}
-
-.mat-mdc-card {
-  background-color: var(--app-surface);
 }
 
 body {
