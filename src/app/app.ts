@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -27,9 +27,25 @@ import { NetworkStatus } from './network-status';
         <span class="brand-mark" aria-hidden="true">i</span>
         Ikasbide
       </a>
-      <span class="tagline">
-        <app-bilingual-text eu="Euskara ikasteko laguna" fr="Votre compagnon de basque" />
-      </span>
+      @if (auth.status() === 'ready' && auth.user()) {
+        <div class="account">
+          <span class="account-name">
+            @if (firstName(); as name) {
+              {{ name }}
+            } @else {
+              <app-bilingual-text eu="Kontua" fr="Compte" />
+            }
+          </span>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="auth.pending()"
+            (click)="auth.signOut()"
+          >
+            <app-bilingual-text eu="Amaitu saioa" fr="Se déconnecter" />
+          </button>
+        </div>
+      }
     </header>
     <main id="main">
       @if (!network.online()) {
@@ -63,24 +79,7 @@ import { NetworkStatus } from './network-status';
         <a mat-stroked-button href="/">
           <app-bilingual-text eu="Berriz saiatu" fr="Réessayer" />
         </a>
-      } @else if (auth.user(); as user) {
-        <div class="account">
-          <span>
-            @if (user.displayName || user.email; as identity) {
-              {{ identity }}
-            } @else {
-              <app-bilingual-text eu="Google kontua konektatuta" fr="Compte Google connecté" />
-            }
-          </span>
-          <button
-            mat-stroked-button
-            type="button"
-            [disabled]="auth.pending()"
-            (click)="auth.signOut()"
-          >
-            <app-bilingual-text eu="Amaitu saioa" fr="Se déconnecter" />
-          </button>
-        </div>
+      } @else if (auth.user()) {
         <router-outlet />
       } @else {
         <section class="intro">
@@ -155,4 +154,7 @@ import { NetworkStatus } from './network-status';
 export class App {
   protected readonly auth = inject(AuthService);
   protected readonly network = inject(NetworkStatus);
+  protected readonly firstName = computed(
+    () => this.auth.user()?.displayName?.trim().split(/\s+/)[0] ?? '',
+  );
 }

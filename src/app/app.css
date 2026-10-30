@@ -18,6 +18,7 @@
 
 header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -46,7 +47,6 @@ header {
   font-family: Georgia, serif;
 }
 
-.tagline,
 .muted,
 footer {
   color: #655e59;
@@ -105,12 +105,23 @@ a[mat-stroked-button] {
 
 .account {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 2rem;
-  overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: auto;
+}
+
+.account-name {
+  min-width: 0;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account button {
+  flex-shrink: 0;
 }
 
 [role='alert'] {
@@ -136,12 +147,6 @@ footer {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.75rem;
-}
-
-@media (max-width: 36rem) {
-  .tagline {
-    display: none;
-  }
 }
 
 .offline-status {

@@ -11,6 +11,10 @@ française en dessous. L’application est disponible sur
 [ikasbide-app.web.app](https://ikasbide-app.web.app) et peut être installée depuis le
 navigateur.
 
+Le header affiche le premier mot du nom Google (ou « Compte » si le nom est vide)
+et un bouton de déconnexion lorsque la session est ouverte, sans nom complet ni e-mail.
+Sur mobile, ces contrôles restent visibles et passent à la ligne si nécessaire.
+
 Le ticket [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) est livré et déployé avec
 l’**import et la navigation du curriculum** : une commande valide les sources JSON du
 dépôt privé `bastienmoulia/ikasbide-content` et les publie dans Firestore ; les
