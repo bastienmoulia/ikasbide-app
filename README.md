@@ -16,11 +16,21 @@ l’**import et la navigation du curriculum** : une commande valide les sources 
 dépôt privé `bastienmoulia/ikasbide-content` et les publie dans Firestore ; les
 apprenants connectés parcourent unités, chapitres colorés, objectifs et séquences.
 Aucun contenu du livre n’est embarqué dans ce dépôt ; voir
-[docs/curriculum.md](docs/curriculum.md). Les quatre formats autocorrigés et les
-consignes orales facultatives sont interactifs, et chaque correction est enregistrée
-comme tentative synchronisée entre les appareils du compte. La page de chaque chapitre
-affiche la carte de progression de ses objectifs. Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié
-pour essayer la navigation ; il ne constitue pas le contenu du livre.
+[docs/curriculum.md](docs/curriculum.md).
+
+Les tickets [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) à
+[#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) sont également livrés et
+déployés : les quatre formats autocorrigés et les consignes orales facultatives sont
+interactifs ; les chapitres déjà consultés restent lisibles hors ligne ; chaque
+correction est enregistrée comme tentative synchronisée entre les appareils du compte ;
+la page de chaque chapitre affiche la **carte de progression** de ses objectifs. Tous
+les tickets d’implémentation de la V1
+([#1](https://github.com/bastienmoulia/ikasbide-app/issues/1)) sont donc terminés.
+
+Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié pour
+essayer l’application ; il ne constitue pas le contenu du livre. Les modes d’affichage
+clair, sombre et système ([#8](https://github.com/bastienmoulia/ikasbide-app/issues/8))
+sont la prochaine évolution prévue.
 
 ### Démarrer sans compte Firebase
 
