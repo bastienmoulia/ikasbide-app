@@ -1,10 +1,11 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
-  answerGap,
+  answerCurrentChoice,
+  answerCurrentText,
   attemptSummary,
   expectBilingualPresentation,
-  gapFillItem,
   signInWithGoogle,
+  startPractice,
 } from './support.ts';
 
 const chapterUrl = '/chapitres/chapter-1';
@@ -42,70 +43,81 @@ async function expectSynced(page: Page, count: number): Promise<void> {
   );
 }
 
-test('objectives are to discover before practice and in progress after incorrect attempts only', async ({
-  page,
-}) => {
+test('a wrong answer records practice without counting as objective mastery', async ({ page }) => {
   await page.goto(sequenceUrl);
   await signInWithGoogle(page);
   await expectSynced(page, 0);
-  await openChapter(page);
-  await expect(greet(page)).toContainText('À découvrir');
-  await expect(origin(page)).toContainText('À découvrir');
 
-  await page.goto(sequenceUrl);
-  await answerGap(page, 0, 'faux');
-  await answerGap(page, 2, 'faux');
-  await answerGap(page, 3, 'faux');
-  await expectSynced(page, 3);
-  await openChapter(page);
+  await startPractice(page);
+  await page.getByRole('textbox').fill('faux');
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
+  await expectSynced(page, 1);
+  await page.getByRole('link', { name: /Retour au chapitre/ }).click();
   await expect(greet(page)).toContainText('En cours');
-  // Each Item counts only for its own objective.
   await expect(origin(page)).toContainText('À découvrir');
 });
 
-test('correct answers on three distinct Items within one practice session are not enough', async ({
+test('a near match shows the correction and does not advance the series progress', async ({
   page,
 }) => {
+  await page.clock.install();
   await page.goto(sequenceUrl);
   await signInWithGoogle(page);
-  await answerGap(page, 0, 'naiz');
-  await answerGap(page, 2, 'on');
-  await answerGap(page, 3, 'Kaixo');
-  await expectSynced(page, 3);
-  await openChapter(page);
-  await expect(greet(page)).toContainText('En cours');
-});
+  await startPractice(page);
 
-test('an objective is acquired only from three distinct correct Items across two sessions', async ({
-  page,
-}) => {
-  await page.goto(sequenceUrl);
-  await signInWithGoogle(page);
-  await answerGap(page, 0, 'naiz');
-  await answerGap(page, 2, 'on');
-  await expectSynced(page, 2);
-
-  // Second session: repeating an Item and a near match add no distinct correct Item.
-  await page.reload();
-  await answerGap(page, 0, 'naiz');
-  await answerGap(page, 3, 'Kiaxo');
-  await expect(gapFillItem(page, 3).getByRole('status')).toContainText('Presque !');
+  for (const answer of ['naiz', 'koa', 'on']) {
+    await answerCurrentText(page, answer);
+  }
+  await page.getByRole('textbox').fill('Kiaxo');
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Presque' })).toBeVisible();
+  await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('≈');
+  await expect(page.locator('.correction')).toContainText('Kaixo');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await expectSynced(page, 4);
+
+  await page.getByRole('button', { name: /Continuer/ }).click();
+  await expect(
+    page.locator('app-activity-player').getByRole('button', { name: 'Agur' }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: /Retour au chapitre/ }).click();
+  await expect(greet(page)).toContainText('En cours');
+});
+
+test('objective mastery still needs three distinct correct Items across two practice sessions', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto(sequenceUrl);
+  await signInWithGoogle(page);
+  await startPractice(page);
+
+  for (const answer of ['naiz', 'koa', 'on', 'Kaixo']) {
+    await answerCurrentText(page, answer);
+  }
+  await answerCurrentChoice(page, 'Agur');
+  await answerCurrentChoice(page, 'Egun on');
+  await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
+  await expectSynced(page, 6);
+
   await openChapter(page);
   await expect(greet(page)).toContainText('En cours');
+  await expect(origin(page)).toContainText('En cours');
 
   await page.goto(sequenceUrl);
-  await answerGap(page, 3, 'Kaixo');
-  await expectSynced(page, 5);
+  await startPractice(page);
+  await page.getByRole('button', { name: /Recommencer/ }).click();
+  await answerCurrentText(page, 'naiz');
+  await expectSynced(page, 7);
   await openChapter(page);
   await expect(greet(page)).toContainText('Acquis');
-  await expect(origin(page)).toContainText('À découvrir');
+  await expect(origin(page)).toContainText('En cours');
 
-  // The chapter accent marks progress, but the status text and filled stages also tell it.
   const status = greet(page).locator('.objective-status');
   expect(await status.evaluate((element) => getComputedStyle(element).color)).toBe(red);
   expect(await filledStages(greet(page))).toBe(3);
-  expect(await filledStages(origin(page))).toBe(0);
+  expect(await filledStages(origin(page))).toBe(1);
   await expect(page.getByText(/\d+ ?(%|points?|\/)/)).toHaveCount(0);
   await expectBilingualPresentation(page);
 });

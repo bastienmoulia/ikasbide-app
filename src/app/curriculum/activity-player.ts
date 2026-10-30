@@ -1,21 +1,60 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, effect, input, output, signal } from '@angular/core';
 import { BilingualText } from '../bilingual-text';
 import type { AttemptOutcome } from './attempt.service';
 import type {
-  Activity,
+  GapFillActivity,
   GapFillItem,
+  MultipleChoiceActivity,
   MultipleChoiceItem,
+  TranslationActivity,
   TranslationItem,
+  WordOrderActivity,
   WordOrderItem,
+  BilingualText as BilingualTextValue,
 } from './curriculum.model';
+import type { PracticeFeedback } from './practice-progress';
 
-type ItemResult = AttemptOutcome;
+type GradedActivity =
+  GapFillActivity | TranslationActivity | MultipleChoiceActivity | WordOrderActivity;
+
+export type ExerciseQuestion =
+  | {
+      kind: 'gap-fill';
+      title: BilingualTextValue;
+      instructions: BilingualTextValue;
+      item: GapFillItem;
+    }
+  | {
+      kind: 'translation';
+      title: BilingualTextValue;
+      instructions: BilingualTextValue;
+      item: TranslationItem;
+    }
+  | {
+      kind: 'multiple-choice';
+      title: BilingualTextValue;
+      instructions: BilingualTextValue;
+      item: MultipleChoiceItem;
+    }
+  | {
+      kind: 'word-order';
+      title: BilingualTextValue;
+      instructions: BilingualTextValue;
+      item: WordOrderItem;
+    };
 
 export interface ItemAttempt {
   itemId: string;
-  outcome: ItemResult;
+  outcome: AttemptOutcome;
 }
-type GradedItem = GapFillItem | TranslationItem | MultipleChoiceItem | WordOrderItem;
+
+export interface ItemResponse {
+  itemId: string;
+  outcome: AttemptOutcome;
+  answer: string;
+  attemptId: string;
+  occurredAt: number;
+}
 
 @Component({
   selector: 'app-activity-feedback',
@@ -24,10 +63,18 @@ type GradedItem = GapFillItem | TranslationItem | MultipleChoiceItem | WordOrder
     role: 'status',
     '[attr.data-result]': 'result()',
   },
-  template: ` <app-bilingual-text [eu]="labels[result()].eu" [fr]="labels[result()].fr" /> `,
+  template: `
+    <span aria-hidden="true">{{ symbols[result()] }}</span>
+    <app-bilingual-text [eu]="labels[result()].eu" [fr]="labels[result()].fr" />
+  `,
 })
 class ActivityFeedback {
-  readonly result = input.required<ItemResult>();
+  readonly result = input.required<AttemptOutcome>();
+  protected readonly symbols = {
+    correct: '✓',
+    almost: '≈',
+    incorrect: '✕',
+  };
   protected readonly labels = {
     correct: { eu: 'Zuzena.', fr: 'Correct.' },
     almost: { eu: 'Ia!', fr: 'Presque !' },
@@ -39,221 +86,271 @@ class ActivityFeedback {
   selector: 'app-activity-player',
   imports: [ActivityFeedback, BilingualText],
   styleUrls: ['./activity-player.css'],
+  host: {
+    role: 'region',
+    tabindex: '-1',
+    '[attr.aria-labelledby]': "'exercise-heading'",
+  },
   template: `
-    @let currentActivity = activity();
-    @switch (currentActivity.kind) {
-      @case ('gap-fill') {
-        <ol class="items">
-          @for (item of currentActivity.items; track item.id) {
-            @let blank = item.prompt.eu.indexOf('___');
-            <li class="item">
-              <p class="prompt">
-                <span lang="eu">{{ item.prompt.eu.slice(0, blank) }}</span>
+    @let currentQuestion = question();
+    <article class="exercise-item">
+      <h2 id="exercise-heading">
+        <app-bilingual-text [eu]="currentQuestion.title.eu" [fr]="currentQuestion.title.fr" />
+      </h2>
+      <p class="instructions">
+        <app-bilingual-text
+          [eu]="currentQuestion.instructions.eu"
+          [fr]="currentQuestion.instructions.fr"
+        />
+      </p>
+      @switch (currentQuestion.kind) {
+        @case ('gap-fill') {
+          @let blank = currentQuestion.item.prompt.eu.indexOf('___');
+          <form (submit)="grade(currentQuestion.item, $event)">
+            <p class="prompt">
+              <span lang="eu">{{ currentQuestion.item.prompt.eu.slice(0, blank) }}</span>
+              @if (feedback(); as result) {
+                <span class="answer" [attr.lang]="answerLang(currentQuestion, result.answer)">{{
+                  result.answer
+                }}</span>
+              } @else {
                 <label class="inline-answer">
                   <app-bilingual-text eu="Erantzuna" fr="Réponse" />
                   <input
                     type="text"
-                    [value]="answers()[item.id] ?? ''"
-                    (input)="updateAnswer(item.id, $event)"
+                    [value]="answer()"
+                    (input)="updateAnswer($event)"
                     autocomplete="off"
                   />
                 </label>
-                <span lang="eu">{{ item.prompt.eu.slice(blank + 3) }}</span>
-              </p>
-              <p class="prompt-translation" lang="fr">{{ item.prompt.fr }}</p>
-              <button type="button" (click)="grade(item)">
+              }
+              <span lang="eu">{{ currentQuestion.item.prompt.eu.slice(blank + 3) }}</span>
+            </p>
+            <p class="prompt-translation" lang="fr">{{ currentQuestion.item.prompt.fr }}</p>
+            @if (!feedback()) {
+              <button type="submit" [disabled]="!canSubmit()">
                 <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
               </button>
-              @if (results()[item.id]; as result) {
-                <app-activity-feedback [result]="result" />
-              }
-            </li>
-          }
-        </ol>
-      }
-      @case ('multiple-choice') {
-        <ol class="items">
-          @for (item of currentActivity.items; track item.id) {
-            <li class="item">
-              <app-bilingual-text [eu]="item.prompt.eu" [fr]="item.prompt.fr" />
-              <fieldset class="choices">
-                <legend>
-                  <app-bilingual-text eu="Aukeratu erantzuna" fr="Choisissez une réponse" />
-                </legend>
-                @for (choice of item.choices; track choice.id) {
-                  <label>
-                    <input
-                      type="radio"
-                      [name]="item.id"
-                      [value]="choice.id"
-                      [checked]="answers()[item.id] === choice.id"
-                      (change)="selectChoice(item.id, choice.id)"
-                    />
-                    <span [attr.lang]="choice.lang">{{ choice.text }}</span>
-                  </label>
-                }
-              </fieldset>
-              <button type="button" (click)="grade(item)">
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+            }
+          </form>
+        }
+        @case ('multiple-choice') {
+          <app-bilingual-text
+            [eu]="currentQuestion.item.prompt.eu"
+            [fr]="currentQuestion.item.prompt.fr"
+          />
+          <fieldset class="choices">
+            <legend>
+              <app-bilingual-text eu="Aukeratu erantzuna" fr="Choisissez une réponse" />
+            </legend>
+            @for (choice of currentQuestion.item.choices; track choice.id) {
+              <button
+                type="button"
+                class="choice"
+                (click)="gradeChoice(currentQuestion.item, choice.id)"
+                [disabled]="!!feedback()"
+                [attr.aria-pressed]="feedback()?.answer === choice.id"
+              >
+                <span [attr.lang]="choice.lang">{{ choice.text }}</span>
               </button>
-              @if (results()[item.id]; as result) {
-                <app-activity-feedback [result]="result" />
+            }
+          </fieldset>
+        }
+        @case ('word-order') {
+          <app-bilingual-text
+            [eu]="currentQuestion.item.prompt.eu"
+            [fr]="currentQuestion.item.prompt.fr"
+          />
+          @if (feedback(); as result) {
+            <p class="answer" [attr.lang]="answerLang(currentQuestion, result.answer)">
+              {{ result.answer }}
+            </p>
+          } @else {
+            <div class="word-answer" aria-label="Erantzuna / Réponse">
+              @for (wordIndex of selectedWords(); track $index) {
+                <button
+                  class="word"
+                  type="button"
+                  (click)="removeWord(wordIndex, currentQuestion.item.words)"
+                >
+                  <span lang="eu">{{ currentQuestion.item.words[wordIndex] }}</span>
+                </button>
               }
-            </li>
-          }
-        </ol>
-      }
-      @case ('word-order') {
-        <ol class="items">
-          @for (item of currentActivity.items; track item.id) {
-            <li class="item">
-              <app-bilingual-text [eu]="item.prompt.eu" [fr]="item.prompt.fr" />
-              <div class="word-answer" aria-label="Erantzuna / Réponse">
-                @for (wordIndex of selectedWords()[item.id] ?? []; track $index) {
+              @if (!selectedWords().length) {
+                <app-bilingual-text
+                  class="empty-answer"
+                  eu="Hautatu hitzak erantzuna osatzeko."
+                  fr="Choisissez les mots pour composer la réponse."
+                />
+              }
+            </div>
+            <div class="word-bank">
+              @for (word of currentQuestion.item.words; track $index) {
+                @if (!selectedWords().includes($index)) {
                   <button
                     class="word"
                     type="button"
-                    (click)="removeWord(item.id, wordIndex, item.words)"
+                    (click)="selectWord($index, currentQuestion.item.words)"
                   >
-                    <span lang="eu">{{ item.words[wordIndex] }}</span>
+                    <span lang="eu">{{ word }}</span>
                   </button>
                 }
-                @if (!(selectedWords()[item.id] ?? []).length) {
-                  <app-bilingual-text
-                    class="empty-answer"
-                    eu="Hautatu hitzak erantzuna osatzeko."
-                    fr="Choisissez les mots pour composer la réponse."
-                  />
-                }
-              </div>
-              <div class="word-bank">
-                @for (word of item.words; track $index) {
-                  @if (!(selectedWords()[item.id] ?? []).includes($index)) {
-                    <button
-                      class="word"
-                      type="button"
-                      (click)="selectWord(item.id, $index, item.words)"
-                    >
-                      <span lang="eu">{{ word }}</span>
-                    </button>
-                  }
-                }
-              </div>
-              <div class="word-actions">
-                <button class="secondary" type="button" (click)="resetWords(item.id)">
-                  <app-bilingual-text eu="Hasi berriz" fr="Recommencer" />
-                </button>
-                <button type="button" (click)="grade(item)">
-                  <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
-                </button>
-              </div>
-              @if (results()[item.id]; as result) {
-                <app-activity-feedback [result]="result" />
               }
-            </li>
+            </div>
+            <div class="word-actions">
+              <button class="secondary" type="button" (click)="resetWords()">
+                <app-bilingual-text eu="Hasi berriz" fr="Recommencer" />
+              </button>
+              <button type="button" (click)="grade(currentQuestion.item)" [disabled]="!canSubmit()">
+                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+              </button>
+            </div>
           }
-        </ol>
-      }
-      @case ('translation') {
-        <ol class="items">
-          @for (item of currentActivity.items; track item.id) {
-            <li class="item">
-              <app-bilingual-text
-                [eu]="
-                  item.direction === 'eu-fr' ? 'Euskaratik frantsesera' : 'Frantsesetik euskarara'
-                "
-                [fr]="
-                  item.direction === 'eu-fr'
-                    ? 'Du basque vers le français'
-                    : 'Du français vers le basque'
-                "
-              />
-              <p class="source" [attr.lang]="item.direction === 'eu-fr' ? 'eu' : 'fr'">
-                {{ item.source }}
-              </p>
+        }
+        @case ('translation') {
+          <app-bilingual-text
+            [eu]="
+              currentQuestion.item.direction === 'eu-fr'
+                ? 'Euskaratik frantsesera'
+                : 'Frantsesetik euskarara'
+            "
+            [fr]="
+              currentQuestion.item.direction === 'eu-fr'
+                ? 'Du basque vers le français'
+                : 'Du français vers le basque'
+            "
+          />
+          <p class="source" [attr.lang]="currentQuestion.item.direction === 'eu-fr' ? 'eu' : 'fr'">
+            {{ currentQuestion.item.source }}
+          </p>
+          @if (feedback(); as result) {
+            <p class="answer" [attr.lang]="answerLang(currentQuestion, result.answer)">
+              {{ result.answer }}
+            </p>
+          } @else {
+            <form (submit)="grade(currentQuestion.item, $event)">
               <label class="answer">
                 <app-bilingual-text eu="Erantzuna" fr="Réponse" />
                 <input
                   type="text"
-                  [value]="answers()[item.id] ?? ''"
-                  (input)="updateAnswer(item.id, $event)"
+                  [value]="answer()"
+                  (input)="updateAnswer($event)"
                   autocomplete="off"
                 />
               </label>
-              <button type="button" (click)="grade(item)">
+              <button type="submit" [disabled]="!canSubmit()">
                 <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
               </button>
-              @if (results()[item.id]; as result) {
-                <app-activity-feedback [result]="result" />
-              }
-            </li>
+            </form>
           }
-        </ol>
+        }
       }
-    }
+      @if (feedback(); as result) {
+        <app-activity-feedback [result]="result.outcome" />
+        @if (result.outcome !== 'correct') {
+          <p class="correction">
+            <strong><app-bilingual-text eu="Erantzun zuzena" fr="Réponse attendue" /></strong>
+            <span [attr.lang]="answerLang(currentQuestion)">{{
+              correctAnswer(currentQuestion)
+            }}</span>
+          </p>
+        }
+      }
+    </article>
   `,
 })
 export class ActivityPlayer {
-  readonly activity = input.required<Activity>();
-  /** Emitted each time an Item is corrected; the answer itself is never emitted. */
-  readonly attempted = output<ItemAttempt>();
-  protected readonly answers = signal<Record<string, string>>({});
-  protected readonly results = signal<Record<string, ItemResult>>({});
-  protected readonly selectedWords = signal<Record<string, number[]>>({});
+  readonly question = input.required<ExerciseQuestion>();
+  readonly feedback = input<PracticeFeedback | null>(null);
+  readonly attempted = output<ItemResponse>();
+  protected readonly answer = signal('');
+  protected readonly selectedWords = signal<number[]>([]);
+  protected readonly canSubmit = () => this.answer().trim().length > 0;
 
-  protected updateAnswer(itemId: string, event: Event): void {
+  constructor() {
+    effect(() => {
+      this.question();
+      this.feedback();
+      this.answer.set('');
+      this.selectedWords.set([]);
+    });
+  }
+
+  protected updateAnswer(event: Event): void {
     const target = event.target;
-    if (!(target instanceof HTMLInputElement)) return;
-    this.answers.update((answers) => ({ ...answers, [itemId]: target.value }));
-    this.results.update(({ [itemId]: _result, ...results }) => results);
+    if (target instanceof HTMLInputElement) this.answer.set(target.value);
   }
 
-  protected selectChoice(itemId: string, choiceId: string): void {
-    this.answers.update((answers) => ({ ...answers, [itemId]: choiceId }));
-    this.results.update(({ [itemId]: _result, ...results }) => results);
+  protected selectWord(wordIndex: number, words: string[]): void {
+    this.selectedWords.update((indices) => [...indices, wordIndex]);
+    this.answer.set(
+      this.selectedWords()
+        .map((index) => words[index])
+        .join(' '),
+    );
   }
 
-  protected selectWord(itemId: string, wordIndex: number, words: string[]): void {
-    const indices = [...(this.selectedWords()[itemId] ?? []), wordIndex];
-    this.setWordOrderAnswer(itemId, indices, words);
+  protected removeWord(wordIndex: number, words: string[]): void {
+    this.selectedWords.update((indices) => indices.filter((index) => index !== wordIndex));
+    this.answer.set(
+      this.selectedWords()
+        .map((index) => words[index])
+        .join(' '),
+    );
   }
 
-  protected removeWord(itemId: string, wordIndex: number, words: string[]): void {
-    const indices = (this.selectedWords()[itemId] ?? []).filter((index) => index !== wordIndex);
-    this.setWordOrderAnswer(itemId, indices, words);
+  protected resetWords(): void {
+    this.selectedWords.set([]);
+    this.answer.set('');
   }
 
-  protected resetWords(itemId: string): void {
-    this.selectedWords.update(({ [itemId]: _indices, ...selection }) => selection);
-    this.answers.update(({ [itemId]: _answer, ...answers }) => answers);
-    this.results.update(({ [itemId]: _result, ...results }) => results);
+  protected gradeChoice(item: MultipleChoiceItem, choiceId: string): void {
+    this.answer.set(choiceId);
+    this.grade(item);
   }
 
-  protected grade(item: GradedItem): void {
-    // Editing an answer clears its result, so an existing result means the answer is unchanged.
-    if (this.results()[item.id]) return;
-    const answer = this.answers()[item.id] ?? '';
-    const result =
+  protected grade(item: ExerciseQuestion['item'], event?: Event): void {
+    event?.preventDefault();
+    if (this.feedback() || !this.canSubmit()) return;
+    const answer = this.answer();
+    const outcome =
       'correctChoiceIds' in item
         ? item.correctChoiceIds.includes(answer)
           ? 'correct'
           : 'incorrect'
         : gradeFreeResponse(answer, item.acceptedAnswers);
-    this.results.update((results) => ({ ...results, [item.id]: result }));
-    this.attempted.emit({ itemId: item.id, outcome: result });
+    this.attempted.emit({
+      itemId: item.id,
+      outcome,
+      answer,
+      attemptId: crypto.randomUUID(),
+      occurredAt: Date.now(),
+    });
   }
 
-  private setWordOrderAnswer(itemId: string, indices: number[], words: string[]): void {
-    this.selectedWords.update((selection) => ({ ...selection, [itemId]: indices }));
-    this.answers.update((answers) => ({
-      ...answers,
-      [itemId]: indices.map((index) => words[index]).join(' '),
-    }));
-    this.results.update(({ [itemId]: _result, ...results }) => results);
+  protected correctAnswer(question: ExerciseQuestion): string {
+    if (question.kind === 'multiple-choice') {
+      return question.item.choices
+        .filter(({ id }) => question.item.correctChoiceIds.includes(id))
+        .map(({ text }) => text)
+        .join(' / ');
+    }
+    return question.item.acceptedAnswers[0] ?? '';
+  }
+
+  protected answerLang(question: ExerciseQuestion, answer?: string): 'eu' | 'fr' {
+    if (question.kind === 'translation') return question.item.direction === 'eu-fr' ? 'fr' : 'eu';
+    if (question.kind === 'multiple-choice') {
+      const choice = question.item.choices.find(({ id }) =>
+        answer ? id === answer : question.item.correctChoiceIds.includes(id),
+      );
+      return choice?.lang ?? 'eu';
+    }
+    return 'eu';
   }
 }
 
-function gradeFreeResponse(answer: string, acceptedAnswers: string[]): ItemResult {
+function gradeFreeResponse(answer: string, acceptedAnswers: string[]): AttemptOutcome {
   const normalizedAnswer = normalizeAnswer(answer);
   const normalizedAccepted = acceptedAnswers.map(normalizeAnswer);
   if (normalizedAccepted.includes(normalizedAnswer)) return 'correct';

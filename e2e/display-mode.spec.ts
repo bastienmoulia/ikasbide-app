@@ -148,6 +148,7 @@ test('the device choice remains available across sign-in and sign-out', async ({
 
 test('the learner journey keeps answers and progress usable in both modes', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
+  await page.clock.install();
   await page.goto('/');
   await signInWithGoogle(page);
 
@@ -180,35 +181,41 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   }
 
   await page.goto('/chapitres/chapter-1/sequences/greetings');
-  const gapArticle = page
-    .getByRole('article')
-    .filter({ has: page.getByRole('heading', { name: /Complétez les phrases/ }) });
-  const gap = gapArticle.getByRole('listitem').first();
-  const gapAnswer = gap.getByRole('textbox');
+  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  const player = page.locator('app-activity-player');
+  const gapAnswer = player.getByRole('textbox');
   await gapAnswer.fill('naiz');
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
     await expect(gapAnswer).toHaveValue('naiz');
     await expectContrast(gapAnswer, gapAnswer, 3, 'border-top-color');
   }
-  await gap.getByRole('button', { name: /Vérifier/ }).click();
-  const feedback = gap.getByRole('status');
+  await player.getByRole('button', { name: /Vérifier/ }).click();
+  const feedback = page.getByRole('status').filter({ hasText: 'Correct' });
   await expect(feedback).toContainText('Correct');
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
     await expect(feedback).toContainText('Correct');
-    await expectContrast(feedback, gapArticle, 4.5);
+    await expectContrast(feedback, player.locator('.exercise-item'), 4.5);
   }
   await expectContrast(
-    gap.getByRole('button', { name: /Vérifier/ }),
-    gap.getByRole('button', { name: /Vérifier/ }),
+    player.getByRole('button', { name: /Vérifier/ }),
+    player.locator('.exercise-item'),
     4.5,
   );
-  const choice = page.getByRole('radio', { name: 'Agur' });
-  await choice.check();
+  await page.clock.fastForward(600);
+  for (const answer of ['koa', 'on', 'Kaixo']) {
+    await player.getByRole('textbox').fill(answer);
+    await player.getByRole('button', { name: /Vérifier/ }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+    await page.clock.fastForward(600);
+  }
+  const choice = player.getByRole('button', { name: 'Agur', exact: true });
+  await expect(choice).toBeVisible();
   await setDisplayMode(page, 'light');
   await setDisplayMode(page, 'dark');
-  await expect(choice).toBeChecked();
+  await choice.click();
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
 
   await page.goto('/chapitres/chapter-1/sequences/origin');
   const resourceArticle = page.getByRole('article').first();
@@ -219,25 +226,30 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
       mode === 'dark' ? 'rgb(43, 44, 47)' : 'rgb(255, 255, 255)',
     );
   }
-  const translation = page
-    .getByRole('article')
-    .filter({ has: page.getByRole('heading', { name: /Traduisez/ }) });
-  const translationAnswer = translation.getByRole('textbox').first();
+  await page.getByRole('button', { name: /Commencer les exercices/ }).click();
+  const translationAnswer = page.locator('app-activity-player').getByRole('textbox');
   await translationAnswer.fill('Ni Baionakoa naiz.');
   await setDisplayMode(page, 'light');
   await expect(translationAnswer).toHaveValue('Ni Baionakoa naiz.');
   await setDisplayMode(page, 'dark');
   await expect(translationAnswer).toHaveValue('Ni Baionakoa naiz.');
+  await translationAnswer.press('Enter');
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
+  await page.locator('app-activity-player').getByRole('textbox').fill('J’habite à Bilbao.');
+  await page
+    .locator('app-activity-player')
+    .getByRole('button', { name: /Vérifier/ })
+    .click();
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
 
-  const wordOrder = page
-    .getByRole('article')
-    .filter({ has: page.getByRole('heading', { name: /Remettez les mots dans l’ordre/ }) });
-  await wordOrder.getByRole('button', { name: 'Zu' }).click();
-  await wordOrder.getByRole('button', { name: 'nongoa' }).click();
+  await page.getByRole('button', { name: 'Zu', exact: true }).click();
+  await page.getByRole('button', { name: 'nongoa', exact: true }).click();
   await setDisplayMode(page, 'light');
-  await expect(wordOrder.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
   await setDisplayMode(page, 'dark');
-  await expect(wordOrder.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
 
   await page.goto('/chapitres/chapter-1');
   const greetingObjective = progressMap

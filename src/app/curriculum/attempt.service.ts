@@ -10,6 +10,9 @@ export interface Attempt extends ItemAttempt {
   chapterId: string;
   /** Practice session in which the Item was answered (ADR 0004). */
   sessionId: string;
+  /** Stable local identifiers let a restored response safely retry its immutable write. */
+  attemptId?: string;
+  occurredAt?: number;
 }
 
 /** Stored attempt evidence; `pending` while it is only queued on this device. */
@@ -39,9 +42,23 @@ export class AttemptService {
   async record(learnerId: string, attempt: Attempt): Promise<void> {
     try {
       const { db, sdk } = await loadFirestore();
-      const ref = sdk.doc(db, 'learners', learnerId, 'attempts', crypto.randomUUID());
+      const ref = sdk.doc(
+        db,
+        'learners',
+        learnerId,
+        'attempts',
+        attempt.attemptId ?? crypto.randomUUID(),
+      );
       // Resolves only once the server confirms; the write is already queued locally.
-      await sdk.setDoc(ref, { ...attempt, occurredAt: sdk.Timestamp.now() });
+      await sdk.setDoc(ref, {
+        chapterId: attempt.chapterId,
+        itemId: attempt.itemId,
+        outcome: attempt.outcome,
+        sessionId: attempt.sessionId,
+        occurredAt: attempt.occurredAt
+          ? sdk.Timestamp.fromMillis(attempt.occurredAt)
+          : sdk.Timestamp.now(),
+      });
     } catch (error) {
       console.error('Attempt could not be saved.', error);
       this.error.set(attemptNotSavedMessage);

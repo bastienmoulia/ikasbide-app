@@ -50,6 +50,10 @@ _Avoid_: Session (pour une réponse individuelle)
 Visite d'une séquence pendant laquelle l'apprenant répond à des items ; ouvrir, recharger ou changer de séquence en démarre une nouvelle.
 _Avoid_: Session (pour la connexion au compte)
 
+**Série d'entraînement** :
+Parcours local d'une séquence qui présente ses items autocorrigés un par un et repose les items ratés jusqu'à leur réussite ; son avancement immédiat est distinct de la carte de progression du chapitre.
+_Avoid_: Session de pratique, Activité
+
 **Carte de progression** :
 Vue d'un chapitre qui estime, à partir des tentatives, l'état de chaque objectif d'apprentissage : à découvrir, en cours ou acquis.
 _Avoid_: Score, Note

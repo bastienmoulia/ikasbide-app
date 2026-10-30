@@ -99,21 +99,36 @@ export async function waitForOfflineShell(page: Page): Promise<void> {
     .toMatch(/Driver state: NORMAL[\s\S]*Latest manifest hash: [0-9a-f]+/);
 }
 
-/** An Item of the greetings gap-fill activity in the sample curriculum. */
-export function gapFillItem(page: Page, index: number): Locator {
-  return page
-    .getByRole('article')
-    .filter({ has: page.getByRole('heading', { name: /Complétez les phrases/ }) })
-    .getByRole('listitem')
-    .nth(index);
+export async function startPractice(page: Page): Promise<void> {
+  const start = page.getByRole('button', {
+    name: /Commencer les exercices|Reprendre les exercices/,
+  });
+  await expect(start).toBeVisible();
+  await start.click();
 }
 
-/** Answers an Item of the greetings gap-fill activity and waits for its correction. */
-export async function answerGap(page: Page, index: number, answer: string): Promise<void> {
-  const item = gapFillItem(page, index);
-  await item.getByRole('textbox').fill(answer);
-  await item.getByRole('button', { name: /Vérifier/ }).click();
-  await expect(item.getByRole('status')).toBeVisible();
+/** Submits a free-response Item and advances through its brief correct-answer feedback. */
+export async function answerCurrentText(
+  page: Page,
+  answer: string,
+  useEnter = false,
+): Promise<void> {
+  const input = page.getByRole('textbox');
+  await input.fill(answer);
+  if (useEnter) {
+    await input.press('Enter');
+  } else {
+    await page.getByRole('button', { name: /Vérifier/ }).click();
+  }
+  await expect(page.getByRole('status').filter({ hasText: /Correct|Zuzena/ })).toBeVisible();
+  await page.clock.fastForward(600);
+}
+
+/** Submits a multiple-choice Item and advances through its brief correct-answer feedback. */
+export async function answerCurrentChoice(page: Page, choice: string): Promise<void> {
+  await page.getByRole('button', { name: choice, exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: /Correct|Zuzena/ })).toBeVisible();
+  await page.clock.fastForward(600);
 }
 
 export function attemptSummary(page: Page): Locator {

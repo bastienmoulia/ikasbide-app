@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import {
-  answerGap,
   attemptSummary,
   learnerId,
   signInWithGoogle,
+  startPractice,
   storedAttempts,
   waitForOfflineShell,
 } from './support.ts';
@@ -12,12 +12,13 @@ test.use({ serviceWorkers: 'allow' });
 
 const sequenceUrl = '/chapitres/chapter-1/sequences/greetings';
 
-test('attempts made offline are queued, kept across reloads and synchronized once', async ({
+test('a submitted answer is restored offline and synchronized exactly once', async ({
   page,
   context,
   browser,
   baseURL,
 }) => {
+  await page.clock.install();
   await page.goto(sequenceUrl);
   const email = await signInWithGoogle(page);
   await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 0');
@@ -30,11 +31,13 @@ test('attempts made offline are queued, kept across reloads and synchronized onc
     await signInWithGoogle(otherPage, 'Apprenant fictif', email);
     await expect(attemptSummary(otherPage)).toContainText('Tentatives synchronisées : 0');
 
+    await startPractice(page);
     await context.setOffline(true);
-    await answerGap(page, 0, 'naiz');
-    await answerGap(page, 1, 'ko');
+    await page.getByRole('textbox').fill('secret-answer');
+    await page.getByRole('button', { name: /Vérifier/ }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
     await expect(attemptSummary(page)).toContainText(
-      'Tentatives synchronisées : 0 · en attente : 2',
+      'Tentatives synchronisées : 0 · en attente : 1',
     );
 
     await page.reload();
@@ -42,23 +45,32 @@ test('attempts made offline are queued, kept across reloads and synchronized onc
       page.getByRole('status').filter({ hasText: 'Vous êtes hors ligne' }),
     ).toBeVisible();
     await expect(attemptSummary(page)).toContainText(
-      'Tentatives synchronisées : 0 · en attente : 2',
+      'Tentatives synchronisées : 0 · en attente : 1',
     );
-    await answerGap(page, 2, 'on');
-    await expect(attemptSummary(page)).toContainText('en attente : 3');
+    await startPractice(page);
+    await expect(page.getByText('secret-answer', { exact: true })).toBeVisible();
+    await expect(page.locator('.correction')).toContainText('naiz');
+    await expect(attemptSummary(page)).toContainText(
+      'Tentatives synchronisées : 0 · en attente : 1',
+    );
+
+    await page.getByRole('button', { name: /Continuer/ }).click();
+    await page.getByRole('textbox').fill('koa');
+    await page.getByRole('button', { name: /Vérifier/ }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+    await page.clock.fastForward(600);
+    await expect(attemptSummary(page)).toContainText('en attente : 2');
     await expect(attemptSummary(otherPage)).toContainText('Tentatives synchronisées : 0');
 
-    // The connection drops again right after returning, so the queue is sent more than once.
     await context.setOffline(false);
     await context.setOffline(true);
     await context.setOffline(false);
-
     await expect(attemptSummary(page)).toContainText(
-      'Tentatives synchronisées : 3 · en attente : 0',
+      'Tentatives synchronisées : 2 · en attente : 0',
       { timeout: 30_000 },
     );
     await expect(attemptSummary(otherPage)).toContainText(
-      'Tentatives synchronisées : 3 · en attente : 0',
+      'Tentatives synchronisées : 2 · en attente : 0',
     );
   } finally {
     await otherDevice.close();
@@ -66,13 +78,13 @@ test('attempts made offline are queued, kept across reloads and synchronized onc
 
   const attempts = await storedAttempts(await learnerId(email));
   expect(attempts.map(({ fields }) => [fields['itemId'], fields['outcome']]).sort()).toEqual([
-    ['greetings-gap-1', 'correct'],
-    ['greetings-gap-2', 'incorrect'],
-    ['greetings-gap-3', 'correct'],
+    ['greetings-gap-1', 'incorrect'],
+    ['greetings-gap-2', 'correct'],
   ]);
-  const [first, second, third] = [...attempts].sort((a, b) =>
-    a.fields['occurredAt'].localeCompare(b.fields['occurredAt']),
-  );
-  expect(first.fields['sessionId']).toBe(second.fields['sessionId']);
-  expect(third.fields['sessionId']).not.toBe(first.fields['sessionId']);
+  expect(attempts.map(({ fields }) => fields['sessionId'])).toEqual([
+    expect.any(String),
+    expect.any(String),
+  ]);
+  expect(attempts[0].fields['sessionId']).not.toBe(attempts[1].fields['sessionId']);
+  expect(JSON.stringify(attempts)).not.toContain('secret-answer');
 });

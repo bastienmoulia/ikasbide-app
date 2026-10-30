@@ -1,0 +1,111 @@
+:host {
+  display: block;
+}
+
+.practice,
+.completion {
+  display: grid;
+  justify-items: stretch;
+  gap: 1.25rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding-block: 0.5rem 2rem;
+}
+
+.practice-toolbar,
+.completion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.practice-toolbar p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.practice progress {
+  display: block;
+  width: 100%;
+  height: 0.75rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--app-surface-muted);
+  color: var(--chapter-accent);
+  accent-color: var(--chapter-accent);
+}
+
+.practice progress::-webkit-progress-bar {
+  border-radius: 1rem;
+  background: var(--app-surface-muted);
+}
+
+.practice progress::-webkit-progress-value {
+  border-radius: 1rem;
+  background: var(--chapter-accent);
+}
+
+.practice progress::-moz-progress-bar {
+  border-radius: 1rem;
+  background: var(--chapter-accent);
+}
+
+.exit,
+.continue,
+.completion-actions button,
+.completion-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: var(--chapter-accent);
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.exit,
+.completion-actions .secondary {
+  border: 1px solid var(--app-border-strong);
+  background: transparent;
+  color: inherit;
+}
+
+.continue {
+  justify-self: end;
+}
+
+.completion {
+  justify-items: center;
+  text-align: center;
+  padding-block: 3rem;
+}
+
+.completion h2 {
+  margin: 0;
+  font-size: clamp(2rem, 8vw, 3.25rem);
+}
+
+.completion-actions {
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

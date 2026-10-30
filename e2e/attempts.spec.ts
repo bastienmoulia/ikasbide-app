@@ -1,45 +1,53 @@
 import { expect, test } from '@playwright/test';
 import {
-  answerGap,
   attemptSummary,
-  gapFillItem,
   learnerId,
   signInWithGoogle,
+  startPractice,
   storedAttempts,
 } from './support.ts';
 
-const sequenceUrl = '/chapitres/chapter-1/sequences/greetings';
+const sequenceUrl = '/chapitres/chapter-2/sequences/family-words';
 
-test('attempts are kept per practice session and shared with the learner’s other devices', async ({
+test('attempts stay immutable and shared while local practice progress stays on one device', async ({
   page,
   browser,
   baseURL,
 }) => {
+  await page.clock.install();
   await page.goto(sequenceUrl);
   const email = await signInWithGoogle(page);
   await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 0');
 
-  await answerGap(page, 0, 'secret-wrong');
-  await answerGap(page, 0, 'naiz');
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 2');
-  // Checking an unchanged answer again is not a new attempt.
-  await gapFillItem(page, 0)
-    .getByRole('button', { name: /Vérifier/ })
-    .dblclick();
-  // Writes are sent in order, so any duplicate would be synchronized before this attempt.
-  await answerGap(page, 1, 'koa');
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 3 · en attente : 0');
+  await startPractice(page);
+  await page.getByRole('button', { name: 'aita', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
+  await expect(page.locator('.correction')).toContainText('ama');
+  await page.getByRole('button', { name: /Continuer/ }).click();
 
-  // Reopening the sequence starts a new practice session.
-  await page.reload();
-  await answerGap(page, 0, 'naiz');
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4');
+  await page.getByRole('button', { name: 'aita', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
+  await page.getByRole('button', { name: 'anaia', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
+  await page.getByRole('button', { name: 'ama', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
+  await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4 · en attente : 0');
 
-  const attempts = (await storedAttempts(await learnerId(email))).filter(
-    ({ fields }) => fields['itemId'] === 'greetings-gap-1',
+  const uid = await learnerId(email);
+  const firstItemAttempts = (await storedAttempts(uid)).filter(
+    ({ fields }) => fields['itemId'] === 'family-choice-1',
   );
-  expect(attempts).toHaveLength(3);
-  for (const { fields } of attempts) {
+  expect(firstItemAttempts).toHaveLength(2);
+  expect(firstItemAttempts.map(({ fields }) => fields['outcome']).sort()).toEqual([
+    'correct',
+    'incorrect',
+  ]);
+  expect(firstItemAttempts[0].fields['sessionId']).toBe(firstItemAttempts[1].fields['sessionId']);
+  for (const { fields } of firstItemAttempts) {
     expect(Object.keys(fields).sort()).toEqual([
       'chapterId',
       'itemId',
@@ -47,29 +55,36 @@ test('attempts are kept per practice session and shared with the learner’s oth
       'outcome',
       'sessionId',
     ]);
-    expect(fields).toMatchObject({ chapterId: 'chapter-1', itemId: 'greetings-gap-1' });
-    expect(JSON.stringify(fields)).not.toContain('secret-wrong');
+    expect(fields).toMatchObject({ chapterId: 'chapter-2', itemId: 'family-choice-1' });
+    expect(JSON.stringify(fields)).not.toContain('aita');
   }
-  const byDate = [...attempts].sort((a, b) =>
-    a.fields['occurredAt'].localeCompare(b.fields['occurredAt']),
+
+  await page.reload();
+  await startPractice(page);
+  await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
+  await page.getByRole('button', { name: /Recommencer/ }).click();
+  await page.getByRole('button', { name: 'ama', exact: true }).click();
+  await page.clock.fastForward(600);
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 5 · en attente : 0');
+  const allFirstItemAttempts = (await storedAttempts(uid)).filter(
+    ({ fields }) => fields['itemId'] === 'family-choice-1',
   );
-  expect(byDate.map(({ fields }) => fields['outcome'])).toEqual([
-    'incorrect',
-    'correct',
-    'correct',
-  ]);
-  expect(byDate[0].fields['sessionId']).toBe(byDate[1].fields['sessionId']);
-  expect(byDate[2].fields['sessionId']).not.toBe(byDate[0].fields['sessionId']);
+  expect(allFirstItemAttempts).toHaveLength(3);
+  expect(new Set(allFirstItemAttempts.map(({ fields }) => fields['sessionId'])).size).toBe(2);
 
   const otherDevice = await browser.newContext({ baseURL, serviceWorkers: 'block' });
   try {
     const otherPage = await otherDevice.newPage();
     await otherPage.goto(sequenceUrl);
     await signInWithGoogle(otherPage, 'Apprenant fictif', email);
-    await expect(attemptSummary(otherPage)).toContainText('Tentatives synchronisées : 4');
+    await expect(attemptSummary(otherPage)).toContainText('Tentatives synchronisées : 5');
+    await expect(otherPage.getByRole('button', { name: /Commencer les exercices/ })).toBeVisible();
+    await expect(otherPage.getByRole('button', { name: /Reprendre les exercices/ })).toHaveCount(0);
 
-    await answerGap(otherPage, 2, 'on');
-    await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 5');
+    await startPractice(otherPage);
+    await otherPage.getByRole('button', { name: 'ama', exact: true }).click();
+    await expect(otherPage.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+    await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 6');
   } finally {
     await otherDevice.close();
   }
