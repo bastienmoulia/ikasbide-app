@@ -12,7 +12,6 @@ import {
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
-import { DisplayModeControl } from '../display-mode-control';
 import { Icon } from '../icon';
 import { PracticeLayout } from '../practice-layout';
 import { ActivityPlayer, type ExerciseQuestion, type ItemResponse } from './activity-player';
@@ -29,15 +28,7 @@ import { ReadingPlayer } from './reading-player';
 
 @Component({
   selector: 'app-practice-runner',
-  imports: [
-    ActivityPlayer,
-    BilingualText,
-    DisplayModeControl,
-    Icon,
-    MatTooltipModule,
-    RouterLink,
-    ReadingPlayer,
-  ],
+  imports: [ActivityPlayer, BilingualText, Icon, MatTooltipModule, RouterLink, ReadingPlayer],
   styleUrls: ['./practice-runner.css'],
   template: `
     @if (progress(); as state) {
@@ -65,7 +56,6 @@ import { ReadingPlayer } from './reading-player';
                 [fr]="visitedReadingCount() + ' / ' + readingCount() + ' lectures parcourues'"
               />
             </p>
-            <app-display-mode-control />
           </div>
           <progress
             [value]="questions().length ? state.completedItemIds.length : visitedReadingCount()"
@@ -131,13 +121,13 @@ import { ReadingPlayer } from './reading-player';
                 <app-icon name="next" />
               </button>
             }
+            @if (!reviewing() && state.feedback && state.feedback.outcome !== 'correct') {
+              <button type="button" class="continue" (click)="continue()">
+                <app-bilingual-text eu="Jarraitu" fr="Continuer" />
+                <app-icon name="next" />
+              </button>
+            }
           </nav>
-          @if (!reviewing() && state.feedback && state.feedback.outcome !== 'correct') {
-            <button type="button" class="continue" (click)="continue()">
-              <app-bilingual-text eu="Jarraitu" fr="Continuer" />
-              <app-icon name="next" />
-            </button>
-          }
           @if (storageError(); as error) {
             <p role="alert">
               <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />

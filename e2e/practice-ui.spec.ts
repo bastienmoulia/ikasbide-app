@@ -18,6 +18,7 @@ test('practice keeps only a compact toolbar and restores the shell on exit or na
   await signInWithGoogle(page);
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
+  await page.getByRole('radio', { name: /Iluna Sombre/ }).click();
 
   await startPractice(page);
   await expect(page.getByRole('banner')).toHaveCount(0);
@@ -26,7 +27,8 @@ test('practice keeps only a compact toolbar and restores the shell on exit or na
   await expect(page.getByRole('link', { name: /Retour au chapitre/ })).toHaveCount(0);
   const toolbar = page.locator('.practice-toolbar');
   await expect(toolbar.getByRole('button', { name: /Arrêter pour le moment/ })).toBeVisible();
-  await expect(toolbar.getByRole('radio')).toHaveCount(3);
+  await expect(toolbar.getByRole('radio')).toHaveCount(0);
+  await expect(page.locator('html')).toHaveAttribute('data-display-mode', 'dark');
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '0');
   await expectBilingualPresentation(page);
 
@@ -42,7 +44,6 @@ test('practice keeps only a compact toolbar and restores the shell on exit or na
   ).toBe(true);
 
   await answer.fill('naiz');
-  await toolbar.getByRole('radio', { name: /Iluna Sombre/ }).click();
   await expect(answer).toHaveValue('naiz');
   await expect(page.locator('html')).toHaveAttribute('data-display-mode', 'dark');
   await toolbar.getByRole('button', { name: /Arrêter pour le moment/ }).click();
@@ -85,6 +86,32 @@ test('each written question receives focus and QCM questions never inherit a foc
   await expect(player.locator('.choice[aria-pressed="true"]')).toHaveCount(0);
 });
 
+test('previous and continue buttons share a row during question feedback', async ({ page }) => {
+  await page.clock.install();
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto(greetings);
+  await signInWithGoogle(page);
+  await startPractice(page);
+  await answerCurrentText(page, 'naiz');
+
+  await page.getByRole('textbox').fill('incorrect answer');
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(page.getByRole('status').filter({ hasText: /Incorrect|Oker/ })).toBeVisible();
+
+  const navigation = page.locator('.step-navigation');
+  const previous = navigation.getByRole('button', { name: /Précédent/ });
+  const continueButton = navigation.getByRole('button', { name: /Continuer/ });
+  await expect(previous).toBeVisible();
+  await expect(continueButton).toBeVisible();
+  const [previousBounds, continueBounds] = await Promise.all([
+    previous.boundingBox(),
+    continueButton.boundingBox(),
+  ]);
+  expect(previousBounds).not.toBeNull();
+  expect(continueBounds).not.toBeNull();
+  expect(Math.abs(previousBounds!.y - continueBounds!.y)).toBeLessThanOrEqual(1);
+});
+
 test('QCM choices shuffle per presentation, stay stable during answers and grade by id', async ({
   page,
 }) => {
@@ -96,8 +123,6 @@ test('QCM choices shuffle per presentation, stay stable during answers and grade
   const player = page.locator('app-activity-player');
   const choices = player.locator('.choice');
   await expect(choices).toHaveText(['aita', 'ama']);
-  await page.getByRole('radio', { name: /Iluna Sombre/ }).click();
-  await expect(page.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expect(choices).toHaveText(['aita', 'ama']);
   await page.getByRole('button', { name: 'aita', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
