@@ -229,10 +229,17 @@ test('translation and word-order warning variants show the canonical expected an
   await page.clock.fastForward(2_000);
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await page.getByRole('button', { name: /Continuer/ }).click();
+  await expect(page.getByRole('textbox')).toBeVisible();
+  await page.getByRole('textbox').fill('zira');
+  await page.getByRole('button', { name: /Egiaztatu|Vérifier/ }).click();
+  await expect(warning).toBeVisible();
+  await expect(page.locator('.correction > span')).toHaveText('zara');
+  await expect(page.locator('.correction > span')).toHaveAttribute('lang', 'eu');
+  await page.getByRole('button', { name: /Continuer/ }).click();
   await expect(page.locator('app-reading-player')).toBeVisible();
   await skipReadings(page);
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4');
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 5');
 });
 
 test('a learner can answer a multiple-choice item', async ({ page }) => {

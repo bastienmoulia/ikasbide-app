@@ -287,6 +287,30 @@
         },
         {
           "type": "activity",
+          "kind": "gap-fill",
+          "id": "origin-dialect-gap",
+          "title": {
+            "eu": "Osatu esaldia",
+            "fr": "Complétez la phrase"
+          },
+          "instructions": {
+            "eu": "Idatzi falta den hitza.",
+            "fr": "Écrivez le mot manquant."
+          },
+          "items": [
+            {
+              "id": "origin-dialect-gap-1",
+              "objectiveIds": ["say-origin-and-residence"],
+              "prompt": {
+                "eu": "Zu ez ___ Pantxoa.",
+                "fr": "Tu n’es pas Pantxoa."
+              },
+              "acceptedAnswers": ["zara"]
+            }
+          ]
+        },
+        {
+          "type": "activity",
           "kind": "oral-prompt",
           "id": "origin-pair-talk",
           "title": {

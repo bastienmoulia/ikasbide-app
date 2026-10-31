@@ -427,6 +427,14 @@ function gradeFreeResponse(
   const normalizedAccepted = acceptedAnswers.map(normalizeAnswer);
   if (normalizedAccepted.includes(normalizedAnswer)) return 'correct';
   if (warningAnswers.map(normalizeAnswer).includes(normalizedAnswer)) return 'correct-with-warning';
+  if (
+    normalizedAccepted.some(
+      (accepted) =>
+        accepted.replace(/(?<![\p{L}\p{N}_])zara(?![\p{L}\p{N}_])/gu, 'zira') === normalizedAnswer,
+    )
+  ) {
+    return 'correct-with-warning';
+  }
   return normalizedAccepted.some((accepted) => isNearMatch(normalizedAnswer, accepted))
     ? 'almost'
     : 'incorrect';

@@ -109,7 +109,13 @@ Les items `gap-fill`, `translation` et `word-order` peuvent ajouter un champ fac
 `warningAnswers`, une liste non vide de variantes acceptées avec avertissement. Par exemple :
 `"acceptedAnswers": ["zara"], "warningAnswers": ["zira"]`. Les réponses déjà présentes dans
 `acceptedAnswers` restent correctes sans avertissement, même si elles figurent aussi dans
-`warningAnswers` : aucun changement implicite de leur équivalence.
+`warningAnswers`.
+
+En basque, `zira` est également reconnu automatiquement avec avertissement lorsque la réponse
+attendue contient le mot `zara` (par exemple `Zu ez zira Pantxoa` pour `Zu ez zara Pantxoa`).
+La réponse attendue affichée reste `acceptedAnswers[0]`, ce qui recommande la forme standard
+`zara` sans rejeter la variante dialectale. Cette règle s'applique à toutes les questions à
+réponse libre comparables, même sans champ `warningAnswers`.
 
 Une correspondance exacte avec `warningAnswers`, après la même normalisation, affiche un
 avertissement distinct et la réponse attendue (`acceptedAnswers[0]`), en conservant le basque
