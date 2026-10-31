@@ -7,7 +7,7 @@ export default async function globalSetup(): Promise<void> {
   }
   const result = await runCurriculumCli(
     'import',
-    'tests/fixtures/curriculum.sample.json',
+    'tests/fixtures/curriculum.sample',
     '--project',
     'demo-ikasbide',
   );

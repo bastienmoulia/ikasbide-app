@@ -6,24 +6,50 @@ validées, puis publiées dans Firestore par la commande d’import. Une fois pu
 contenu est lisible par **tout compte Google connecté** : le dépôt privé protège les
 sources, pas le contenu publié.
 
-Le seul exemple versionné ici est [`tests/fixtures/curriculum.sample.json`](../tests/fixtures/curriculum.sample.json),
-un contenu fictif original utilisé par les tests. Il sert de modèle complet du format.
-Les types TypeScript du contrat sont dans
+Le seul exemple versionné ici est le dossier
+[`tests/fixtures/curriculum.sample`](../tests/fixtures/curriculum.sample), un contenu
+fictif original utilisé par les tests. Les types TypeScript du contrat sont dans
 [`src/app/curriculum/curriculum.model.ts`](../src/app/curriculum/curriculum.model.ts).
 
-## Hiérarchie
+## Hiérarchie et source v2
 
 ```text
-curriculum { $schema?, schemaVersion: 1, units[] }
-└─ unit { id, number, title, chapters[] }            nombre de chapitres libre
-   └─ chapter { id, number, title, objectives[], sequences[] }
-      ├─ objective { id, label }
+A1/
+├─ book.json { $schema?, schemaVersion: 2, id, title, chapters[] }
+└─ chapters/
+   └─ <chapterId>.json { $schema?, schemaVersion: 2, title, objectives[], sequences[] }
       └─ sequence { id, letter, title, contents[] }
          └─ content : ressource ou activité
+            └─ item { id, objectiveIds[], ... }
 ```
 
-Chaque texte affiché est bilingue : `{ "eu": "…", "fr": "…" }`, les deux valeurs non vides.
-Le basque est affiché en premier, le français en dessous.
+`book.json` porte l’identifiant explicite du livre (`a1`), son titre (`eu` obligatoire,
+`fr` facultatif) et la liste ordonnée des identifiants de chapitres. Chaque identifiant
+correspond à un fichier `chapters/<chapterId>.json`. Le numéro du chapitre est sa position
+dans la liste (à partir de 1) : aucun numéro n’est répété dans les sources. Les fichiers
+JSON de `chapters/` doivent tous être référencés par le livre. Les identifiants de
+chapitres restent globaux et uniques, car les tentatives les référencent seuls.
+
+La version 1 monolithique est refusée : les deux types de fichiers exigent
+`schemaVersion: 2`. Chaque fichier peut référencer son schéma avec `$schema` :
+
+```json
+// book.json
+{
+  "$schema": "../ikasbide-app/tools/curriculum/book.schema.json",
+  "schemaVersion": 2,
+  "id": "a1",
+  "title": { "eu": "Liburua" },
+  "chapters": ["chapter-1"]
+}
+```
+
+Pour `chapters/<chapterId>.json`, la référence est
+`../../ikasbide-app/tools/curriculum/chapter.schema.json`.
+
+Chaque texte affiché, sauf le titre éventuellement unilingue du livre, est bilingue :
+`{ "eu": "…", "fr": "…" }`, les deux valeurs non vides. Le basque est affiché en premier,
+le français en dessous.
 
 ## Types de contenus
 
@@ -44,36 +70,30 @@ un `id` et des `objectiveIds` qui référencent des objectifs du même chapitre.
 
 ## Règles de validation
 
-L’import refuse tout le fichier s’il contient une incohérence et liste toutes les erreurs
-avec leur chemin JSON. Aucune écriture n’a lieu si le fichier est invalide.
+L’import refuse le livre entier s’il contient une incohérence et liste toutes les erreurs
+avec leur chemin source. Aucune écriture n’a lieu si le livre ou un chapitre est invalide.
 
-- Clés inconnues interdites ; textes bilingues complets.
-- Identifiants en kebab-case, uniques dans leur portée (unités, chapitres, objectifs,
-  séquences, contenus, items, choix d’un item).
-- Numéros d’unités et de chapitres entiers positifs, strictement croissants dans l’ordre
-  du livre. L’appartenance d’un chapitre à une unité vient de l’imbrication, pas du numéro.
+- Clés inconnues interdites ; les textes bilingues doivent être complets.
+- Identifiants en kebab-case, uniques dans leur portée (chapitres, objectifs, séquences,
+  contenus, items, choix d’un item).
+- Les numéros de chapitre sont déduits de la position dans `book.json`.
 - Lettres de séquences : une majuscule, en ordre alphabétique.
 - QCM : au moins deux choix, réponses correctes existantes.
 - Remise en ordre : au moins deux mots ; chaque réponse acceptée utilise exactement ces
   mots (casse et ponctuation finale ignorées).
 - Chaque objectif est évalué par au moins trois items corrigés, sans quoi il ne pourrait
   jamais être acquis.
-- Au plus 400 documents publiés (limite d’un lot Firestore atomique).
+- Au plus 400 documents de livre et de chapitre publiés. Le nombre de suppressions
+  nécessaires est aussi vérifié avant de créer le lot atomique.
 
-## Schéma JSON
+## Schémas JSON
 
-[`tools/curriculum/curriculum.schema.json`](../tools/curriculum/curriculum.schema.json)
-décrit la structure ci-dessus (JSON Schema 2020-12) pour la complétion et les erreurs dans
-l’éditeur. Le fichier source peut le référencer par une clé racine facultative, ignorée à
-la publication :
-
-```json
-{ "$schema": "../ikasbide-app/tools/curriculum/curriculum.schema.json", "schemaVersion": 1, … }
-```
-
-Le schéma ne vérifie pas les règles croisées (unicité des identifiants, références aux
-objectifs et aux choix, ordre du livre, mots des remises en ordre, trois items par
-objectif) : `npm run curriculum:validate` reste la référence avant tout import.
+[`tools/curriculum/book.schema.json`](../tools/curriculum/book.schema.json) décrit le
+manifest `book.json` ; [`tools/curriculum/chapter.schema.json`](../tools/curriculum/chapter.schema.json)
+décrit un chapitre. Les deux utilisent JSON Schema 2020-12. Ils vérifient la structure ;
+la validation TypeScript reste la référence pour les fichiers manquants ou non référencés,
+l’unicité des identifiants, les références aux objectifs et aux choix, les mots des remises
+en ordre et les trois items par objectif.
 
 ## Correction des réponses
 
@@ -96,8 +116,8 @@ en premier et le français en dessous pour les libellés. La réponse attendue c
 langue propre. Le résultat `correct-with-warning` compte comme correct pour la maîtrise,
 mais la tentative n’est enregistrée et l’item n’est terminé qu’au clic sur « Continuer ».
 L’item ne sera pas reposé. Avant ce clic, recharger ou reprendre la série restaure
-l’avertissement sans enregistrer la tentative. Les approximations de ces variantes ne
-sont pas acceptées : « Presque ! » reste calculé uniquement à partir d’`acceptedAnswers`.
+l’avertissement sans enregistrer la tentative. Les approximations de ces variantes ne sont
+pas acceptées : « Presque ! » reste calculé uniquement à partir d’`acceptedAnswers`.
 Pour une remise en ordre, les variantes de `warningAnswers` doivent elles aussi utiliser
 exactement les mots proposés. Sans ce champ, le comportement existant reste inchangé.
 
@@ -105,23 +125,25 @@ exactement les mots proposés. Sans ce champ, le comportement existant reste inc
 
 | Document         | Contenu                                                                         |
 | ---------------- | ------------------------------------------------------------------------------- |
-| `units/{unitId}` | `number`, `title`, résumé des chapitres (`id`, `number`, `title`)               |
-| `chapters/{id}`  | `unitId`, `number`, `title`, `objectives`, `sequences` avec tous leurs contenus |
+| `books/{bookId}` | titre (`eu`, `fr` facultatif), sommaire ordonné (`id`, `number`, `title`)       |
+| `chapters/{id}`  | `bookId`, `number`, `title`, `objectives`, `sequences` avec tous leurs contenus |
 
-L’import est un remplacement complet et atomique : les unités et chapitres absents du
-fichier sont supprimés dans le même lot. Les réponses acceptées sont publiées pour la
-correction côté client (ticket #4) mais ne sont jamais affichées pendant la navigation.
+Chaque import publie le livre et tous ses chapitres dans un seul lot atomique. Les chapitres
+du livre absents de sa source sont supprimés dans le même lot ; les documents de l’ancienne
+collection `units` sont supprimés lors de la transition vers v2. Les documents d’autres
+livres restent inchangés. Les réponses acceptées sont publiées pour la correction côté client
+(ticket #4) mais ne sont jamais affichées pendant la navigation.
 
-Les [règles Firestore](../firestore.rules) autorisent la lecture de `units` et `chapters`
-aux seuls comptes connectés avec Google et interdisent toute écriture depuis
-l’application. Seul l’import, avec des identifiants d’administration, peut publier.
+Les [règles Firestore](../firestore.rules) autorisent la lecture de `books` et `chapters`
+aux seuls comptes connectés avec Google et interdisent toute écriture depuis l’application.
+Seul l’import, avec des identifiants d’administration, peut publier.
 
 ## Valider et importer
 
 Depuis ce dépôt, avec le dépôt de contenu cloné à côté :
 
 ```bash
-npm run curriculum:validate -- ../ikasbide-content/curriculum.json
+npm run curriculum:validate -- ../ikasbide-content/A1
 ```
 
 Pour publier en production, utiliser les identifiants par défaut de Google Cloud
@@ -129,7 +151,7 @@ Pour publier en production, utiliser les identifiants par défaut de Google Clou
 
 ```bash
 gcloud auth application-default login
-npm run curriculum:import -- ../ikasbide-content/curriculum.json --project PROJECT_ID
+npm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID
 ```
 
 La commande refuse un projet `demo-…` sans émulateur, et un vrai projet si
@@ -139,5 +161,5 @@ La commande refuse un projet `demo-…` sans émulateur, et un vrai projet si
 npm run emulators
 # dans un autre terminal
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
-  npm run curriculum:import -- tests/fixtures/curriculum.sample.json --project demo-ikasbide
+  npm run curriculum:import -- tests/fixtures/curriculum.sample --project demo-ikasbide
 ```

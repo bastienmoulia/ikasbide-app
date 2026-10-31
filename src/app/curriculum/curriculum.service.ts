@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { loadFirestore } from '../firestore';
-import type { Chapter, PublishedChapter, PublishedUnit } from './curriculum.model';
+import type { Chapter, PublishedBook, PublishedChapter } from './curriculum.model';
 import { CurriculumUnavailableOfflineError } from './curriculum-unavailable-offline';
 
-export interface UnitOverview extends PublishedUnit {
+export interface BookOverview extends PublishedBook {
   id: string;
 }
 
@@ -13,19 +13,19 @@ export interface UnitOverview extends PublishedUnit {
  */
 @Injectable({ providedIn: 'root' })
 export class CurriculumService {
-  async units(): Promise<UnitOverview[]> {
+  async books(): Promise<BookOverview[]> {
     const { db, sdk } = await loadFirestore();
-    const query = sdk.query(sdk.collection(db, 'units'), sdk.orderBy('number'));
+    const query = sdk.collection(db, 'books');
     const snapshot = await (navigator.onLine ? sdk.getDocs(query) : sdk.getDocsFromCache(query));
     // An empty cached result means "never loaded here", not "nothing published".
     if (snapshot.metadata.fromCache && snapshot.empty) {
       throw new CurriculumUnavailableOfflineError();
     }
-    return snapshot.docs.map((unit) => ({ id: unit.id, ...(unit.data() as PublishedUnit) }));
+    return snapshot.docs.map((book) => ({ id: book.id, ...(book.data() as PublishedBook) }));
   }
 
   /** Returns `null` when no chapter with this identifier is published. */
-  async chapter(id: string): Promise<(Chapter & { unitId: string }) | null> {
+  async chapter(id: string): Promise<(Chapter & { bookId: string }) | null> {
     const { db, sdk } = await loadFirestore();
     const ref = sdk.doc(db, 'chapters', id);
     let snapshot: import('firebase/firestore').DocumentSnapshot;

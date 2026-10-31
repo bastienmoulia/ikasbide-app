@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../tools/curriculum/book.schema.json",
+  "schemaVersion": 2,
+  "id": "a1",
+  "title": {
+    "eu": "Lehen urratsak"
+  },
+  "chapters": ["chapter-1", "chapter-2"]
+}

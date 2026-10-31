@@ -18,31 +18,34 @@ import { CurriculumService } from './curriculum.service';
     <h1>
       <app-bilingual-text eu="Zure ibilbidea" fr="Votre parcours" />
     </h1>
-    @if (units.isLoading()) {
+    @if (books.isLoading()) {
       <p id="curriculum-loading" role="status">
         <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
       </p>
       <mat-progress-bar mode="indeterminate" aria-labelledby="curriculum-loading" />
-    } @else if (units.error(); as error) {
+    } @else if (books.error(); as error) {
       @let message = errorMessage(error);
       <p role="alert">
         <app-bilingual-text [eu]="message.eu" [fr]="message.fr" />
       </p>
-    } @else if (units.value()?.length) {
+    } @else if (books.value()?.length) {
       <p class="muted">
         <app-bilingual-text
           eu="Jarraitu gomendatutako ordena edo ireki nahi duzun kapitulua."
           fr="Suivez l’ordre recommandé ou ouvrez le chapitre de votre choix."
         />
       </p>
-      @for (unit of units.value(); track unit.id) {
-        <section [attr.aria-labelledby]="'unit-' + unit.id">
-          <h2 [id]="'unit-' + unit.id" class="stack">
-            <app-bilingual-text [eu]="unit.number + '. unitatea'" [fr]="'Unité ' + unit.number" />
-            <app-bilingual-text [eu]="unit.title.eu" [fr]="unit.title.fr" />
+      @for (book of books.value()?.slice(0, 1); track book.id) {
+        <section [attr.aria-labelledby]="'book-' + book.id">
+          <h2 [id]="'book-' + book.id">
+            @if (book.title.fr; as titleFr) {
+              <app-bilingual-text [eu]="book.title.eu" [fr]="titleFr" />
+            } @else {
+              <span lang="eu">{{ book.title.eu }}</span>
+            }
           </h2>
           <ol class="cards">
-            @for (chapter of unit.chapters; track chapter.id) {
+            @for (chapter of book.chapters; track chapter.id) {
               <li [style.--chapter-accent]="color(chapter.number)">
                 <a [routerLink]="['/chapitres', chapter.id]">
                   <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
@@ -80,7 +83,7 @@ import { CurriculumService } from './curriculum.service';
 })
 export class CurriculumHome {
   private readonly curriculum = inject(CurriculumService);
-  protected readonly units = resource({ loader: () => this.curriculum.units() });
+  protected readonly books = resource({ loader: () => this.curriculum.books() });
   protected readonly color = chapterColor;
   protected readonly loading = loadingMessage;
   protected readonly errorMessage = loadErrorMessage;

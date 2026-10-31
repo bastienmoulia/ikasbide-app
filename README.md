@@ -18,9 +18,12 @@ Sur mobile, ces contrôles restent visibles et passent à la ligne si nécessair
 Le ticket [#3](https://github.com/bastienmoulia/ikasbide-app/issues/3) est livré et déployé avec
 l’**import et la navigation du curriculum** : une commande valide les sources JSON du
 dépôt privé `bastienmoulia/ikasbide-content` et les publie dans Firestore ; les
-apprenants connectés parcourent unités, chapitres colorés, objectifs et séquences.
+apprenants connectés parcourent le livre, ses chapitres colorés, ses objectifs et ses
+séquences.
 Aucun contenu du livre n’est embarqué dans ce dépôt ; voir
 [docs/curriculum.md](docs/curriculum.md).
+Le format v2 et la publication du livre complet sont décrits dans
+[l’ADR 0005](docs/adr/0005-book-and-chapter-publication.md).
 
 Les tickets [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) à
 [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) sont également livrés et
@@ -31,7 +34,7 @@ la page de chaque chapitre affiche la **carte de progression** de ses objectifs.
 les tickets d’implémentation de la V1
 ([#1](https://github.com/bastienmoulia/ikasbide-app/issues/1)) sont donc terminés.
 
-Un curriculum fictif de démonstration (**1 unité et 2 chapitres**) est publié pour
+Un curriculum fictif de démonstration (**1 livre et 2 chapitres**) est publié pour
 essayer l’application ; il ne constitue pas le contenu du livre. Les modes d’affichage
 clair, sombre et système ([#8](https://github.com/bastienmoulia/ikasbide-app/issues/8))
 sont la prochaine évolution prévue.
@@ -55,10 +58,10 @@ du dépôt voisin :
 
 ```bash
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
-  npm run curriculum:import -- ../ikasbide-content/curriculum.json --project demo-ikasbide
+  npm run curriculum:import -- ../ikasbide-content/A1 --project demo-ikasbide
 ```
 
-Sans accès au dépôt de contenu, utiliser `tests/fixtures/curriculum.sample.json`
+Sans accès au dépôt de contenu, utiliser `tests/fixtures/curriculum.sample`
 à la place. Cet import reste local et ne modifie pas la production.
 
 Pour vérifier le projet :
@@ -81,13 +84,17 @@ Conserver les deux dépôts côte à côte, sans cloner le contenu dans l’appl
 bastienmoulia/
 ├── ikasbide-app/
 └── ikasbide-content/
-    └── curriculum.json
+    └── A1/
+        ├── book.json
+        └── chapters/
+            ├── chapter-1.json
+            └── …
 ```
 
-Depuis `ikasbide-app`, valider le fichier avant de le publier :
+Depuis `ikasbide-app`, valider le livre complet avant de le publier :
 
 ```bash
-npm run curriculum:validate -- ../ikasbide-content/curriculum.json
+npm run curriculum:validate -- ../ikasbide-content/A1
 ```
 
 Pour publier dans le projet Firebase de production `ikasbide-app`, installer la
@@ -97,12 +104,13 @@ une fois un compte disposant des droits d’écriture Firestore :
 ```bash
 gcloud auth application-default login
 env -u FIRESTORE_EMULATOR_HOST npm run curriculum:import -- \
-  ../ikasbide-content/curriculum.json --project ikasbide-app
+  ../ikasbide-content/A1 --project ikasbide-app
 ```
 
-Les identifiants restent sur la machine, jamais dans les dépôts. **L’import remplace
-tout le curriculum publié** : les unités et chapitres absents du fichier sont
-supprimés. Une modification du contenu ne nécessite pas de redéployer l’application ;
+Les identifiants restent sur la machine, jamais dans les dépôts. **L’import publie le livre
+et tous ses chapitres dans un lot atomique** : les chapitres absents du manifeste sont
+supprimés, ainsi que l’ancienne collection `units`. Une modification du contenu ne
+nécessite pas de redéployer l’application ;
 rafraîchir la page après l’import. Un commit ou un push du dépôt de contenu ne
 déclenche pas cet import automatiquement.
 
@@ -111,7 +119,7 @@ Le format JSON et ses contraintes sont décrits dans
 
 ## Première version prévue
 
-L'application suivra l'organisation du livre : **Unité → Chapitre → Séquence**, avec des ressources pédagogiques et des activités composées d'items. Le glossaire définit ces termes et fait référence pour le projet.
+L'application suit l'organisation du livre : **Livre → Chapitre → Séquence**, avec des ressources pédagogiques et des activités composées d'items. Le glossaire définit ces termes et fait référence pour le projet.
 
 - Interface et contenu bilingues : basque en premier, traduction française dessous en plus petit.
 - Chapitre 1 disponible en premier, puis ajout des chapitres au fil de la progression.

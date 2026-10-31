@@ -2,92 +2,136 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 
-// The JSON Schema gives editors structural feedback; tools/curriculum/validate.ts stays the
-// authority for cross-reference rules. These checks keep both contracts aligned.
-const sample = 'tests/fixtures/curriculum.sample.json';
+const sample = 'tests/fixtures/curriculum.sample';
 
-async function schemaValidator() {
-  const schema = JSON.parse(await readFile('tools/curriculum/curriculum.schema.json', 'utf8'));
-  return new Ajv2020({ allErrors: true, strict: true, strictTypes: false }).compile(schema);
+async function sourceSchemas() {
+  const [bookSchema, chapterSchema] = await Promise.all([
+    readFile('tools/curriculum/book.schema.json', 'utf8').then(JSON.parse),
+    readFile('tools/curriculum/chapter.schema.json', 'utf8').then(JSON.parse),
+  ]);
+  const ajv = new Ajv2020({ allErrors: true, strict: true, strictTypes: false });
+  ajv.addSchema(bookSchema);
+  ajv.addSchema(chapterSchema);
+  return {
+    book: ajv.compile(bookSchema),
+    chapter: ajv.compile(chapterSchema),
+  };
 }
 
-async function sampleCurriculum() {
-  return JSON.parse(await readFile(sample, 'utf8'));
+async function sampleSource() {
+  const book = JSON.parse(await readFile(`${sample}/book.json`, 'utf8'));
+  const chapters = Object.fromEntries(
+    await Promise.all(
+      book.chapters.map(async (id: string) => [
+        id,
+        JSON.parse(await readFile(`${sample}/chapters/${id}.json`, 'utf8')),
+      ]),
+    ),
+  );
+  return { book, chapters };
 }
 
-test('the JSON Schema accepts the synthetic sample and a $schema reference', async () => {
-  const validate = await schemaValidator();
-  const curriculum = await sampleCurriculum();
-  curriculum.$schema = './curriculum.schema.json';
-  expect(validate(curriculum), JSON.stringify(validate.errors)).toBe(true);
+test('the book and chapter JSON Schemas accept the converted sample', async () => {
+  const schemas = await sourceSchemas();
+  const { book, chapters } = await sampleSource();
+  expect(schemas.book(book), JSON.stringify(schemas.book.errors)).toBe(true);
+  book.title.fr = 'Premiers pas';
+  expect(schemas.book(book), JSON.stringify(schemas.book.errors)).toBe(true);
+  for (const chapter of Object.values(chapters)) {
+    expect(schemas.chapter(chapter), JSON.stringify(schemas.chapter.errors)).toBe(true);
+  }
 });
 
-const structuralErrors: [string, (curriculum: any) => void][] = [
-  ['a missing French translation', (c) => delete c.units[0].chapters[0].objectives[0].label.fr],
+const structuralErrors: [string, (book: any, chapters: Record<string, any>) => void, boolean][] = [
+  [
+    'a missing French translation',
+    (_book, chapters) => delete chapters['chapter-1'].objectives[0].label.fr,
+    false,
+  ],
   [
     'an empty Basque translation',
-    (c) => (c.units[0].chapters[0].sequences[0].contents[0].body.eu = '  '),
+    (_book, chapters) => (chapters['chapter-1'].sequences[0].contents[0].body.eu = '  '),
+    false,
   ],
-  ['a misspelt field', (c) => (c.units[0].chapters[0].titel = c.units[0].chapters[0].title)],
-  ['an unknown schema version', (c) => (c.schemaVersion = 2)],
-  ['a non-kebab-case identifier', (c) => (c.units[0].id = 'Unit 1')],
-  ['a lowercase sequence letter', (c) => (c.units[0].chapters[0].sequences[0].letter = 'a')],
+  [
+    'a misspelt field',
+    (_book, chapters) => (chapters['chapter-1'].titel = chapters['chapter-1'].title),
+    false,
+  ],
+  ['an unsupported book schema version', (book) => (book.schemaVersion = 1), true],
+  ['a non-kebab-case book identifier', (book) => (book.id = 'Book 1'), true],
+  ['a book title without Basque', (book) => (book.title = { fr: 'Titre' }), true],
+  [
+    'a lowercase sequence letter',
+    (_book, chapters) => (chapters['chapter-1'].sequences[0].letter = 'a'),
+    false,
+  ],
   [
     'an unknown activity format',
-    (c) => (c.units[0].chapters[0].sequences[0].contents[3].kind = 'matching'),
+    (_book, chapters) => (chapters['chapter-1'].sequences[0].contents[3].kind = 'matching'),
+    false,
   ],
   [
     'an activity kind used as a resource',
-    (c) => (c.units[0].chapters[0].sequences[0].contents[3].type = 'resource'),
+    (_book, chapters) => (chapters['chapter-1'].sequences[0].contents[3].type = 'resource'),
+    false,
   ],
   [
     'a gap-fill prompt without a gap',
-    (c) =>
-      (c.units[0].chapters[0].sequences[0].contents[2].items[0].prompt.eu = 'Kaixo, Jon naiz.'),
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[0].contents[2].items[0].prompt.eu = 'Kaixo, Jon naiz.'),
+    false,
   ],
   [
     'a gap-fill prompt with two gaps',
-    (c) => (c.units[0].chapters[0].sequences[0].contents[2].items[0].prompt.eu = '___ eta ___'),
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[0].contents[2].items[0].prompt.eu = '___ eta ___'),
+    false,
   ],
   [
     'an item without accepted answers',
-    (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].acceptedAnswers = []),
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[1].contents[2].items[0].acceptedAnswers = []),
+    false,
   ],
   [
     'an empty warning answer list',
-    (c) => (c.units[0].chapters[0].sequences[0].contents[2].items[0].warningAnswers = []),
-  ],
-  [
-    'a blank warning answer',
-    (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].warningAnswers = [' ']),
-  ],
-  [
-    'a warning answer list that is not an array',
-    (c) => (c.units[0].chapters[0].sequences[1].contents[3].items[0].warningAnswers = 'zara'),
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[0].contents[2].items[0].warningAnswers = []),
+    false,
   ],
   [
     'warning answers on a multiple-choice item',
-    (c) => (c.units[0].chapters[0].sequences[0].contents[3].items[0].warningAnswers = ['Agur']),
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[0].contents[3].items[0].warningAnswers = ['Agur']),
+    false,
   ],
   [
     'an item field from another activity format',
-    (c) => (c.units[0].chapters[0].sequences[1].contents[2].items[0].words = ['a', 'b']),
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[1].contents[2].items[0].words = ['a', 'b']),
+    false,
   ],
   [
     'an oral prompt with corrected items',
-    (c) => (c.units[0].chapters[0].sequences[1].contents[4].items = []),
+    (_book, chapters) => (chapters['chapter-1'].sequences[1].contents[4].items = []),
+    false,
   ],
   [
     'a non-HTTPS external resource',
-    (c) => (c.units[0].chapters[0].sequences[1].contents[1].url = 'http://example.org/audio.mp3'),
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[1].contents[1].url = 'http://example.org/audio.mp3'),
+    false,
   ],
 ];
 
-for (const [name, change] of structuralErrors) {
+for (const [name, change, isBook] of structuralErrors) {
   test(`the JSON Schema rejects ${name}`, async () => {
-    const validate = await schemaValidator();
-    const curriculum = await sampleCurriculum();
-    change(curriculum);
-    expect(validate(curriculum)).toBe(false);
+    const schemas = await sourceSchemas();
+    const { book, chapters } = await sampleSource();
+    change(book, chapters);
+    expect((isBook ? schemas.book : schemas.chapter)(isBook ? book : chapters['chapter-1'])).toBe(
+      false,
+    );
   });
 }

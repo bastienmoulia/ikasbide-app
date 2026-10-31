@@ -1,0 +1,107 @@
+{
+  "$schema": "../../../../tools/curriculum/chapter.schema.json",
+  "schemaVersion": 2,
+  "title": {
+    "eu": "Familia",
+    "fr": "La famille"
+  },
+  "objectives": [
+    {
+      "id": "name-family-members",
+      "label": {
+        "eu": "Familiakoak izendatu",
+        "fr": "Nommer les membres de sa famille"
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "family-words",
+      "letter": "A",
+      "title": {
+        "eu": "Nire familia",
+        "fr": "Ma famille"
+      },
+      "contents": [
+        {
+          "type": "activity",
+          "kind": "multiple-choice",
+          "id": "family-choices",
+          "title": {
+            "eu": "Familiako hitzak",
+            "fr": "Les mots de la famille"
+          },
+          "instructions": {
+            "eu": "Aukeratu hitz egokia.",
+            "fr": "Choisissez le bon mot."
+          },
+          "items": [
+            {
+              "id": "family-choice-1",
+              "objectiveIds": ["name-family-members"],
+              "prompt": {
+                "eu": "« mère » euskaraz",
+                "fr": "« mère » en basque"
+              },
+              "choices": [
+                {
+                  "id": "ama",
+                  "lang": "eu",
+                  "text": "ama"
+                },
+                {
+                  "id": "aita",
+                  "lang": "eu",
+                  "text": "aita"
+                }
+              ],
+              "correctChoiceIds": ["ama"]
+            },
+            {
+              "id": "family-choice-2",
+              "objectiveIds": ["name-family-members"],
+              "prompt": {
+                "eu": "« père » euskaraz",
+                "fr": "« père » en basque"
+              },
+              "choices": [
+                {
+                  "id": "ama",
+                  "lang": "eu",
+                  "text": "ama"
+                },
+                {
+                  "id": "aita",
+                  "lang": "eu",
+                  "text": "aita"
+                }
+              ],
+              "correctChoiceIds": ["aita"]
+            },
+            {
+              "id": "family-choice-3",
+              "objectiveIds": ["name-family-members"],
+              "prompt": {
+                "eu": "« frère » euskaraz",
+                "fr": "« frère » en basque"
+              },
+              "choices": [
+                {
+                  "id": "anaia",
+                  "lang": "eu",
+                  "text": "anaia"
+                },
+                {
+                  "id": "aita",
+                  "lang": "eu",
+                  "text": "aita"
+                }
+              ],
+              "correctChoiceIds": ["anaia"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

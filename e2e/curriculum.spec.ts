@@ -30,15 +30,15 @@ async function expectFeedbackIconBesideText(page: Page): Promise<void> {
   expect(layout.textLeft).toBeGreaterThan(layout.iconRight);
 }
 
-test('a learner browses units, chapters and sequences in book order', async ({ page }) => {
+test('a learner browses a book, chapters and sequences in book order', async ({ page }) => {
   await page.goto('/');
   await signInWithGoogle(page);
 
-  const unit = page.getByRole('region', { name: /Unité 1/ });
-  await expect(unit.getByRole('heading', { level: 2 })).toHaveAccessibleName(
-    '1. unitatea Unité 1 Lehen urratsak Premiers pas',
-  );
-  const chapters = unit.getByRole('listitem');
+  const book = page.getByRole('region', { name: /Lehen urratsak/ });
+  const bookTitle = book.getByRole('heading', { level: 2 });
+  await expect(bookTitle).toHaveAccessibleName('Lehen urratsak');
+  await expect(bookTitle.locator('[lang="fr"]')).toHaveCount(0);
+  const chapters = book.getByRole('listitem');
   await expect(chapters).toHaveText([/Chapitre 1.*Les présentations/, /Chapitre 2.*La famille/]);
   // Colour follows the book's cycle but the chapter number always accompanies it.
   const chapter1Marker = chapters.nth(0).locator('.chapter-marker');

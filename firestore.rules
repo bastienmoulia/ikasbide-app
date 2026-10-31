@@ -7,7 +7,7 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.firebase.sign_in_provider == 'google.com';
     }
 
-    match /units/{unitId} {
+    match /books/{bookId} {
       allow read: if isGoogleLearner();
     }
 

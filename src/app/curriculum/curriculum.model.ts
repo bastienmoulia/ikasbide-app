@@ -6,25 +6,30 @@ export interface BilingualText {
   fr: string;
 }
 
-export interface CurriculumSource {
-  $schema?: string;
-  schemaVersion: 1;
-  units: UnitSource[];
+export interface BookTitle {
+  eu: string;
+  fr?: string;
 }
 
-export interface UnitSource {
+export interface CurriculumSource {
+  $schema?: string;
+  schemaVersion: 2;
   id: string;
-  number: number;
-  title: BilingualText;
+  title: BookTitle;
   chapters: Chapter[];
 }
 
-export interface Chapter {
-  id: string;
-  number: number;
+export interface ChapterSource {
+  $schema?: string;
+  schemaVersion: 2;
   title: BilingualText;
   objectives: LearningObjective[];
   sequences: Sequence[];
+}
+
+export interface Chapter extends Omit<ChapterSource, '$schema' | 'schemaVersion'> {
+  id: string;
+  number: number;
 }
 
 export interface LearningObjective {
@@ -143,14 +148,12 @@ export interface ChapterSummary {
   title: BilingualText;
 }
 
-/** Firestore `units/{unitId}`. */
-export interface PublishedUnit {
-  number: number;
-  title: BilingualText;
+/** Firestore `books/{bookId}`. */
+export interface PublishedBook {
+  title: BookTitle;
   chapters: ChapterSummary[];
 }
 
-/** Firestore `chapters/{chapterId}`. */
 export interface PublishedChapter extends Omit<Chapter, 'id'> {
-  unitId: string;
+  bookId: string;
 }

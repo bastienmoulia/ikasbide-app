@@ -4,16 +4,15 @@ Vocabulaire partagé pour l'application d'entraînement qui accompagne la progre
 
 ## Parcours pédagogique
 
-**Unité** :
-Grand ensemble pédagogique du livre qui regroupe cinq chapitres consécutifs : l'unité 1 contient les chapitres 1 à 5, l'unité 2 les chapitres 6 à 10.
-_Avoid_: Chapitre, Module
+**Livre** :
+Ensemble pédagogique composé de chapitres ordonnés et identifié par un titre et un identifiant.
+_Avoid_: Unité, Curriculum
 
 **Chapitre** :
-Partie numérotée d'une unité, organisée autour d'un thème et composée de séquences.
-_Avoid_: Unité
+Partie numérotée d'un livre, organisée autour d'un thème et composée de séquences.
 
 **Couleur de chapitre** :
-Couleur d'accent qui identifie un chapitre selon sa position dans l'unité, en suivant le cycle du livre : rouge, violet, bleu, vert, orange (chapitres 1 et 6 en rouge, 2 et 7 en violet, etc.).
+Couleur d'accent qui identifie un chapitre selon son numéro dans le livre, en suivant le cycle du livre : rouge, violet, bleu, vert, orange (chapitres 1 et 6 en rouge, 2 et 7 en violet, etc.).
 _Avoid_: Couleur d'unité
 
 **Mode d'affichage** :

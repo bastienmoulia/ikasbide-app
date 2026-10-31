@@ -1,41 +1,38 @@
-import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { publishCurriculum } from './publish.ts';
+import { readCurriculumDirectory } from './source.ts';
 import { validateCurriculum } from './validate.ts';
 
 const usage = `Usage:
-  npm run curriculum:validate -- <curriculum.json>
-  npm run curriculum:import -- <curriculum.json> --project <firebase-project-id>`;
+  npm run curriculum:validate -- <book-directory>
+  npm run curriculum:import -- <book-directory> --project <firebase-project-id>`;
 
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
     options: { project: { type: 'string' } },
   });
-  const [command, file] = positionals;
-  if (!file || !(command === 'validate' || (command === 'import' && values.project))) {
+  const [command, directory] = positionals;
+  if (
+    positionals.length !== 2 ||
+    !directory ||
+    !(command === 'validate' || (command === 'import' && values.project))
+  ) {
     throw new UsageError(usage);
   }
 
-  let source: unknown;
-  try {
-    source = JSON.parse(await readFile(file, 'utf8'));
-  } catch (error) {
-    throw new UsageError(`Cannot read ${file} as JSON: ${(error as Error).message}`);
-  }
-  const result = validateCurriculum(source);
+  const source = await readCurriculumDirectory(directory);
+  const result = validateCurriculum(source.book, source.chapterFiles, source.errors);
   if (!result.valid) {
     throw new UsageError(
-      `Invalid curriculum in ${file}; nothing was published.\n` +
+      `Invalid book in ${directory}; nothing was published.\n` +
         result.errors.map((error) => `  - ${error}`).join('\n'),
     );
   }
   const { curriculum } = result;
-  const chapterCount = curriculum.units.reduce((total, unit) => total + unit.chapters.length, 0);
+  const chapterCount = curriculum.chapters.length;
   if (command === 'validate') {
-    console.log(
-      `Valid curriculum: ${plural(curriculum.units.length, 'unit')}, ${plural(chapterCount, 'chapter')}.`,
-    );
+    console.log(`Valid book ${curriculum.id}: ${plural(chapterCount, 'chapter')}.`);
     return;
   }
   if (!values.project) throw new UsageError(usage);
@@ -60,7 +57,7 @@ async function main(): Promise<void> {
   );
   const summary = await publishCurriculum(getFirestore(app), curriculum);
   console.log(
-    `Published ${plural(summary.units, 'unit')}, ${plural(summary.chapters, 'chapter')} ` +
+    `Published book ${summary.bookId}, ${plural(summary.chapters, 'chapter')} ` +
       `to ${values.project} (${summary.removed} removed).`,
   );
 }

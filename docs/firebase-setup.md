@@ -77,7 +77,7 @@ Publier ensuite le curriculum depuis le dépôt privé de contenu (voir
 
 ```bash
 gcloud auth application-default login
-npm run curriculum:import -- ../ikasbide-content/curriculum.json --project PROJECT_ID
+npm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID
 ```
 
 Ouvrir l’URL HTTPS affichée par la CLI. Vérifier la connexion Google, la liste des
@@ -149,7 +149,7 @@ npm test
 `npm test` construit la PWA, écrit une configuration fictive **uniquement dans `dist/`**,
 et démarre les émulateurs Authentication (`127.0.0.1:9099`), Firestore
 (`127.0.0.1:8080`) et Hosting (`127.0.0.1:5100`) avec `demo-ikasbide`. Le curriculum
-fictif `tests/fixtures/curriculum.sample.json` y est importé avant les tests. La fenêtre Google de l’émulateur crée des
+fictif `tests/fixtures/curriculum.sample/` y est importé avant les tests. La fenêtre Google de l’émulateur crée des
 identités synthétiques `example.test` ; aucun compte Google ou accès à la production
 n’est nécessaire. Les émulateurs sont arrêtés à la fin, même en cas d’échec.
 Ne saisir aucun compte réel dans cette fenêtre. Un test ne modifie jamais
@@ -178,7 +178,7 @@ npx firebase emulators:exec --project demo-ikasbide --only firestore \
 ```
 
 Les tests couvrent les vues mobile et bureau, le parcours Google émulé, la navigation
-dans les unités, chapitres et séquences, les droits de lecture Firestore, l’import et
+dans les livres, chapitres et séquences, les droits de lecture Firestore, l’import et
 ses refus de fichiers invalides, la persistance,
 la déconnexion, l’annulation de la fenêtre, les configurations absentes/invalides et
 l’installabilité Chromium de la PWA réellement servie par Hosting. Ils ne valident
