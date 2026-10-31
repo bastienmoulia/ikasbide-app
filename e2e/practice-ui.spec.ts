@@ -10,6 +10,42 @@ import {
 const greetings = '/chapitres/chapter-1/sequences/greetings';
 const family = '/chapitres/chapter-2/sequences/family-words';
 
+for (const answer of ['ele', 'naiz']) {
+  test(`gap-fill feedback keeps "${answer}" inline within the sentence`, async ({ page }) => {
+    await page.clock.install();
+    await page.goto(greetings);
+    await signInWithGoogle(page);
+    await startPractice(page);
+    await page.getByRole('textbox').fill(answer);
+    await page.getByRole('button', { name: /Vérifier/ }).click();
+
+    const prompt = page.locator('app-activity-player .prompt');
+    await expect(prompt).toHaveText(`Kaixo, Jon ${answer}.`);
+    const fragments = prompt.locator('span');
+    await expect(fragments).toHaveCount(3);
+    const bounds = await fragments.evaluateAll((elements) =>
+      elements.map((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const { top, bottom } = range.getBoundingClientRect();
+        return { top, bottom };
+      }),
+    );
+    expect(Math.max(...bounds.map(({ top }) => top))).toBeLessThan(
+      Math.min(...bounds.map(({ bottom }) => bottom)),
+    );
+    if (answer === 'ele') {
+      const submittedAnswer = fragments.nth(1);
+      await expect(submittedAnswer).toHaveCSS('font-weight', '700');
+      const errorColor = await page.locator('app-activity-feedback').evaluate((element) => {
+        return getComputedStyle(element).color;
+      });
+      await expect(submittedAnswer).toHaveCSS('color', errorColor);
+      await expect(page.locator('.correction')).toContainText('naiz');
+    }
+  });
+}
+
 test('practice keeps only a compact toolbar and restores the shell on exit or navigation', async ({
   page,
 }) => {

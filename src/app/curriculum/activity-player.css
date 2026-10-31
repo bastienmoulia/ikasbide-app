@@ -39,6 +39,11 @@ form {
   line-height: 1.8;
 }
 
+.gap-answer.answer-error {
+  color: var(--app-feedback-incorrect);
+  font-weight: 700;
+}
+
 .prompt-translation {
   color: var(--app-text-muted);
 }

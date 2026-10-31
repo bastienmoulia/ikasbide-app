@@ -139,9 +139,14 @@ class ActivityFeedback {
             <p class="prompt">
               <span lang="eu">{{ currentQuestion.item.prompt.eu.slice(0, blank) }}</span>
               @if (feedback(); as result) {
-                <span class="answer" [attr.lang]="answerLang(currentQuestion, result.answer)">{{
-                  result.answer
-                }}</span>
+                <span
+                  class="gap-answer"
+                  [class.answer-error]="
+                    result.outcome === 'incorrect' || result.outcome === 'almost'
+                  "
+                  [attr.lang]="answerLang(currentQuestion, result.answer)"
+                  >{{ result.answer }}</span
+                >
               } @else {
                 <label class="inline-answer">
                   <app-bilingual-text class="visually-hidden" eu="Erantzuna" fr="Réponse" />
