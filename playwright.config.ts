@@ -15,6 +15,13 @@ export default defineConfig({
   projects: [
     { name: 'desktop', testDir: './e2e', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', testDir: './e2e', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'webkit',
+      testDir: './e2e',
+      testMatch: 'display-mode.spec.ts',
+      grep: /selector|tooltips/,
+      use: { ...devices['Desktop Safari'] },
+    },
     { name: 'firestore', testDir: './tests/firestore' },
   ],
 });

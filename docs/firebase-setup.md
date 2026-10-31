@@ -141,7 +141,7 @@ de ce même cache, puis sont synchronisées au retour du réseau.
 ## Vérification sans projet de production
 
 ```bash
-npx playwright install chromium
+npx playwright install chromium webkit
 npm run typecheck
 npm test
 ```

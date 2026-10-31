@@ -42,7 +42,7 @@ Avec Node 24.15+ (ou 22.22.3+) :
 
 ```bash
 npm ci
-npx playwright install chromium
+npx playwright install chromium webkit
 npm run build:e2e
 npm run emulators
 ```

@@ -89,7 +89,9 @@ body {
 
 // Material tooltips accept plain text only; keep Basque above a smaller French line.
 .display-mode-tooltip .mat-mdc-tooltip-surface {
-  white-space: pre-line;
+  // WebKit's intrinsic width does not account for the larger first line.
+  min-width: 6rem;
+  white-space: pre;
   font-size: 0.75rem;
   line-height: 1.4;
 

@@ -297,7 +297,7 @@ test('the selector is keyboard-operable and fits a narrow mobile viewport', asyn
   const tooltip = page.locator('.display-mode-tooltip');
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toHaveText('Sistema\nSystème');
-  await expect(tooltip.locator('.mat-mdc-tooltip-surface')).toHaveCSS('white-space', 'pre-line');
+  await expect(tooltip.locator('.mat-mdc-tooltip-surface')).toHaveCSS('white-space', 'pre');
   const surface = tooltip.locator('.mat-mdc-tooltip-surface');
   const sizes = await surface.evaluate((element) => ({
     basque: Number.parseFloat(getComputedStyle(element, '::first-line').fontSize),
@@ -327,6 +327,25 @@ test('Material tooltips describe each theme on hover', async ({ page, isMobile }
     const tooltip = page.locator('.display-mode-tooltip');
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toHaveText(`${eu}\n${fr}`);
+    await expect
+      .poll(
+        () =>
+          tooltip.locator('.mat-mdc-tooltip-surface').evaluate((element) => {
+            const text = element.firstChild;
+            if (!(text instanceof Text)) throw new Error('Expected a plain-text Material tooltip.');
+            const lines = new Set<number>();
+            for (let index = 0; index < text.length; index += 1) {
+              if (text.data[index] === '\n') continue;
+              const range = document.createRange();
+              range.setStart(text, index);
+              range.setEnd(text, index + 1);
+              lines.add(range.getBoundingClientRect().top);
+            }
+            return lines.size;
+          }),
+        { message: `${eu} / ${fr} must stay on exactly two lines` },
+      )
+      .toBe(2);
     await page.mouse.move(0, 0);
     await expect(tooltip).toBeHidden();
   }

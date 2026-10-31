@@ -23,7 +23,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run typecheck
       - run: npm run format:check
       - run: npm test
