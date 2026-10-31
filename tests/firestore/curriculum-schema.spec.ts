@@ -1,4 +1,6 @@
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 
@@ -40,6 +42,22 @@ test('the book and chapter JSON Schemas accept the converted sample', async () =
   for (const chapter of Object.values(chapters)) {
     expect(schemas.chapter(chapter), JSON.stringify(schemas.chapter.errors)).toBe(true);
   }
+});
+
+test('a standalone schema consumer can resolve the chapter schema and its references', async () => {
+  const chapterPath = resolve(`${sample}/chapters/chapter-1.json`);
+  const chapter = JSON.parse(await readFile(chapterPath, 'utf8'));
+  const schemaUrl = new URL(chapter.$schema, pathToFileURL(chapterPath));
+  const ajv = new Ajv2020({
+    allErrors: true,
+    strict: true,
+    strictTypes: false,
+    loadSchema: async (uri) => JSON.parse(await readFile(new URL(uri), 'utf8')),
+  });
+
+  const validate = await ajv.compileAsync({ $ref: schemaUrl.href });
+
+  expect(validate(chapter), JSON.stringify(validate.errors)).toBe(true);
 });
 
 const structuralErrors: [string, (book: any, chapters: Record<string, any>) => void, boolean][] = [

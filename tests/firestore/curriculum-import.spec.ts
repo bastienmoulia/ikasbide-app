@@ -1,14 +1,14 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { runCurriculumCli } from './run-curriculum-cli.ts';
 
 const sample = 'tests/fixtures/curriculum.sample';
-const bookSchema =
-  'https://github.com/bastienmoulia/ikasbide-app/tools/curriculum/book.schema.json';
-const chapterSchema =
-  'https://github.com/bastienmoulia/ikasbide-app/tools/curriculum/chapter.schema.json';
+const bookSchema = pathToFileURL(resolve('tools/curriculum/book.schema.json')).href;
+const chapterSchema = pathToFileURL(resolve('tools/curriculum/chapter.schema.json')).href;
 let environment: RulesTestEnvironment;
 
 test.beforeAll(async () => {

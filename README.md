@@ -107,12 +107,23 @@ env -u FIRESTORE_EMULATOR_HOST npm run curriculum:import -- \
   ../ikasbide-content/A1 --project ikasbide-app
 ```
 
-Les identifiants restent sur la machine, jamais dans les dépôts. **L’import publie le livre
-et tous ses chapitres dans un lot atomique** : les chapitres absents du manifeste sont
-supprimés, ainsi que l’ancienne collection `units`. Une modification du contenu ne
-nécessite pas de redéployer l’application ;
-rafraîchir la page après l’import. Un commit ou un push du dépôt de contenu ne
-déclenche pas cet import automatiquement.
+Les identifiants restent sur la machine, jamais dans les dépôts. Sans `--chapter`,
+**l’import publie le livre et tous ses chapitres dans une transaction atomique** : les chapitres
+absents du manifeste sont supprimés, ainsi que l’ancienne collection `units`.
+
+Pour republier seulement certains chapitres après une première publication complète :
+
+```bash
+env -u FIRESTORE_EMULATOR_HOST npm run curriculum:import -- \
+  ../ikasbide-content/A1 --project ikasbide-app --chapter chapter-1 chapter-2
+```
+
+Le livre entier est toujours validé, puis son sommaire et les seuls chapitres ciblés sont
+publiés, sans aucune suppression. Si un chapitre non ciblé n’est pas publié ou si son numéro
+ou son titre a changé, l’import est refusé : cibler aussi ce chapitre ou publier tout le
+livre. Une modification du contenu ne nécessite pas de redéployer l’application ;
+rafraîchir la page après l’import. Un commit ou un push du dépôt de contenu ne déclenche
+pas cet import automatiquement.
 
 Le format JSON et ses contraintes sont décrits dans
 [docs/curriculum.md](docs/curriculum.md).

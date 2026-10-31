@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/bastienmoulia/ikasbide-app/tools/curriculum/book.schema.json",
+  "$id": "book.schema.json",
   "title": "Ikasbide book",
   "description": "Structural contract for book.json and shared chapter content. Cross-reference rules are checked by npm run curriculum:validate.",
   "type": "object",

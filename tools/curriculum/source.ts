@@ -1,7 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-
-const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+import { idPattern } from './identifiers.ts';
 
 export interface CurriculumDirectory {
   book: unknown;

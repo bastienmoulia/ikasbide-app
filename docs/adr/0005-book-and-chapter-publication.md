@@ -22,16 +22,20 @@ to change one chapter. The application also grouped the chapter list by unit.
 - Display the book's ordered chapter list without unit grouping. Chapter colors continue
   to use the chapter number; progress behavior is unchanged.
 - Validate the entire book and every source chapter before any write. A complete import
-  writes the book and its chapters in one atomic Firestore batch, removes obsolete chapters
-  belonging to that book, and removes legacy `units` documents. An invalid or missing
-  source file prevents publication.
-- Reject v1 sources rather than maintaining a compatibility path. The import is limited
-  to 400 book and chapter documents; required deletions must also fit the atomic batch.
-- Partial `--chapter` publication remains a separate follow-up: when implemented, it must
-  still validate the whole book, republish the book document, and never delete documents.
-  The #29 implementation supports only complete-book publication.
-- Keep the conversion of real curriculum content outside this repository's implementation
-  tranche. Preserve existing chapter IDs when that content is migrated.
+  writes the book and its chapters in one atomic Firestore transaction, removes obsolete
+  chapters belonging to that book, and removes legacy `units` documents. An invalid or
+  missing source file prevents publication.
+- A partial `--chapter` import validates the whole book, republishes its summary and only
+  the selected chapters, and never deletes documents. Reject it if an unselected chapter is
+  missing or its published number or title differs, so the summary and chapter views cannot
+  diverge; select all affected chapters or publish the complete book instead.
+- Check chapter ownership and partial-publication consistency inside the same transaction
+  as the writes. Concurrent publications recheck these constraints rather than claiming the
+  same chapter or leaving its summary out of sync.
+- Reject v1 sources rather than maintaining a compatibility path. Each atomic publication
+  is limited to 400 writes, including deletions; validation itself does not limit book size.
+- Convert real curriculum content in its private repository, preserving existing chapter IDs
+  without adding that content or the one-off migration script to this repository.
 
 ## Consequences
 

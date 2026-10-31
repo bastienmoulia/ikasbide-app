@@ -4,12 +4,11 @@ import type {
   CurriculumSource,
   Resource,
 } from '../../src/app/curriculum/curriculum.model.ts';
+import { idPattern } from './identifiers.ts';
 
 export type ValidationResult =
   { valid: true; curriculum: CurriculumSource } | { valid: false; errors: string[] };
 
-// Firestore batches are limited to 500 writes; stale-document deletions share the budget.
-export const maxPublishedDocuments = 400;
 const gapMarker = '___';
 // Below this count an objective could never be acquired (README: three distinct items).
 const minCorrectedItemsPerObjective = 3;
@@ -21,8 +20,6 @@ const activityKinds: readonly Activity['kind'][] = [
   'word-order',
   'oral-prompt',
 ];
-const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
 type JsonObject = Record<string, unknown>;
 
 /** Validates the book manifest and every chapter file before returning normalized data. */
@@ -364,13 +361,6 @@ export function validateCurriculum(
       }
     }
   });
-
-  if (chapterIds.size + 1 > maxPublishedDocuments) {
-    fail(
-      'book.json.chapters',
-      `cannot publish more than ${maxPublishedDocuments} book and chapter documents at once`,
-    );
-  }
 
   return errors.length
     ? { valid: false, errors }

@@ -31,12 +31,12 @@ JSON de `chapters/` doivent tous être référencés par le livre. Les identifia
 chapitres restent globaux et uniques, car les tentatives les référencent seuls.
 
 La version 1 monolithique est refusée : les deux types de fichiers exigent
-`schemaVersion: 2`. Chaque fichier peut référencer son schéma avec `$schema` :
+`schemaVersion: 2`. Lorsque les dépôts `ikasbide-content` et `ikasbide-app` sont
+frères, le fichier `ikasbide-content/A1/book.json` peut référencer son schéma :
 
 ```json
-// book.json
 {
-  "$schema": "../ikasbide-app/tools/curriculum/book.schema.json",
+  "$schema": "../../ikasbide-app/tools/curriculum/book.schema.json",
   "schemaVersion": 2,
   "id": "a1",
   "title": { "eu": "Liburua" },
@@ -45,7 +45,7 @@ La version 1 monolithique est refusée : les deux types de fichiers exigent
 ```
 
 Pour `chapters/<chapterId>.json`, la référence est
-`../../ikasbide-app/tools/curriculum/chapter.schema.json`.
+`../../../ikasbide-app/tools/curriculum/chapter.schema.json`.
 
 Chaque texte affiché, sauf le titre éventuellement unilingue du livre, est bilingue :
 `{ "eu": "…", "fr": "…" }`, les deux valeurs non vides. Le basque est affiché en premier,
@@ -83,15 +83,16 @@ avec leur chemin source. Aucune écriture n’a lieu si le livre ou un chapitre 
   mots (casse et ponctuation finale ignorées).
 - Chaque objectif est évalué par au moins trois items corrigés, sans quoi il ne pourrait
   jamais être acquis.
-- Au plus 400 documents de livre et de chapitre publiés. Le nombre de suppressions
-  nécessaires est aussi vérifié avant de créer le lot atomique.
+- Le livre entier est validé quel que soit le nombre de chapitres. Chaque publication
+  est limitée à 400 écritures, suppressions comprises, dans sa transaction atomique.
 
 ## Schémas JSON
 
 [`tools/curriculum/book.schema.json`](../tools/curriculum/book.schema.json) décrit le
 manifest `book.json` ; [`tools/curriculum/chapter.schema.json`](../tools/curriculum/chapter.schema.json)
-décrit un chapitre. Les deux utilisent JSON Schema 2020-12. Ils vérifient la structure ;
-la validation TypeScript reste la référence pour les fichiers manquants ou non référencés,
+décrit un chapitre. Les deux utilisent JSON Schema 2020-12 et doivent rester dans le même
+dossier : le schéma de chapitre référence celui du livre. Ils vérifient la structure ; la
+validation TypeScript reste la référence pour les fichiers manquants ou non référencés,
 l’unicité des identifiants, les références aux objectifs et aux choix, les mots des remises
 en ordre et les trois items par objectif.
 
@@ -128,11 +129,24 @@ exactement les mots proposés. Sans ce champ, le comportement existant reste inc
 | `books/{bookId}` | titre (`eu`, `fr` facultatif), sommaire ordonné (`id`, `number`, `title`)       |
 | `chapters/{id}`  | `bookId`, `number`, `title`, `objectives`, `sequences` avec tous leurs contenus |
 
-Chaque import publie le livre et tous ses chapitres dans un seul lot atomique. Les chapitres
-du livre absents de sa source sont supprimés dans le même lot ; les documents de l’ancienne
-collection `units` sont supprimés lors de la transition vers v2. Les documents d’autres
-livres restent inchangés. Les réponses acceptées sont publiées pour la correction côté client
-(ticket #4) mais ne sont jamais affichées pendant la navigation.
+Sans `--chapter`, l’import publie le livre et tous ses chapitres dans une transaction atomique.
+Les chapitres du livre absents de sa source et les documents de l’ancienne collection
+`units` sont supprimés dans la même transaction. Avec `--chapter`, seul le livre et les
+chapitres sélectionnés sont publiés ; aucune suppression n’a lieu. Les documents d’autres
+livres restent inchangés.
+
+Le sommaire republié doit rester cohérent avec les chapitres non ciblés : chacun doit déjà
+être publié pour ce livre avec le même numéro et le même titre que dans la source. Sinon,
+l’import partiel est refusé avant toute écriture ; cibler aussi les chapitres concernés ou
+publier le livre complet. Un identifiant de chapitre déjà attribué à un autre livre est
+également refusé. Ces vérifications et les écritures partagent la même transaction, y compris
+en cas de publications simultanées. Chaque transaction comprend au plus 400 écritures, y
+compris les suppressions : un grand livre peut donc être validé et publié par chapitre même
+si sa publication complète dépasse cette limite.
+
+Les réponses acceptées sont publiées pour la correction côté client (ticket #4) mais ne
+sont jamais affichées pendant la navigation. Aucun versionnement du cache hors ligne n’est
+ajouté ; Firestore relit les chapitres lors de leur prochaine consultation en ligne.
 
 Les [règles Firestore](../firestore.rules) autorisent la lecture de `books` et `chapters`
 aux seuls comptes connectés avec Google et interdisent toute écriture depuis l’application.
@@ -153,6 +167,17 @@ Pour publier en production, utiliser les identifiants par défaut de Google Clou
 gcloud auth application-default login
 npm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID
 ```
+
+Pour ne republier que certains chapitres, après une publication initiale complète :
+
+```bash
+npm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID \
+  --chapter chapter-1 chapter-2
+```
+
+L’option `--chapter` peut aussi être répétée (`--chapter chapter-1 --chapter chapter-2`).
+La validation porte toujours sur tous les fichiers du livre, même ceux qui ne sont pas
+sélectionnés.
 
 La commande refuse un projet `demo-…` sans émulateur, et un vrai projet si
 `FIRESTORE_EMULATOR_HOST` est défini. Pour essayer l’import en local :

@@ -5,17 +5,37 @@ import { validateCurriculum } from './validate.ts';
 
 const usage = `Usage:
   npm run curriculum:validate -- <book-directory>
-  npm run curriculum:import -- <book-directory> --project <firebase-project-id>`;
+  npm run curriculum:import -- <book-directory> --project <firebase-project-id> [--chapter <id> ...]`;
 
 async function main(): Promise<void> {
-  const { positionals, values } = parseArgs({
+  const { positionals, values, tokens } = parseArgs({
     allowPositionals: true,
-    options: { project: { type: 'string' } },
+    options: { project: { type: 'string' }, chapter: { type: 'string', multiple: true } },
+    tokens: true,
   });
+  const chapterIds = values.chapter ? [...values.chapter] : undefined;
+  let positionalCount = 0;
+  let collectingChapters = false;
+  for (const token of tokens) {
+    if (token.kind === 'option') {
+      collectingChapters = token.name === 'chapter';
+    } else if (token.kind === 'positional') {
+      if (positionalCount++ < 2) {
+        collectingChapters = false;
+      } else if (collectingChapters && chapterIds) {
+        chapterIds.push(token.value);
+      } else {
+        throw new UsageError(usage);
+      }
+    } else {
+      collectingChapters = false;
+    }
+  }
   const [command, directory] = positionals;
   if (
-    positionals.length !== 2 ||
+    positionals.length < 2 ||
     !directory ||
+    (command === 'validate' && chapterIds) ||
     !(command === 'validate' || (command === 'import' && values.project))
   ) {
     throw new UsageError(usage);
@@ -55,7 +75,7 @@ async function main(): Promise<void> {
       ? { projectId: values.project }
       : { projectId: values.project, credential: applicationDefault() },
   );
-  const summary = await publishCurriculum(getFirestore(app), curriculum);
+  const summary = await publishCurriculum(getFirestore(app), curriculum, chapterIds);
   console.log(
     `Published book ${summary.bookId}, ${plural(summary.chapters, 'chapter')} ` +
       `to ${values.project} (${summary.removed} removed).`,
