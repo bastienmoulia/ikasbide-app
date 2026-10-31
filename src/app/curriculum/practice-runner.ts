@@ -45,16 +45,8 @@ import { ReadingPlayer } from './reading-player';
               <app-icon name="previous" />
             </button>
             <p class="progress-label">
-              <app-bilingual-text
-                [eu]="state.completedItemIds.length + ' / ' + questions().length + ' ariketa'"
-                [fr]="
-                  state.completedItemIds.length + ' / ' + questions().length + ' exercices réussis'
-                "
-              />
-              <app-bilingual-text
-                [eu]="visitedReadingCount() + ' / ' + readingCount() + ' irakurgai'"
-                [fr]="visitedReadingCount() + ' / ' + readingCount() + ' lectures parcourues'"
-              />
+              {{ state.completedItemIds.length + visitedReadingCount() }} /
+              {{ questions().length + readingCount() }}
             </p>
           </div>
           <progress
