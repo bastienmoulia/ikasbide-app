@@ -294,16 +294,42 @@ test('the selector is keyboard-operable and fits a narrow mobile viewport', asyn
   await expect(system).toBeFocused();
   await expect(control.locator('app-icon')).toHaveCount(3);
   await expect(page.locator('.display-mode-label')).toHaveCount(0);
-  const tooltip = page.getByRole('tooltip');
-  await expect(tooltip.locator('[lang="eu"]')).toHaveText('Sistema');
-  await expect(tooltip.locator('[lang="fr"]')).toHaveText('Système');
+  const tooltip = page.locator('.display-mode-tooltip');
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toHaveText('Sistema\nSystème');
+  await expect(tooltip.locator('.mat-mdc-tooltip-surface')).toHaveCSS('white-space', 'pre-line');
+  const surface = tooltip.locator('.mat-mdc-tooltip-surface');
+  const sizes = await surface.evaluate((element) => ({
+    basque: Number.parseFloat(getComputedStyle(element, '::first-line').fontSize),
+    french: Number.parseFloat(getComputedStyle(element).fontSize),
+  }));
+  expect(sizes.basque).toBeGreaterThan(sizes.french);
   await page.keyboard.press('Escape');
-  await expect(tooltip).toHaveCount(0);
+  await expect(tooltip).toBeHidden();
   await page.keyboard.press('ArrowLeft');
   await expect(control.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
 
   await expect(control).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('Material tooltips describe each theme on hover', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Touch devices show Material tooltips on long press instead of hover.');
+  await page.goto('/');
+
+  for (const [eu, fr] of [
+    ['Argia', 'Clair'],
+    ['Iluna', 'Sombre'],
+    ['Sistema', 'Système'],
+  ]) {
+    const option = displayModeControl(page).getByRole('radio', { name: `${eu} ${fr}` });
+    await option.hover();
+    const tooltip = page.locator('.display-mode-tooltip');
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveText(`${eu}\n${fr}`);
+    await page.mouse.move(0, 0);
+    await expect(tooltip).toBeHidden();
+  }
 });
 
 test('a failed local save keeps the current mode and explains the limitation bilingually', async ({

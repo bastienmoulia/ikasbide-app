@@ -133,6 +133,11 @@ Utiliser le composant `app-bilingual-text` avec ses deux entrées obligatoires
 `lang` de sa langue pour les lecteurs d’écran ; les libellés accessibles des
 contrôles conservent les deux langues.
 
+Le sélecteur de thème utilise les boutons à bascule et les infobulles Angular
+Material. Ces infobulles n’acceptent que du texte : les deux langues sont séparées
+par un retour à la ligne, avec le français plus petit via la classe globale
+`display-mode-tooltip`, sans balises `lang` distinctes.
+
 ### Correction et progression
 
 La page de séquence présente un sommaire et un bouton « Commencer le parcours » ou
