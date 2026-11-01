@@ -78,7 +78,7 @@ import { PracticeLayout } from './practice-layout';
               role="dialog"
               aria-modal="false"
               aria-label="Kontua / Compte"
-              cdkTrapFocus
+              [cdkTrapFocus]="false"
               [cdkTrapFocusAutoCapture]="true"
             >
               <div class="account-menu-display-mode">

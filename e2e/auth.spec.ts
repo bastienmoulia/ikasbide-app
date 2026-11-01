@@ -125,3 +125,14 @@ test('the account menu stays open while changing display mode and dismisses outs
   await trigger.click();
   await expect(menu).toBeVisible();
 });
+
+test('the account menu does not trap keyboard focus', async ({ page }) => {
+  await page.goto('/');
+  await signInWithGoogle(page);
+
+  const menu = await openAccountMenu(page);
+  const signOut = menu.getByRole('button', { name: /Amaitu saioa/ });
+  await signOut.focus();
+  await page.keyboard.press('Tab');
+  await expect(menu.locator(':focus')).toHaveCount(0);
+});
