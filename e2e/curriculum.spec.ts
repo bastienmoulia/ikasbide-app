@@ -282,7 +282,7 @@ test('translation answers accept listed variants and preserve diacritic distinct
   const answer = page.getByRole('textbox');
   await expect(page.locator('app-activity-player .source')).toHaveAttribute('lang', 'fr');
   await expect(page.getByText('Je suis de Bayonne.')).toBeVisible();
-  await answer.fill('  Ni Baionakoa  naiz!! ');
+  await answer.fill('  Ni, Baionakoa  naiz! ');
   await answer.press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
   await page.clock.fastForward(600);
@@ -294,6 +294,40 @@ test('translation answers accept listed variants and preserve diacritic distinct
   await expect(page.getByText('J’habite à Bilbao.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Continuer/ }).click();
   await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
+});
+
+test('translation answers accept apostrophe and punctuation variants', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await signInWithGoogle(page);
+  await startPractice(page);
+
+  const answer = page.getByRole('textbox');
+  await answer.fill('Ni Baionakoa naiz.');
+  await answer.press('Enter');
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
+
+  await answer.fill("J'habite à Bilbao!");
+  await answer.press('Enter');
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+});
+
+test('translation answers do not accept a missing apostrophe', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await signInWithGoogle(page);
+  await startPractice(page);
+
+  const answer = page.getByRole('textbox');
+  await answer.fill('Ni Baionakoa naiz.');
+  await answer.press('Enter');
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
+
+  await answer.fill('Jhabite à Bilbao.');
+  await answer.press('Enter');
+  await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
 });
 
 test('a learner can build a word-order answer from the offered words', async ({ page }) => {
