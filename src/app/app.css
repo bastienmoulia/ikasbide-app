@@ -173,18 +173,10 @@ a[mat-stroked-button] {
   justify-content: center;
 }
 
-.account-menu-version {
+.account-menu-about {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.25rem 0.25rem;
-  color: var(--app-text-muted);
-}
-
-.account-menu-version > span {
-  color: var(--mat-sys-on-surface);
-  font-variant-numeric: tabular-nums;
+  justify-content: flex-start;
+  min-height: 3rem;
 }
 
 .account-menu hr {

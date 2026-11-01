@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.about-dialog-content {
+  display: grid;
+  gap: 0.75rem;
+  min-width: min(20rem, calc(100vw - 5rem));
+}
+
+.about-dialog-content h3,
+.about-dialog-content p {
+  margin: 0;
+}
+
+.about-dialog-version {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--app-text-muted);
+}
+
+.about-dialog-version > span {
+  color: var(--mat-sys-on-surface);
+  font-variant-numeric: tabular-nums;
+}

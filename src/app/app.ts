@@ -3,11 +3,12 @@ import { A11yModule } from '@angular/cdk/a11y';
 import { OverlayModule, type ConnectedPosition } from '@angular/cdk/overlay';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import packageJson from '../../package.json';
 import { AuthService } from './auth.service';
+import { AboutDialog } from './about-dialog';
 import { BilingualText } from './bilingual-text';
 import { DisplayModeService } from './display-mode.service';
 import { DisplayModeControl } from './display-mode-control';
@@ -18,6 +19,7 @@ import { PracticeLayout } from './practice-layout';
   imports: [
     A11yModule,
     MatButtonModule,
+    MatDialogModule,
     DisplayModeControl,
     MatCardModule,
     MatProgressBarModule,
@@ -84,10 +86,9 @@ import { PracticeLayout } from './practice-layout';
               <div class="account-menu-display-mode">
                 <app-display-mode-control />
               </div>
-              <div class="account-menu-version" aria-label="Bertsioa / Version">
-                <app-bilingual-text eu="Bertsioa" fr="Version" />
-                <span>{{ version }}</span>
-              </div>
+              <button class="account-menu-about" mat-button type="button" (click)="openAbout()">
+                <app-bilingual-text eu="Honi buruz" fr="À propos" />
+              </button>
               <hr role="separator" />
               <button
                 class="account-menu-sign-out"
@@ -234,7 +235,7 @@ export class App {
   protected readonly displayMode = inject(DisplayModeService);
   protected readonly practiceLayout = inject(PracticeLayout);
   protected readonly network = inject(NetworkStatus);
-  protected readonly version = packageJson.version;
+  private readonly dialog = inject(MatDialog);
   protected readonly firstName = computed(
     () => this.auth.user()?.displayName?.trim().split(/\s+/)[0] ?? '',
   );
@@ -256,5 +257,10 @@ export class App {
 
   protected signOut(): void {
     void this.auth.signOut();
+  }
+
+  protected openAbout(): void {
+    this.closeAccountMenu();
+    this.dialog.open(AboutDialog);
   }
 }
