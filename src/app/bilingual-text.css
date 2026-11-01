@@ -1,4 +1,60 @@
 :host {
+  position: relative;
+  display: inline;
+}
+
+.basque {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--app-border-strong);
+  text-underline-offset: 0.2em;
+  cursor: help;
+}
+
+.translation {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.55rem;
+  background: var(--app-surface);
+  box-shadow: 0 0.4rem 1.2rem rgb(0 0 0 / 16%);
+  color: inherit;
+  font-size: 0.92em;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.2rem) scale(0.98);
+  transform-origin: top left;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+:host(:focus-visible) .translation,
+:host(.is-revealed) .translation {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :host(:hover) .translation {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+}
+
+:host([data-mode='stacked']) .basque {
+  text-decoration: none;
+  cursor: inherit;
+}
+
+:host([data-mode='stacked']) {
   display: inline-flex;
   flex-direction: column;
   gap: 0.15em;
@@ -8,8 +64,29 @@
   vertical-align: middle;
 }
 
-.translation {
+:host([data-mode='stacked']) .translation {
+  position: static;
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   font-size: 0.8em;
   font-weight: 400;
   letter-spacing: normal;
+  line-height: inherit;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .translation {
+    transition: none;
+  }
 }

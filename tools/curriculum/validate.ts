@@ -18,8 +18,11 @@ const activityKinds: readonly Activity['kind'][] = [
   'translation',
   'multiple-choice',
   'word-order',
+  'matching',
   'oral-prompt',
 ];
+const minMatchingPairs = 2;
+const maxMatchingPairs = 8;
 type JsonObject = Record<string, unknown>;
 
 /** Validates the book manifest and every chapter file before returning normalized data. */
@@ -275,6 +278,28 @@ export function validateCurriculum(
               }
             });
             break;
+          case 'matching':
+            item(value, itemPath, ['pairs'], (record) => {
+              const pairs = list(record['pairs'], `${itemPath}.pairs`, minMatchingPairs);
+              if (pairs.length > maxMatchingPairs) {
+                fail(`${itemPath}.pairs`, `must contain at most ${maxMatchingPairs} pairs`);
+              }
+              const seen = { eu: new Set<string>(), fr: new Set<string>() };
+              pairs.forEach((pair, pairIndex) => {
+                const pairPath = `${itemPath}.pairs[${pairIndex}]`;
+                bilingual(pair, pairPath);
+                for (const lang of ['eu', 'fr'] as const) {
+                  const value = (pair as JsonObject | null)?.[lang];
+                  if (typeof value !== 'string') continue;
+                  const key = value.trim().normalize('NFC').toLocaleLowerCase(lang);
+                  if (seen[lang].has(key)) {
+                    fail(`${pairPath}.${lang}`, `duplicates "${value}" in this item`);
+                  }
+                  seen[lang].add(key);
+                }
+              });
+            });
+            break;
         }
       });
     }
@@ -303,14 +328,22 @@ export function validateCurriculum(
           contentValue,
           contentPath,
           ['type', 'kind', 'id', 'title'],
-          ['body', 'lines', 'description', 'url', 'instructions', 'items'],
+          ['body', 'markdown', 'lines', 'description', 'url', 'instructions', 'items'],
         );
         if (!content) return;
         id(content['id'], `${contentPath}.id`, contentIds);
         if ('title' in content) bilingual(content['title'], `${contentPath}.title`);
         const kind = content['kind'];
         const allowOnly = (fields: string[]) => {
-          for (const field of ['body', 'lines', 'description', 'url', 'instructions', 'items']) {
+          for (const field of [
+            'body',
+            'markdown',
+            'lines',
+            'description',
+            'url',
+            'instructions',
+            'items',
+          ]) {
             const present = field in content;
             if (fields.includes(field) && !present) fail(`${contentPath}.${field}`, 'is required');
             if (!fields.includes(field) && present) {
@@ -323,8 +356,14 @@ export function validateCurriculum(
           if (!(resourceKinds as readonly unknown[]).includes(kind)) {
             fail(`${contentPath}.kind`, `must be one of ${resourceKinds.join(', ')}`);
           } else if (kind === 'note') {
-            allowOnly(['body']);
-            if ('body' in content) bilingual(content['body'], `${contentPath}.body`);
+            // A note is either two parallel paragraphs or a single free Markdown text.
+            if ('markdown' in content && !('body' in content)) {
+              allowOnly(['markdown']);
+              text(content['markdown'], `${contentPath}.markdown`);
+            } else {
+              allowOnly(['body']);
+              if ('body' in content) bilingual(content['body'], `${contentPath}.body`);
+            }
           } else if (kind === 'dialogue') {
             allowOnly(['lines']);
             list(content['lines'], `${contentPath}.lines`).forEach((line, lineIndex) => {

@@ -55,22 +55,48 @@ le français en dessous.
 
 | `kind`            | Nature   | Champs propres                                                              |
 | ----------------- | -------- | --------------------------------------------------------------------------- |
-| `note`            | Resource | `title`, `body`                                                             |
+| `note`            | Resource | `title`, et soit `body` (bilingue), soit `markdown` (texte libre formaté)   |
 | `dialogue`        | Resource | `title`, `lines[] { speaker, text }`                                        |
 | `external-link`   | Resource | `title`, `description`, `url` (HTTPS uniquement, aucun fichier hébergé)     |
 | `gap-fill`        | Activity | `items[] { prompt, acceptedAnswers[] }`, `prompt.eu` contient un seul `___` |
 | `translation`     | Activity | `items[] { direction (`eu-fr`ou`fr-eu`), source, acceptedAnswers[] }`       |
 | `multiple-choice` | Activity | `items[] { prompt, choices[] { id, lang, text }, correctChoiceIds[] }`      |
 | `word-order`      | Activity | `items[] { prompt, words[], acceptedAnswers[] }`                            |
+| `matching`        | Activity | `items[] { pairs[] { eu, fr } }` : de 2 à 8 paires à relier                 |
 | `oral-prompt`     | Activity | `instructions` seulement : facultative, non corrigée, sans `items`          |
 
 Les ressources ont `type: "resource"`, `id`, `kind` et `title` ; les activités ont
 `type: "activity"`, `id`, `kind`, `title` et `instructions`. Chaque item corrigé a
 un `id` et des `objectiveIds` qui référencent des objectifs du même chapitre.
 
+### Note en Markdown
+
+Une note peut remplacer les deux paragraphes parallèles de `body` par un seul champ
+`markdown` quand un tableau, une liste, une image ou une citation est plus clair. Le texte
+est libre : il peut mélanger basque et français. Le HTML produit est assaini à l’affichage
+(les scripts sont retirés). Les images doivent être en HTTPS et ne sont pas disponibles
+hors ligne.
+
+```json
+{
+  "type": "resource",
+  "id": "greetings-reference",
+  "kind": "note",
+  "title": { "eu": "Agurrak", "fr": "Les salutations" },
+  "markdown": "| Euskara | Français |\n| --- | --- |\n| **Egun on!** | Bonjour ! (le matin) |"
+}
+```
+
+### Association (`matching`)
+
+Chaque item affiche les expressions basques à gauche et leurs traductions françaises
+mélangées à droite. L’apprenant touche une expression de chaque côté pour les relier ;
+toucher un élément déjà relié défait le lien. L’item n’est correct que si toutes les
+paires sont justes ; la correction indique chaque lien erroné et la bonne traduction.
+
 ### Aide facultative (`hint`)
 
-Chaque item corrigé (`gap-fill`, `translation`, `multiple-choice`, `word-order`) peut porter
+Chaque item corrigé (`gap-fill`, `translation`, `multiple-choice`, `word-order`, `matching`) peut porter
 un champ facultatif `hint` : une liste non vide de lignes bilingues courtes, rédigées par
 l’auteur, qui apportent du vocabulaire ou une tournure illustrée par un autre exemple.
 L’aide ne doit jamais révéler la réponse attendue, le bon choix ou l’ordre des mots.
@@ -99,6 +125,9 @@ avec leur chemin source. Aucune écriture n’a lieu si le livre ou un chapitre 
 - Les numéros de chapitre sont déduits de la position dans `book.json`.
 - Lettres de séquences : une majuscule, en ordre alphabétique.
 - QCM : au moins deux choix, réponses correctes existantes.
+- Note : `body` ou `markdown` non vide, jamais les deux.
+- Association : 2 à 8 paires bilingues ; chaque texte basque et chaque texte français est
+  unique dans l’item (casse et espaces ignorés).
 - `hint`, s’il est présent : au moins une ligne, chacune bilingue et complète.
 - Remise en ordre : au moins deux mots ; chaque réponse acceptée utilise exactement ces
   mots (casse et ponctuation finale ignorées).

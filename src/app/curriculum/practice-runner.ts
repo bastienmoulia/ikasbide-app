@@ -64,6 +64,7 @@ import { ReadingPlayer } from './reading-player';
             </button>
             <p class="progress-label">
               <app-bilingual-text
+                mode="stacked"
                 [eu]="
                   state.journey.visited.length +
                   state.skippedStepIds.length +
@@ -105,10 +106,15 @@ import { ReadingPlayer } from './reading-player';
           @if (reviewing() && step.kind === 'question') {
             <article class="question-review" tabindex="-1" #reviewHeading>
               <h2>
-                <app-bilingual-text [eu]="step.question.title.eu" [fr]="step.question.title.fr" />
+                <app-bilingual-text
+                  mode="stacked"
+                  [eu]="step.question.title.eu"
+                  [fr]="step.question.title.fr"
+                />
               </h2>
               <p>
                 <app-bilingual-text
+                  mode="reveal"
                   [eu]="step.question.instructions.eu"
                   [fr]="step.question.instructions.fr"
                 />
@@ -117,9 +123,16 @@ import { ReadingPlayer } from './reading-player';
                 <p [attr.lang]="step.question.item.direction === 'eu-fr' ? 'eu' : 'fr'">
                   {{ step.question.item.source }}
                 </p>
+              } @else if (step.question.kind === 'matching') {
+                <ul>
+                  @for (pair of step.question.item.pairs; track $index) {
+                    <li><app-bilingual-text mode="stacked" [eu]="pair.eu" [fr]="pair.fr" /></li>
+                  }
+                </ul>
               } @else {
                 <p>
                   <app-bilingual-text
+                    mode="stacked"
                     [eu]="step.question.item.prompt.eu"
                     [fr]="step.question.item.prompt.fr"
                   />
@@ -134,6 +147,7 @@ import { ReadingPlayer } from './reading-player';
               }
               <p>
                 <app-bilingual-text
+                  mode="stacked"
                   eu="Ariketa hau jada egin duzu. Berrikusteak ez du beste saiakerarik erregistratzen."
                   fr="Vous avez déjà répondu à cet exercice. La relecture n’enregistre aucune nouvelle tentative."
                 />
@@ -144,41 +158,42 @@ import { ReadingPlayer } from './reading-player';
             @if (canGoBack()) {
               <button type="button" class="exit" (click)="previous()">
                 <app-icon name="previous" />
-                <app-bilingual-text eu="Aurrekoa" fr="Précédent" />
+                <app-bilingual-text mode="stacked" eu="Aurrekoa" fr="Précédent" />
               </button>
             }
             @if (reviewing() || step.kind === 'reading') {
               <button type="button" class="continue" (click)="next()">
-                <app-bilingual-text eu="Hurrengoa" fr="Suivant" />
+                <app-bilingual-text mode="stacked" eu="Hurrengoa" fr="Suivant" />
                 <app-icon name="next" />
               </button>
             }
             @if (!reviewing() && step.kind === 'question' && !state.feedback) {
               <button type="button" class="continue" (click)="skip()">
-                <app-bilingual-text eu="Saltatu" fr="Passer cette étape" />
+                <app-bilingual-text mode="stacked" eu="Saltatu" fr="Passer cette étape" />
                 <app-icon name="next" />
               </button>
             }
             @if (!reviewing() && state.feedback && state.feedback.outcome !== 'correct') {
               <button type="button" class="continue" (click)="continue()">
-                <app-bilingual-text eu="Jarraitu" fr="Continuer" />
+                <app-bilingual-text mode="stacked" eu="Jarraitu" fr="Continuer" />
                 <app-icon name="next" />
               </button>
             }
           </nav>
           @if (storageError(); as error) {
             <p role="alert">
-              <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+              <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
             </p>
           }
         </section>
       } @else {
         <section class="completion" aria-labelledby="completion-heading">
           <h2 id="completion-heading" tabindex="-1" #completionHeading>
-            <app-bilingual-text eu="Oso ondo!" fr="Bravo !" />
+            <app-bilingual-text mode="stacked" eu="Oso ondo!" fr="Bravo !" />
           </h2>
           <p class="progress-label">
             <app-bilingual-text
+              mode="stacked"
               [eu]="
                 state.completedItemIds.length + ' / ' + questions().length + ' ariketa gaindituta'
               "
@@ -193,10 +208,15 @@ import { ReadingPlayer } from './reading-player';
             aria-label="Ibilbidearen aurrerapena / Progression du parcours"
           ></progress>
           <p>
-            <app-bilingual-text eu="Ibilbidea amaitu duzu." fr="Vous avez terminé le parcours." />
+            <app-bilingual-text
+              mode="stacked"
+              eu="Ibilbidea amaitu duzu."
+              fr="Vous avez terminé le parcours."
+            />
           </p>
           <p>
             <app-bilingual-text
+              mode="stacked"
               [eu]="visitedReadingCount() + ' / ' + readingCount() + ' irakurgai'"
               [fr]="
                 visitedReadingCount() + ' / ' + readingCount() + ' lectures parcourues, sans score.'
@@ -205,12 +225,14 @@ import { ReadingPlayer } from './reading-player';
           </p>
           <p>
             <app-bilingual-text
+              mode="stacked"
               [eu]="state.incorrectItemIds.length + ' ariketa berrikusteko'"
               [fr]="state.incorrectItemIds.length + ' exercices à revoir'"
             />
           </p>
           <p>
             <app-bilingual-text
+              mode="stacked"
               [eu]="state.skippedStepIds.length + ' urrats saltatuta'"
               [fr]="state.skippedStepIds.length + ' étapes ignorées'"
             />
@@ -218,33 +240,37 @@ import { ReadingPlayer } from './reading-player';
           <nav class="completion-actions">
             @if (nextSequenceId(); as nextId) {
               <a [routerLink]="['/', bookId(), chapterId(), nextId]">
-                <app-bilingual-text eu="Hurrengo sekuentzia" fr="Séquence suivante" />
+                <app-bilingual-text
+                  mode="stacked"
+                  eu="Hurrengo sekuentzia"
+                  fr="Séquence suivante"
+                />
                 <app-icon name="next" />
               </a>
             } @else {
               <a [routerLink]="['/', bookId(), chapterId()]">
                 <app-icon name="previous" />
-                <app-bilingual-text eu="Itzuli kapitulura" fr="Retour au chapitre" />
+                <app-bilingual-text mode="stacked" eu="Itzuli kapitulura" fr="Retour au chapitre" />
               </a>
             }
             <button type="button" class="secondary" (click)="exit.emit()">
               <app-icon name="previous" />
-              <app-bilingual-text eu="Aurkibidera itzuli" fr="Revenir au sommaire" />
+              <app-bilingual-text mode="stacked" eu="Aurkibidera itzuli" fr="Revenir au sommaire" />
             </button>
             <button type="button" class="secondary" (click)="restart()">
               <app-icon name="restart" />
-              <app-bilingual-text eu="Berriro hasi" fr="Recommencer" />
+              <app-bilingual-text mode="stacked" eu="Berriro hasi" fr="Recommencer" />
             </button>
             @if (canGoBack()) {
               <button type="button" class="secondary" (click)="previous()">
                 <app-icon name="previous" />
-                <app-bilingual-text eu="Berrikusi" fr="Relire le parcours" />
+                <app-bilingual-text mode="stacked" eu="Berrikusi" fr="Relire le parcours" />
               </button>
             }
           </nav>
           @if (storageError(); as error) {
             <p role="alert">
-              <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+              <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
             </p>
           }
         </section>

@@ -10,18 +10,19 @@ import { BilingualText } from './bilingual-text';
   styleUrl: './about-dialog.css',
   template: `
     <h2 mat-dialog-title>
-      <app-bilingual-text eu="Honi buruz" fr="À propos" />
+      <app-bilingual-text mode="stacked" eu="Honi buruz" fr="À propos" />
     </h2>
     <mat-dialog-content class="about-dialog-content">
       <h3>Ikasbide</h3>
       <p>
         <app-bilingual-text
+          mode="stacked"
           eu="Ikasi, praktikatu, konfiantza hartu."
           fr="Apprendre, pratiquer, prendre confiance."
         />
       </p>
       <p class="about-dialog-version">
-        <app-bilingual-text eu="Bertsioa" fr="Version" />
+        <app-bilingual-text mode="stacked" eu="Bertsioa" fr="Version" />
         <span>{{ version }}</span>
       </p>
       <a
@@ -35,7 +36,7 @@ import { BilingualText } from './bilingual-text';
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button type="button" mat-dialog-close>
-        <app-bilingual-text eu="Itxi" fr="Fermer" />
+        <app-bilingual-text mode="stacked" eu="Itxi" fr="Fermer" />
       </button>
     </mat-dialog-actions>
   `,

@@ -15,20 +15,14 @@ import { BilingualText } from '../bilingual-text';
 import { Icon } from '../icon';
 import type { AttemptOutcome } from './attempt.service';
 import type {
-  GapFillActivity,
   GapFillItem,
-  MultipleChoiceActivity,
+  MatchingItem,
   MultipleChoiceItem,
-  TranslationActivity,
   TranslationItem,
-  WordOrderActivity,
   WordOrderItem,
   BilingualText as BilingualTextValue,
 } from './curriculum.model';
 import type { PracticeFeedback } from './practice-progress';
-
-type GradedActivity =
-  GapFillActivity | TranslationActivity | MultipleChoiceActivity | WordOrderActivity;
 
 export type ExerciseQuestion =
   | {
@@ -54,7 +48,15 @@ export type ExerciseQuestion =
       title: BilingualTextValue;
       instructions: BilingualTextValue;
       item: WordOrderItem;
+    }
+  | {
+      kind: 'matching';
+      title: BilingualTextValue;
+      instructions: BilingualTextValue;
+      item: MatchingItem;
     };
+
+type MatchingSelection = { side: 'eu' | 'fr'; index: number } | null;
 
 export interface ItemAttempt {
   itemId: string;
@@ -90,7 +92,7 @@ export interface ItemResponse {
   `,
   template: `
     <span class="feedback-icon" aria-hidden="true">{{ symbols[result()] }}</span>
-    <app-bilingual-text [eu]="labels[result()].eu" [fr]="labels[result()].fr" />
+    <app-bilingual-text mode="stacked" [eu]="labels[result()].eu" [fr]="labels[result()].fr" />
   `,
 })
 class ActivityFeedback {
@@ -167,12 +169,12 @@ class ActivityFeedback {
       (click)="toggled.emit()"
     >
       <app-icon name="hint" />
-      <app-bilingual-text eu="Laguntza" fr="Aide" />
+      <app-bilingual-text mode="stacked" eu="Laguntza" fr="Aide" />
     </button>
     @if (open()) {
       <ul class="hint-panel" [id]="panelId">
         @for (line of lines(); track $index) {
-          <li><app-bilingual-text [eu]="line.eu" [fr]="line.fr" /></li>
+          <li><app-bilingual-text mode="reveal" [eu]="line.eu" [fr]="line.fr" /></li>
         }
       </ul>
     }
@@ -198,10 +200,15 @@ export class ExerciseHint {
     @let currentQuestion = question();
     <article class="exercise-item">
       <h2 id="exercise-heading">
-        <app-bilingual-text [eu]="currentQuestion.title.eu" [fr]="currentQuestion.title.fr" />
+        <app-bilingual-text
+          mode="stacked"
+          [eu]="currentQuestion.title.eu"
+          [fr]="currentQuestion.title.fr"
+        />
       </h2>
       <p class="instructions">
         <app-bilingual-text
+          mode="reveal"
           [eu]="currentQuestion.instructions.eu"
           [fr]="currentQuestion.instructions.fr"
         />
@@ -230,7 +237,12 @@ export class ExerciseHint {
                 >
               } @else {
                 <label class="inline-answer">
-                  <app-bilingual-text class="visually-hidden" eu="Erantzuna" fr="Réponse" />
+                  <app-bilingual-text
+                    mode="stacked"
+                    class="visually-hidden"
+                    eu="Erantzuna"
+                    fr="Réponse"
+                  />
                   <input
                     #answerInput
                     type="text"
@@ -247,13 +259,14 @@ export class ExerciseHint {
             @if (!feedback()) {
               <button type="submit" [disabled]="!canSubmit()">
                 <app-icon name="check" />
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
               </button>
             }
           </form>
         }
         @case ('multiple-choice') {
           <app-bilingual-text
+            mode="reveal"
             [eu]="currentQuestion.item.prompt.eu"
             [fr]="currentQuestion.item.prompt.fr"
           />
@@ -266,7 +279,11 @@ export class ExerciseHint {
           }
           <fieldset class="choices">
             <legend>
-              <app-bilingual-text eu="Aukeratu erantzuna" fr="Choisissez une réponse" />
+              <app-bilingual-text
+                mode="stacked"
+                eu="Aukeratu erantzuna"
+                fr="Choisissez une réponse"
+              />
             </legend>
             @for (choice of choices(); track choice.id) {
               <button
@@ -283,6 +300,7 @@ export class ExerciseHint {
         }
         @case ('word-order') {
           <app-bilingual-text
+            mode="reveal"
             [eu]="currentQuestion.item.prompt.eu"
             [fr]="currentQuestion.item.prompt.fr"
           />
@@ -310,6 +328,7 @@ export class ExerciseHint {
               }
               @if (!selectedWords().length) {
                 <app-bilingual-text
+                  mode="reveal"
                   class="empty-answer"
                   eu="Hautatu hitzak erantzuna osatzeko."
                   fr="Choisissez les mots pour composer la réponse."
@@ -332,7 +351,7 @@ export class ExerciseHint {
             <div class="word-actions">
               <button class="secondary" type="button" (click)="resetWords()">
                 <app-icon name="restart" />
-                <app-bilingual-text eu="Hasi berriz" fr="Recommencer" />
+                <app-bilingual-text mode="stacked" eu="Hasi berriz" fr="Recommencer" />
               </button>
               <button
                 #wordSubmitButton
@@ -341,13 +360,101 @@ export class ExerciseHint {
                 [disabled]="!canSubmit()"
               >
                 <app-icon name="check" />
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
+              </button>
+            </div>
+          }
+        }
+        @case ('matching') {
+          @let pairs = currentQuestion.item.pairs;
+          @if (currentQuestion.item.hint?.length) {
+            <app-exercise-hint
+              [lines]="currentQuestion.item.hint!"
+              [open]="hintOpen()"
+              (toggled)="toggleHint()"
+            />
+          }
+          @if (feedback(); as result) {
+            <ul class="matching-result">
+              @for (link of answeredLinks(result.answer, pairs.length); track $index) {
+                @let right = link === $index;
+                <li [class.answer-error]="!right">
+                  <span class="matching-mark" aria-hidden="true">{{ right ? '✓' : '✕' }}</span>
+                  <span lang="eu">{{ pairs[$index].eu }}</span>
+                  <span class="matching-arrow" aria-hidden="true">↔</span>
+                  <span lang="fr">
+                    @if (right) {
+                      {{ pairs[$index].fr }}
+                    } @else {
+                      @if (link !== null) {
+                        <s>{{ pairs[link].fr }}</s>
+                      }
+                      <strong>{{ pairs[$index].fr }}</strong>
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="matching-board">
+              <ul class="matching-column" aria-label="Euskara / Basque">
+                @for (pair of pairs; track $index) {
+                  <li>
+                    <button
+                      type="button"
+                      class="matching-option"
+                      [class.linked]="links()[$index] !== null"
+                      [attr.aria-pressed]="isSelected('eu', $index)"
+                      (click)="pick('eu', $index, $event)"
+                    >
+                      @if (links()[$index] !== null) {
+                        <span class="matching-badge">{{ $index + 1 }}</span>
+                      }
+                      <span lang="eu">{{ pair.eu }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+              <ul class="matching-column" aria-label="Frantsesa / Français">
+                @for (frIndex of frenchOrder(); track frIndex) {
+                  @let euIndex = links().indexOf(frIndex);
+                  <li>
+                    <button
+                      type="button"
+                      class="matching-option"
+                      [class.linked]="euIndex !== -1"
+                      [attr.aria-pressed]="isSelected('fr', frIndex)"
+                      (click)="pick('fr', frIndex, $event)"
+                    >
+                      @if (euIndex !== -1) {
+                        <span class="matching-badge">{{ euIndex + 1 }}</span>
+                      }
+                      <span lang="fr">{{ pairs[frIndex].fr }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+            <div class="word-actions">
+              <button class="secondary" type="button" (click)="resetLinks()">
+                <app-icon name="restart" />
+                <app-bilingual-text mode="stacked" eu="Hasi berriz" fr="Recommencer" />
+              </button>
+              <button
+                #matchingSubmitButton
+                type="button"
+                (click)="gradeMatching(currentQuestion.item)"
+                [disabled]="!allLinked()"
+              >
+                <app-icon name="check" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
               </button>
             </div>
           }
         }
         @case ('translation') {
           <app-bilingual-text
+            mode="stacked"
             [eu]="
               currentQuestion.item.direction === 'eu-fr'
                 ? 'Euskaratik frantsesera'
@@ -376,7 +483,12 @@ export class ExerciseHint {
           } @else {
             <form autocomplete="off" (submit)="grade(currentQuestion.item, $event)">
               <label class="answer">
-                <app-bilingual-text class="visually-hidden" eu="Erantzuna" fr="Réponse" />
+                <app-bilingual-text
+                  mode="stacked"
+                  class="visually-hidden"
+                  eu="Erantzuna"
+                  fr="Réponse"
+                />
                 <input
                   #answerInput
                   type="text"
@@ -388,7 +500,7 @@ export class ExerciseHint {
               </label>
               <button type="submit" [disabled]="!canSubmit()">
                 <app-icon name="check" />
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
               </button>
             </form>
           }
@@ -396,9 +508,11 @@ export class ExerciseHint {
       }
       @if (feedback(); as result) {
         <app-activity-feedback [result]="result.outcome" />
-        @if (result.outcome !== 'correct') {
+        @if (result.outcome !== 'correct' && currentQuestion.kind !== 'matching') {
           <p class="correction">
-            <strong><app-bilingual-text eu="Erantzun zuzena" fr="Réponse attendue" /></strong>
+            <strong
+              ><app-bilingual-text mode="stacked" eu="Erantzun zuzena" fr="Réponse attendue"
+            /></strong>
             <span [attr.lang]="answerLang(currentQuestion)">{{
               correctAnswer(currentQuestion)
             }}</span>
@@ -426,21 +540,44 @@ export class ActivityPlayer {
     }
     return choices;
   });
+  /** For each Basque expression (by position), the index of the linked French expression. */
+  protected readonly links = signal<(number | null)[]>([]);
+  protected readonly selection = signal<MatchingSelection>(null);
+  protected readonly allLinked = computed(
+    () => this.links().length > 0 && this.links().every((link) => link !== null),
+  );
+  protected readonly frenchOrder = computed(() => {
+    const question = this.question();
+    if (question.kind !== 'matching') return [];
+    const order = question.item.pairs.map((_, index) => index);
+    // Never show the solution as is: a sorted column would give every pair away.
+    do {
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const other = Math.floor(Math.random() * (index + 1));
+        [order[index], order[other]] = [order[other], order[index]];
+      }
+    } while (order.length > 1 && order.every((value, index) => value === index));
+    return order;
+  });
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   @ViewChild('answerInput', { read: ElementRef })
   private answerInput?: ElementRef<HTMLInputElement>;
   @ViewChild('wordSubmitButton', { read: ElementRef })
   private wordSubmitButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('matchingSubmitButton', { read: ElementRef })
+  private matchingSubmitButton?: ElementRef<HTMLButtonElement>;
 
   constructor() {
     afterNextRender(() => {
       (this.answerInput?.nativeElement ?? this.host.nativeElement).focus();
     });
     effect(() => {
-      this.question();
+      const question = this.question();
       this.feedback();
       this.answer.set('');
       this.selectedWords.set([]);
+      this.selection.set(null);
+      this.links.set(question.kind === 'matching' ? question.item.pairs.map(() => null) : []);
     });
     effect(() => {
       this.question();
@@ -488,7 +625,72 @@ export class ActivityPlayer {
     this.grade(item);
   }
 
-  protected grade(item: ExerciseQuestion['item'], event?: Event): void {
+  protected isSelected(side: 'eu' | 'fr', index: number): boolean {
+    const selection = this.selection();
+    return selection?.side === side && selection.index === index;
+  }
+
+  /** Selecting one expression on each side links them; picking a linked one unlinks it. */
+  protected pick(side: 'eu' | 'fr', index: number, event: MouseEvent): void {
+    const selection = this.selection();
+    if (selection?.side === side && selection.index === index) {
+      this.selection.set(null);
+      return;
+    }
+    if (!selection || selection.side === side) {
+      this.links.update((links) =>
+        links.map((link, euIndex) =>
+          (side === 'eu' ? euIndex === index : link === index) ? null : link,
+        ),
+      );
+      this.selection.set({ side, index });
+      return;
+    }
+    const euIndex = side === 'eu' ? index : selection.index;
+    const frIndex = side === 'fr' ? index : selection.index;
+    this.links.update((links) =>
+      links.map((link, position) =>
+        position === euIndex ? frIndex : link === frIndex ? null : link,
+      ),
+    );
+    this.selection.set(null);
+    if (event.detail === 0 && this.allLinked()) {
+      setTimeout(() => this.matchingSubmitButton?.nativeElement.focus());
+    }
+  }
+
+  protected resetLinks(): void {
+    this.selection.set(null);
+    this.links.update((links) => links.map(() => null));
+  }
+
+  protected gradeMatching(item: MatchingItem): void {
+    if (this.feedback() || !this.allLinked()) return;
+    const links = this.links();
+    this.attempted.emit({
+      itemId: item.id,
+      outcome: links.every((link, index) => link === index) ? 'correct' : 'incorrect',
+      answer: JSON.stringify(links),
+      attemptId: crypto.randomUUID(),
+      occurredAt: Date.now(),
+    });
+  }
+
+  /** Reads the links saved as the answer; unreadable answers count as unlinked. */
+  protected answeredLinks(answer: string, count: number): (number | null)[] {
+    let links: unknown;
+    try {
+      links = JSON.parse(answer);
+    } catch {
+      links = [];
+    }
+    return Array.from({ length: count }, (_, index) => {
+      const link = Array.isArray(links) ? links[index] : null;
+      return Number.isInteger(link) && link >= 0 && link < count ? (link as number) : null;
+    });
+  }
+
+  protected grade(item: Exclude<ExerciseQuestion['item'], MatchingItem>, event?: Event): void {
     event?.preventDefault();
     if (this.feedback() || !this.canSubmit()) return;
     const answer = this.answer();
@@ -514,6 +716,7 @@ export class ActivityPlayer {
         .map(({ text }) => text)
         .join(' / ');
     }
+    if (question.kind === 'matching') return '';
     return question.item.acceptedAnswers[0] ?? '';
   }
 

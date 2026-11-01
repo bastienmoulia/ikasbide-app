@@ -42,14 +42,16 @@ Configurer la protection de `main` pour exiger la vérification `CI / browser-te
 avant fusion ; ne pas imposer aux commits de développement une convention qui ne
 s’applique qu’au titre de pull request.
 
-La publication automatique déclenchée par une release vérifie le dernier workflow
-`CI` de type push sur `main` pour le SHA exact du tag. Le déploiement échoue si ce
-workflow est absent, en attente au-delà du délai, échoué, annulé, ignoré ou associé à
-un autre commit. Le build et le déploiement utilisent ensuite ce même SHA, même si
-`main` a avancé. Une nouvelle exécution du workflow de déploiement depuis la release
-réessaie le même tag ; les événements dupliqués sont sérialisés. La route manuelle
-**Actions → Deploy Firebase Hosting → Run workflow** reste limitée à `main` pour
-récupération et conserve ses contrôles Firebase existants. Les deux routes déploient
+Chaque push sur `main` déclenche le déploiement du dernier commit du push. La
+publication d’une release avec un tag `vX.Y.Z` déclenche également le déploiement du
+SHA exact de ce tag. Dans les deux cas, le workflow vérifie le dernier `CI` de type
+push sur `main` pour ce SHA. Le déploiement échoue si ce workflow est absent, en
+attente au-delà du délai, échoué, annulé, ignoré ou associé à un autre commit. Le
+build et le déploiement utilisent ce même SHA, même si `main` a avancé. Une nouvelle
+exécution du workflow depuis la release réessaie le même tag. Les déploiements sont
+sérialisés, mais GitHub ne garantit pas l’ordre des exécutions en attente. La route
+manuelle **Actions → Deploy Firebase Hosting → Run workflow** reste limitée à `main`
+pour récupération et conserve ses contrôles Firebase existants. Ces routes déploient
 Hosting et les règles Firestore, jamais la configuration Authentication.
 
 La publication et le déploiement ne sont pas exécutés pendant les tests locaux.

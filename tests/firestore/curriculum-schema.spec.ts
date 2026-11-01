@@ -86,7 +86,7 @@ const structuralErrors: [string, (book: any, chapters: Record<string, any>) => v
   ],
   [
     'an unknown activity format',
-    (_book, chapters) => (chapters['chapter-1'].sequences[0].contents[3].kind = 'matching'),
+    (_book, chapters) => (chapters['chapter-1'].sequences[0].contents[3].kind = 'pairing'),
     false,
   ],
   [
@@ -144,6 +144,24 @@ const structuralErrors: [string, (book: any, chapters: Record<string, any>) => v
   [
     'an oral prompt with corrected items',
     (_book, chapters) => (chapters['chapter-1'].sequences[1].contents[5].items = []),
+    false,
+  ],
+  [
+    'a matching item with a single pair',
+    (_book, chapters) =>
+      chapters['chapter-1'].sequences[1].contents.push({
+        type: 'activity',
+        kind: 'matching',
+        id: 'single-pair',
+        title: { eu: 'Lotu', fr: 'Associer' },
+        instructions: { eu: 'Lotu.', fr: 'Associez.' },
+        items: [{ id: 'single-pair-1', objectiveIds: ['x'], pairs: [{ eu: 'ama', fr: 'mère' }] }],
+      }),
+    false,
+  ],
+  [
+    'a note with both a bilingual body and Markdown',
+    (_book, chapters) => (chapters['chapter-1'].sequences[0].contents[0].markdown = '**Kaixo**'),
     false,
   ],
   [

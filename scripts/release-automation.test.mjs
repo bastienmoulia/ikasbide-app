@@ -227,6 +227,28 @@ test('release and deployment workflows retain the gated immutable-release path',
   );
 });
 
+test('deploys main pushes at their exact commit after successful CI', async () => {
+  const deployWorkflow = await readFile('.github/workflows/deploy.yml', 'utf8');
+
+  assert.match(deployWorkflow, /^on:\n  push:\n    branches: \[main\]\n  release:/m);
+  assert.match(
+    deployWorkflow,
+    /deploy:\n    if: >-\n      \(github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'\) \|\|/,
+  );
+  assert.match(
+    deployWorkflow,
+    /ref: >-\n\s+\$\{\{ \(github\.event_name == 'release' && github\.event\.release\.tag_name\) \|\|\n\s+\(github\.event_name == 'push' && github\.sha\) \|\| 'main' \}\}/,
+  );
+  assert.match(
+    deployWorkflow,
+    /name: Require CI for the exact deployment commit\n\s+if: github\.event_name == 'release' \|\| github\.event_name == 'push'/,
+  );
+  assert.match(
+    deployWorkflow,
+    /concurrency:\n  group: firebase-hosting-production\n  cancel-in-progress: false\n  queue: max/,
+  );
+});
+
 test('Release Please bootstraps at 0.1.0 without changing the current build version', async () => {
   const [config, manifest, packageJson, packageLock] = await Promise.all([
     readFile('release-please-config.json', 'utf8').then(JSON.parse),

@@ -102,6 +102,59 @@
           ]
         }
       ]
+    },
+    {
+      "id": "family-matching",
+      "letter": "B",
+      "title": {
+        "eu": "Familia lotzen",
+        "fr": "Associer la famille"
+      },
+      "contents": [
+        {
+          "type": "resource",
+          "kind": "note",
+          "id": "family-table",
+          "title": {
+            "eu": "Familiako hitzak",
+            "fr": "Les mots de la famille"
+          },
+          "markdown": "| Euskara | Français |\n| --- | --- |\n| **ama** | mère |\n| **aita** | père |\n\n> *Ama* eta *aita* : les parents.\n\n<script>window.injected = true</script>"
+        },
+        {
+          "type": "activity",
+          "kind": "matching",
+          "id": "family-pairs",
+          "title": {
+            "eu": "Lotu hitzak",
+            "fr": "Associez les mots"
+          },
+          "instructions": {
+            "eu": "Lotu euskarazko hitz bakoitza bere itzulpenarekin.",
+            "fr": "Reliez chaque mot basque à sa traduction."
+          },
+          "items": [
+            {
+              "id": "family-pairs-1",
+              "objectiveIds": ["name-family-members"],
+              "pairs": [
+                {
+                  "eu": "ama",
+                  "fr": "mère"
+                },
+                {
+                  "eu": "aita",
+                  "fr": "père"
+                },
+                {
+                  "eu": "anaia",
+                  "fr": "frère"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

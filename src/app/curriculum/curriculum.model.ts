@@ -54,9 +54,17 @@ interface ResourceBase {
   title: BilingualText;
 }
 
-export interface NoteResource extends ResourceBase {
+/** A note is either two parallel paragraphs, or one free Markdown text (tables, images…). */
+export type NoteResource = BilingualNoteResource | MarkdownNoteResource;
+
+export interface BilingualNoteResource extends ResourceBase {
   kind: 'note';
   body: BilingualText;
+}
+
+export interface MarkdownNoteResource extends ResourceBase {
+  kind: 'note';
+  markdown: string;
 }
 
 export interface DialogueResource extends ResourceBase {
@@ -75,6 +83,7 @@ export type Activity =
   | TranslationActivity
   | MultipleChoiceActivity
   | WordOrderActivity
+  | MatchingActivity
   | OralPromptActivity;
 
 export type ActivityKind = Activity['kind'];
@@ -119,6 +128,11 @@ export interface WordOrderItem extends ItemBase {
   warningAnswers?: string[];
 }
 
+/** Every Basque expression must be linked to its French equivalent. */
+export interface MatchingItem extends ItemBase {
+  pairs: BilingualText[];
+}
+
 export interface GapFillActivity extends ActivityBase {
   kind: 'gap-fill';
   items: GapFillItem[];
@@ -137,6 +151,11 @@ export interface MultipleChoiceActivity extends ActivityBase {
 export interface WordOrderActivity extends ActivityBase {
   kind: 'word-order';
   items: WordOrderItem[];
+}
+
+export interface MatchingActivity extends ActivityBase {
+  kind: 'matching';
+  items: MatchingItem[];
 }
 
 /** Optional oral or group task: shown as instructions only, never auto-corrected. */

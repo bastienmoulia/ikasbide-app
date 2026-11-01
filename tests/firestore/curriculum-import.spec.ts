@@ -270,8 +270,25 @@ const invalidSources: [string, (source: CurriculumSources) => void, string][] = 
   ],
   [
     'an unknown activity format',
-    ({ chapters }) => (chapters['chapter-1'].sequences[0].contents[3].kind = 'matching'),
-    `${greetings}[3].kind: must be one of gap-fill, translation, multiple-choice, word-order, oral-prompt`,
+    ({ chapters }) => (chapters['chapter-1'].sequences[0].contents[3].kind = 'pairing'),
+    `${greetings}[3].kind: must be one of gap-fill, translation, multiple-choice, word-order, matching, oral-prompt`,
+  ],
+  [
+    'a matching item with a single pair',
+    ({ chapters }) => chapters['chapter-2'].sequences[1].contents[1].items[0].pairs.splice(1),
+    'chapters/chapter-2.json.sequences[1].contents[1].items[0].pairs: must contain at least 2 element(s)',
+  ],
+  [
+    'a matching item with an ambiguous French expression',
+    ({ chapters }) =>
+      (chapters['chapter-2'].sequences[1].contents[1].items[0].pairs[2].fr = 'Mère'),
+    'chapters/chapter-2.json.sequences[1].contents[1].items[0].pairs[2].fr: duplicates "Mère" in this item',
+  ],
+  [
+    'a note with both a bilingual body and Markdown',
+    ({ chapters }) =>
+      (chapters['chapter-2'].sequences[1].contents[0].body = { eu: 'Ama', fr: 'Mère' }),
+    'chapters/chapter-2.json.sequences[1].contents[0].markdown: is not allowed for "note"',
   ],
   [
     'a non-HTTPS external resource',
@@ -302,7 +319,10 @@ const invalidSources: [string, (source: CurriculumSources) => void, string][] = 
   ],
   [
     'an objective without enough corrected items to be acquired',
-    ({ chapters }) => (chapters['chapter-2'].sequences[0].contents[0].items.length = 2),
+    ({ chapters }) => {
+      chapters['chapter-2'].sequences.length = 1;
+      chapters['chapter-2'].sequences[0].contents[0].items.length = 2;
+    },
     'chapters/chapter-2.json.objectives: objective "name-family-members" needs at least 3 corrected items (found 2)',
   ],
 ];

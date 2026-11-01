@@ -153,6 +153,7 @@
             "translation",
             "multiple-choice",
             "word-order",
+            "matching",
             "oral-prompt"
           ]
         },
@@ -191,7 +192,14 @@
           "then": {
             "properties": {
               "kind": {
-                "enum": ["gap-fill", "translation", "multiple-choice", "word-order", "oral-prompt"]
+                "enum": [
+                  "gap-fill",
+                  "translation",
+                  "multiple-choice",
+                  "word-order",
+                  "matching",
+                  "oral-prompt"
+                ]
               }
             }
           }
@@ -250,6 +258,14 @@
           },
           "then": {
             "$ref": "#/$defs/wordOrder"
+          }
+        },
+        {
+          "if": {
+            "$ref": "#/$defs/kindIs/matching"
+          },
+          "then": {
+            "$ref": "#/$defs/matching"
           }
         },
         {
@@ -319,6 +335,14 @@
           }
         }
       },
+      "matching": {
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "const": "matching"
+          }
+        }
+      },
       "oral-prompt": {
         "required": ["kind"],
         "properties": {
@@ -330,7 +354,6 @@
     },
     "note": {
       "additionalProperties": false,
-      "required": ["body"],
       "properties": {
         "type": {
           "const": "resource"
@@ -344,8 +367,25 @@
         },
         "body": {
           "$ref": "#/$defs/bilingual"
+        },
+        "markdown": {
+          "$ref": "#/$defs/text"
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "body": true
+          },
+          "required": ["body"]
+        },
+        {
+          "properties": {
+            "markdown": true
+          },
+          "required": ["markdown"]
+        }
+      ]
     },
     "dialogue": {
       "additionalProperties": false,
@@ -574,6 +614,32 @@
               },
               "warningAnswers": {
                 "$ref": "#/$defs/texts"
+              }
+            }
+          }
+        }
+      }
+    },
+    "matching": {
+      "$ref": "#/$defs/activity",
+      "unevaluatedProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/itemBase",
+            "unevaluatedProperties": false,
+            "required": ["pairs"],
+            "properties": {
+              "pairs": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 8,
+                "items": {
+                  "$ref": "#/$defs/bilingual"
+                }
               }
             }
           }
