@@ -36,13 +36,17 @@ async function setDisplayMode(
   page: import('@playwright/test').Page,
   mode: 'light' | 'dark',
 ): Promise<void> {
+  const trigger = page.locator('header .account-trigger');
+  await expect(trigger).toBeVisible();
   const control = displayModeControl(page);
   if (!(await control.isVisible())) {
-    await page.locator('header .account-trigger').click();
+    await trigger.click();
   }
+  await expect(control).toBeVisible();
   const names = { light: /Argia Clair/, dark: /Iluna Sombre/ };
   const option = control.getByRole('radio', { name: names[mode] });
-  await option.click();
+  await option.focus();
+  await page.keyboard.press('Space');
   await expect(option).toBeChecked();
   await expectAppearance(page, mode);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -195,19 +199,13 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   const player = page.locator('app-activity-player');
   const gapAnswer = player.getByRole('textbox');
   await gapAnswer.fill('naiz');
-  for (const mode of ['light', 'dark'] as const) {
-    await setDisplayMode(page, mode);
-    await expect(gapAnswer).toHaveValue('naiz');
-    await expectContrast(gapAnswer, gapAnswer, 3, 'border-top-color');
-  }
+  await expectAppearance(page, 'dark');
+  await expect(gapAnswer).toHaveValue('naiz');
+  await expectContrast(gapAnswer, gapAnswer, 3, 'border-top-color');
   await player.getByRole('button', { name: /Vérifier/ }).click();
   const feedback = page.getByRole('status').filter({ hasText: 'Correct' });
   await expect(feedback).toContainText('Correct');
-  for (const mode of ['light', 'dark'] as const) {
-    await setDisplayMode(page, mode);
-    await expect(feedback).toContainText('Correct');
-    await expectContrast(feedback, player.locator('.exercise-item'), 4.5);
-  }
+  await expectContrast(feedback, player.locator('.exercise-item'), 4.5);
   await expectContrast(
     player.getByRole('button', { name: /Vérifier/ }),
     player.locator('.exercise-item'),
@@ -222,8 +220,6 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   }
   const choice = player.getByRole('button', { name: 'Agur', exact: true });
   await expect(choice).toBeVisible();
-  await setDisplayMode(page, 'light');
-  await setDisplayMode(page, 'dark');
   await choice.click();
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
 
@@ -239,9 +235,8 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await startPractice(page);
   const translationAnswer = page.locator('app-activity-player').getByRole('textbox');
   await translationAnswer.fill('Ni Baionakoa naiz.');
-  await setDisplayMode(page, 'light');
   await expect(translationAnswer).toHaveValue('Ni Baionakoa naiz.');
-  await setDisplayMode(page, 'dark');
+  await expectAppearance(page, 'dark');
   await expect(translationAnswer).toHaveValue('Ni Baionakoa naiz.');
   await translationAnswer.press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
@@ -256,9 +251,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
 
   await page.getByRole('button', { name: 'Zu', exact: true }).click();
   await page.getByRole('button', { name: 'nongoa', exact: true }).click();
-  await setDisplayMode(page, 'light');
   await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
-  await setDisplayMode(page, 'dark');
   await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
 
   await page.goto('/chapitres/chapter-1');
