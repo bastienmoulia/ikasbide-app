@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { Firestore } from '@google-cloud/firestore';
@@ -6,6 +7,7 @@ import type { CurriculumSource } from '../../src/app/curriculum/curriculum.model
 import { publishCurriculum } from './publish.ts';
 import { readCurriculumDirectory } from './source.ts';
 import { validateCurriculum } from './validate.ts';
+import { idPattern } from './identifiers.ts';
 
 const execute = promisify(execFile);
 const shaPattern = /^[a-f0-9]{40}$/;
@@ -35,6 +37,43 @@ function sourcePath(path: string): { directory: string; chapterId?: string } | u
   }
   const chapter = /^(?:(.*)\/)?chapters\/([^/]+)\.json$/.exec(path);
   return chapter ? { directory: chapter[1] ?? '.', chapterId: chapter[2] } : undefined;
+}
+
+async function identityErrors(directory: string, paths: readonly string[]): Promise<string[]> {
+  const errors: string[] = [];
+  const bookIds = new Set<string>();
+  const chapterOwners = new Map<string, string>();
+  for (const path of paths.filter((path) => path === 'book.json' || path.endsWith('/book.json'))) {
+    let book: unknown;
+    try {
+      book = JSON.parse(await readFile(join(directory, path), 'utf8'));
+    } catch (error) {
+      throw new Error(`Cannot read book identity inventory at ${path}; nothing was published.`, {
+        cause: error,
+      });
+    }
+    if (
+      typeof book !== 'object' ||
+      book === null ||
+      !('id' in book) ||
+      typeof book.id !== 'string' ||
+      !idPattern.test(book.id) ||
+      !('chapters' in book) ||
+      !Array.isArray(book.chapters) ||
+      book.chapters.some((id: unknown) => typeof id !== 'string' || !idPattern.test(id))
+    ) {
+      errors.push(`${path}: invalid book/chapter identity inventory.`);
+      continue;
+    }
+    if (bookIds.has(book.id)) errors.push(`Duplicate book ID "${book.id}" at ${path}.`);
+    bookIds.add(book.id);
+    for (const id of book.chapters) {
+      const owner = chapterOwners.get(id);
+      if (owner) errors.push(`Chapter "${id}" is claimed by "${owner}" and "${book.id}".`);
+      chapterOwners.set(id, book.id);
+    }
+  }
+  return errors;
 }
 
 /** Publishes cumulative source changes; callers must serialize invocations for this project. */
@@ -76,8 +115,21 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
     .filter(Boolean);
   const committedPaths = new Set(paths);
   const full = !base;
+  // A failed run may have written a change that HEAD subsequently reverted.
+  // Include every touched path, not just the net difference from the checkpoint.
   const changes = base
-    ? (await git(directory, 'diff', '--name-only', '--no-renames', '-z', base, head))
+    ? (
+        await git(
+          directory,
+          'log',
+          '--format=',
+          '--name-only',
+          '--no-renames',
+          '--diff-merges=first-parent',
+          '-z',
+          `${base}..${head}`,
+        )
+      )
         .split('\0')
         .filter(Boolean)
     : paths;
@@ -94,9 +146,7 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
     }
   }
   const publications: { curriculum: CurriculumSource; chapterIds?: string[] }[] = [];
-  const errors: string[] = [];
-  const bookIds = new Set<string>();
-  const chapterOwners = new Map<string, string>();
+  const errors = selected.size ? await identityErrors(directory, paths) : [];
   for (const [bookDirectory, chapterIds] of selected) {
     const source = await readCurriculumDirectory(join(directory, bookDirectory));
     const result = validateCurriculum(source.book, source.chapterFiles, source.errors);
@@ -110,14 +160,6 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
       ]) {
         if (!committedPaths.has(path))
           errors.push(`${path}: is not part of committed revision ${head}.`);
-      }
-      if (bookIds.has(curriculum.id)) errors.push(`Duplicate book ID "${curriculum.id}".`);
-      bookIds.add(curriculum.id);
-      for (const chapter of curriculum.chapters) {
-        const owner = chapterOwners.get(chapter.id);
-        if (owner)
-          errors.push(`Chapter "${chapter.id}" is claimed by "${owner}" and "${curriculum.id}".`);
-        chapterOwners.set(chapter.id, curriculum.id);
       }
       publications.push({
         curriculum,

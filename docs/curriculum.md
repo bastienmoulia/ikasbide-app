@@ -231,14 +231,18 @@ l’application ; il ne contient aucun texte pédagogique.
 
 Un manifeste modifié sélectionne le livre complet ; des chapitres seuls sélectionnent
 une publication partielle unique par livre. Tous les livres concernés sont validés en
-entier avant la première écriture, avec vérification des identifiants partagés entre
-livres concernés. Une suppression de chapitre exige un manifeste cohérent. Un livre
+entier avant la première écriture. Les identifiants des livres et chapitres sont également
+vérifiés dans tous les manifestes versionnés, y compris ceux des livres non ciblés :
+un nouveau livre ne peut pas usurper leur identité. Une suppression de chapitre exige
+un manifeste cohérent. Un livre
 supprimé entièrement est refusé lorsque sa suppression est détectée : la suppression
 automatique de livres n’est pas prise en charge.
 
 Le SHA de réussite n’avance qu’après toutes les publications. Si un import échoue,
 l’exécution suivante reprend le cumul des différences depuis ce SHA ; les imports déjà
-réussis peuvent être rejoués. L’atomicité reste **par livre**, pas multi-livres. Les échecs
+réussis peuvent être rejoués. La sélection inclut tous les chemins touchés par les commits
+intermédiaires, même si un changement a ensuite été annulé : un livre écrit avant l’échec
+doit être réconcilié avec HEAD. L’atomicité reste **par livre**, pas multi-livres. Les échecs
 d’import (permissions, collision avec un document existant, limite de transaction, etc.)
 restent explicites et peuvent survenir après la publication d’un autre livre valide.
 
