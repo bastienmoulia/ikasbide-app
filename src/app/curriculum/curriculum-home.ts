@@ -13,24 +13,29 @@ import { CurriculumService } from './curriculum.service';
   styleUrl: './curriculum.css',
   template: `
     <p class="eyebrow">
-      <app-bilingual-text eu="Zure ikasteko gunea" fr="Votre espace d’apprentissage" />
+      <app-bilingual-text
+        mode="stacked"
+        eu="Zure ikasteko gunea"
+        fr="Votre espace d’apprentissage"
+      />
     </p>
     <h1>
-      <app-bilingual-text eu="Zure ibilbidea" fr="Votre parcours" />
+      <app-bilingual-text mode="stacked" eu="Zure ibilbidea" fr="Votre parcours" />
     </h1>
     @if (books.isLoading()) {
       <p id="curriculum-loading" role="status">
-        <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
+        <app-bilingual-text mode="stacked" [eu]="loading.eu" [fr]="loading.fr" />
       </p>
       <mat-progress-bar mode="indeterminate" aria-labelledby="curriculum-loading" />
     } @else if (books.error(); as error) {
       @let message = errorMessage(error);
       <p role="alert">
-        <app-bilingual-text [eu]="message.eu" [fr]="message.fr" />
+        <app-bilingual-text mode="stacked" [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (books.value()?.length) {
       <p class="muted">
         <app-bilingual-text
+          mode="stacked"
           eu="Jarraitu gomendatutako ordena edo ireki nahi duzun kapitulua."
           fr="Suivez l’ordre recommandé ou ouvrez le chapitre de votre choix."
         />
@@ -39,7 +44,7 @@ import { CurriculumService } from './curriculum.service';
         <section [attr.aria-labelledby]="'book-' + book.id">
           <h2 [id]="'book-' + book.id">
             @if (book.title.fr; as titleFr) {
-              <app-bilingual-text [eu]="book.title.eu" [fr]="titleFr" />
+              <app-bilingual-text mode="stacked" [eu]="book.title.eu" [fr]="titleFr" />
             } @else {
               <span lang="eu">{{ book.title.eu }}</span>
             }
@@ -51,11 +56,16 @@ import { CurriculumService } from './curriculum.service';
                   <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
                   <span class="stack">
                     <app-bilingual-text
+                      mode="stacked"
                       [eu]="chapter.number + '. kapitulua'"
                       [fr]="'Chapitre ' + chapter.number"
                     />
                     <strong>
-                      <app-bilingual-text [eu]="chapter.title.eu" [fr]="chapter.title.fr" />
+                      <app-bilingual-text
+                        mode="stacked"
+                        [eu]="chapter.title.eu"
+                        [fr]="chapter.title.fr"
+                      />
                     </strong>
                   </span>
                 </a>
@@ -68,10 +78,15 @@ import { CurriculumService } from './curriculum.service';
       <mat-card appearance="outlined">
         <mat-card-content>
           <h2>
-            <app-bilingual-text eu="Ibilbidea prestatzen ari gara" fr="Le parcours se prépare" />
+            <app-bilingual-text
+              mode="stacked"
+              eu="Ibilbidea prestatzen ari gara"
+              fr="Le parcours se prépare"
+            />
           </h2>
           <p>
             <app-bilingual-text
+              mode="stacked"
               eu="Oraindik ez dago argitaratutako kapitulurik."
               fr="Aucun chapitre publié pour le moment."
             />

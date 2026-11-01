@@ -32,22 +32,22 @@ import { SequenceProgressService } from './sequence-progress.service';
     @if (!practiceLayout.active()) {
       <a class="back" [routerLink]="['/chapitres', chapterId()]">
         <app-icon name="previous" />
-        <app-bilingual-text eu="Kapitulura itzuli" fr="Retour au chapitre" />
+        <app-bilingual-text mode="stacked" eu="Kapitulura itzuli" fr="Retour au chapitre" />
       </a>
     }
     @if (chapter.isLoading()) {
       <p id="sequence-loading" role="status">
-        <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
+        <app-bilingual-text mode="stacked" [eu]="loading.eu" [fr]="loading.fr" />
       </p>
       <mat-progress-bar mode="indeterminate" aria-labelledby="sequence-loading" />
     } @else if (chapter.error(); as error) {
       @let message = errorMessage(error);
       <p role="alert">
-        <app-bilingual-text [eu]="message.eu" [fr]="message.fr" />
+        <app-bilingual-text mode="stacked" [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (!chapter.value()) {
       <p role="alert">
-        <app-bilingual-text [eu]="notPublished.eu" [fr]="notPublished.fr" />
+        <app-bilingual-text mode="stacked" [eu]="notPublished.eu" [fr]="notPublished.fr" />
       </p>
     } @else if (position(); as position) {
       @let chapter = position.chapter;
@@ -56,12 +56,13 @@ import { SequenceProgressService } from './sequence-progress.service';
         <p class="eyebrow">
           <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
           <app-bilingual-text
+            mode="stacked"
             [eu]="chapter.number + '. kapitulua · ' + sequence.letter + ' sekuentzia'"
             [fr]="'Chapitre ' + chapter.number + ' · Séquence ' + sequence.letter"
           />
         </p>
         <h1>
-          <app-bilingual-text [eu]="sequence.title.eu" [fr]="sequence.title.fr" />
+          <app-bilingual-text mode="stacked" [eu]="sequence.title.eu" [fr]="sequence.title.fr" />
         </h1>
       </div>
       @if (attemptSummary(); as summary) {
@@ -71,6 +72,7 @@ import { SequenceProgressService } from './sequence-progress.service';
           role="status"
         >
           <app-bilingual-text
+            mode="stacked"
             [eu]="'Saiakera sinkronizatuak: ' + summary.synced + ' · zain: ' + summary.pending"
             [fr]="
               'Tentatives synchronisées : ' + summary.synced + ' · en attente : ' + summary.pending
@@ -80,7 +82,7 @@ import { SequenceProgressService } from './sequence-progress.service';
       }
       @if (attempts.error(); as error) {
         <p role="alert">
-          <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+          <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
         </p>
       }
       @if (practiceActive() && learnerId(); as learnerId) {
@@ -104,6 +106,7 @@ import { SequenceProgressService } from './sequence-progress.service';
           >
             <p class="muted">
               <app-bilingual-text
+                mode="stacked"
                 eu="Irakurketak eta ariketak ordena pedagogiko berean, urratsez urrats."
                 fr="Lectures et exercices dans l’ordre pédagogique, étape par étape."
               />
@@ -111,6 +114,7 @@ import { SequenceProgressService } from './sequence-progress.service';
             <p class="journey-progress">
               @if (savedPractice(); as progress) {
                 <app-bilingual-text
+                  mode="stacked"
                   [eu]="
                     progress.journey.visited.length +
                     progress.skippedStepIds.length +
@@ -132,6 +136,7 @@ import { SequenceProgressService } from './sequence-progress.service';
                 />
               } @else {
                 <app-bilingual-text
+                  mode="stacked"
                   [eu]="practiceStepCount() + ' urrats zure zain'"
                   [fr]="practiceStepCount() + ' étapes à découvrir'"
                 />
@@ -145,13 +150,14 @@ import { SequenceProgressService } from './sequence-progress.service';
             @if (nextPracticeStep(); as step) {
               <p>
                 <strong>
-                  <app-bilingual-text eu="Hurrengo urratsa" fr="Prochaine étape" />
+                  <app-bilingual-text mode="stacked" eu="Hurrengo urratsa" fr="Prochaine étape" />
                 </strong>
-                <app-bilingual-text [eu]="step.title.eu" [fr]="step.title.fr" />
+                <app-bilingual-text mode="stacked" [eu]="step.title.eu" [fr]="step.title.fr" />
               </p>
             } @else {
               <p role="status">
                 <app-bilingual-text
+                  mode="stacked"
                   eu="Ibilbide hau amaitu duzu."
                   fr="Vous avez terminé ce parcours."
                 />
@@ -160,23 +166,27 @@ import { SequenceProgressService } from './sequence-progress.service';
             <button type="button" class="start-practice" (click)="startPractice()">
               <app-icon name="play" />
               @if (savedPractice() && !nextPracticeStep()) {
-                <app-bilingual-text eu="Ikusi laburpena" fr="Voir le bilan" />
+                <app-bilingual-text mode="stacked" eu="Ikusi laburpena" fr="Voir le bilan" />
               } @else if (savedPractice()) {
-                <app-bilingual-text eu="Ibilbidearekin jarraitu" fr="Reprendre le parcours" />
+                <app-bilingual-text
+                  mode="stacked"
+                  eu="Ibilbidearekin jarraitu"
+                  fr="Reprendre le parcours"
+                />
               } @else {
-                <app-bilingual-text eu="Hasi ibilbidea" fr="Commencer le parcours" />
+                <app-bilingual-text mode="stacked" eu="Hasi ibilbidea" fr="Commencer le parcours" />
               }
             </button>
           </section>
         }
         @if (practiceStorageError(); as error) {
           <p role="alert">
-            <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+            <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
           </p>
         }
         @if (sequenceProgress.error(); as error) {
           <p role="alert">
-            <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+            <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
           </p>
         }
         <nav class="pager">
@@ -184,6 +194,7 @@ import { SequenceProgressService } from './sequence-progress.service';
             <a [routerLink]="['/chapitres', chapter.id, 'sequences', previous.id]">
               <app-icon name="previous" />
               <app-bilingual-text
+                mode="stacked"
                 [eu]="'Aurreko sekuentzia: ' + previous.letter"
                 [fr]="'Séquence précédente : ' + previous.letter"
               />
@@ -192,6 +203,7 @@ import { SequenceProgressService } from './sequence-progress.service';
           @if (position.next; as next) {
             <a class="next" [routerLink]="['/chapitres', chapter.id, 'sequences', next.id]">
               <app-bilingual-text
+                mode="stacked"
                 [eu]="'Hurrengo sekuentzia: ' + next.letter"
                 [fr]="'Séquence suivante : ' + next.letter"
               />
@@ -203,6 +215,7 @@ import { SequenceProgressService } from './sequence-progress.service';
     } @else {
       <p role="alert">
         <app-bilingual-text
+          mode="stacked"
           eu="Sekuentzia hau ez dago kapitulu honetan."
           fr="Cette séquence n’existe pas dans ce chapitre."
         />

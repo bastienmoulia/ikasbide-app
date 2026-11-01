@@ -33,7 +33,7 @@ import { PracticeLayout } from './practice-layout';
   styleUrl: './app.css',
   template: `
     <a class="skip-link" href="#main">
-      <app-bilingual-text eu="Edukira joan" fr="Aller au contenu" />
+      <app-bilingual-text mode="stacked" eu="Edukira joan" fr="Aller au contenu" />
     </a>
     @if (!practiceLayout.active()) {
       <header>
@@ -57,7 +57,7 @@ import { PracticeLayout } from './practice-layout';
                 @if (firstName(); as name) {
                   {{ name }}
                 } @else {
-                  <app-bilingual-text eu="Kontua" fr="Compte" />
+                  <app-bilingual-text mode="stacked" eu="Kontua" fr="Compte" />
                 }
               </span>
               <svg class="account-chevron" viewBox="0 0 24 24" aria-hidden="true">
@@ -87,7 +87,7 @@ import { PracticeLayout } from './practice-layout';
                 <app-display-mode-control />
               </div>
               <button class="account-menu-about" mat-button type="button" (click)="openAbout()">
-                <app-bilingual-text eu="Honi buruz" fr="À propos" />
+                <app-bilingual-text mode="stacked" eu="Honi buruz" fr="À propos" />
               </button>
               <hr role="separator" />
               <button
@@ -102,7 +102,7 @@ import { PracticeLayout } from './practice-layout';
                     d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zm-5 4h8a2 2 0 0 0 2-2v-3h-2v3H5V5h8v3h2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"
                   />
                 </svg>
-                <app-bilingual-text eu="Amaitu saioa" fr="Se déconnecter" />
+                <app-bilingual-text mode="stacked" eu="Amaitu saioa" fr="Se déconnecter" />
               </button>
             </section>
           </ng-template>
@@ -115,6 +115,7 @@ import { PracticeLayout } from './practice-layout';
       @if (displayMode.persistenceUnavailable()) {
         <p class="persistence-warning" role="alert">
           <app-bilingual-text
+            mode="stacked"
             eu="Ezin izan da aukera gorde gailu honetan. Uneko saioan aktibo dago, baina hurrengoan berriro aukeratu beharko duzu."
             fr="Le choix n’a pas pu être enregistré sur cet appareil. Il reste actif pour cette session, mais vous devrez le choisir à nouveau la prochaine fois."
           />
@@ -123,6 +124,7 @@ import { PracticeLayout } from './practice-layout';
       @if (!network.online()) {
         <p class="offline-status" role="status">
           <app-bilingual-text
+            mode="stacked"
             eu="Konexiorik gabe zaude. Gailu honetan lehendik kontsultatutako edukia bakarrik dago erabilgarri."
             fr="Vous êtes hors ligne. Seul le contenu déjà consulté sur cet appareil est disponible."
           />
@@ -130,39 +132,49 @@ import { PracticeLayout } from './practice-layout';
       }
       @if (auth.error(); as error) {
         <p role="alert">
-          <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+          <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
         </p>
       }
       @if (auth.status() === 'loading') {
         <p id="session-loading" role="status">
-          <app-bilingual-text eu="Saioa kargatzen…" fr="Chargement de votre session…" />
+          <app-bilingual-text
+            mode="stacked"
+            eu="Saioa kargatzen…"
+            fr="Chargement de votre session…"
+          />
         </p>
         <mat-progress-bar mode="indeterminate" aria-labelledby="session-loading" />
       } @else if (auth.status() === 'unavailable') {
         <h1>
-          <app-bilingual-text eu="Ezin da saioa hasi" fr="Connexion indisponible" />
+          <app-bilingual-text mode="stacked" eu="Ezin da saioa hasi" fr="Connexion indisponible" />
         </h1>
         <p role="alert">
           <app-bilingual-text
+            mode="stacked"
             eu="Ezin izan da saioa hasteko konexioa prestatu. Egiaztatu Interneteko konexioa. Arazoak jarraitzen badu, aplikazioaren arduradunak Firebase konfigurazioa egiaztatu behar du."
             fr="Impossible de préparer la connexion. Vérifiez votre accès à Internet. Si le problème persiste, la configuration Firebase doit être vérifiée par le responsable de l’application."
           />
         </p>
         <a mat-stroked-button href="/">
-          <app-bilingual-text eu="Berriz saiatu" fr="Réessayer" />
+          <app-bilingual-text mode="stacked" eu="Berriz saiatu" fr="Réessayer" />
         </a>
       } @else if (auth.user()) {
         <router-outlet />
       } @else {
         <section class="intro">
           <p class="eyebrow">
-            <app-bilingual-text eu="Ongi etorri" fr="Bienvenue" />
+            <app-bilingual-text mode="stacked" eu="Ongi etorri" fr="Bienvenue" />
           </p>
           <h1>
-            <app-bilingual-text eu="Euskara, zure erritmoan." fr="Le basque, à votre rythme." />
+            <app-bilingual-text
+              mode="stacked"
+              eu="Euskara, zure erritmoan."
+              fr="Le basque, à votre rythme."
+            />
           </h1>
           <p class="lead">
             <app-bilingual-text
+              mode="stacked"
               eu="Ikasbide metodoaren urratsei jarraituz ikasteko eta praktikatzeko zure gunea."
               fr="Un espace personnel pour apprendre et pratiquer, en suivant la progression d’Ikasbide metodoa."
             />
@@ -172,12 +184,14 @@ import { PracticeLayout } from './practice-layout';
           <mat-card-content>
             <h2>
               <app-bilingual-text
+                mode="stacked"
                 eu="Pauso txiki bat aldi bakoitzean."
                 fr="Un petit pas, chaque fois."
               />
             </h2>
             <p>
               <app-bilingual-text
+                mode="stacked"
                 eu="Hasi saioa zure ikaskuntza-ibilbidea ikusteko."
                 fr="Connectez-vous pour accéder à votre parcours d’apprentissage."
               />
@@ -188,15 +202,20 @@ import { PracticeLayout } from './practice-layout';
               [disabled]="auth.pending()"
               (click)="auth.signIn()"
             >
-              <app-bilingual-text eu="Hasi saioa Google bidez" fr="Se connecter avec Google" />
+              <app-bilingual-text
+                mode="stacked"
+                eu="Hasi saioa Google bidez"
+                fr="Se connecter avec Google"
+              />
             </button>
             @if (auth.pending()) {
               <p role="status">
-                <app-bilingual-text eu="Saioa hasten…" fr="Connexion en cours…" />
+                <app-bilingual-text mode="stacked" eu="Saioa hasten…" fr="Connexion en cours…" />
               </p>
             }
             <p class="muted">
               <app-bilingual-text
+                mode="stacked"
                 eu="Google kontua duen edonor sar daiteke."
                 fr="L’accès est ouvert à toute personne disposant d’un compte Google."
               />
@@ -208,11 +227,13 @@ import { PracticeLayout } from './practice-layout';
     @if (!practiceLayout.active()) {
       <footer>
         <app-bilingual-text
+          mode="stacked"
           eu="Ikasi, praktikatu, konfiantza hartu."
           fr="Apprendre, pratiquer, prendre confiance."
         />
         <p class="legal-note">
           <app-bilingual-text
+            mode="stacked"
             eu="Ikasbide metodoaren liburuaren osagarria da, ez du ordezkatzen; liburua behar da erabiltzeko."
             fr="Cette application complète le livre Ikasbide metodoa, mais ne le remplace pas ; le livre est nécessaire pour l’utiliser."
           />
