@@ -1,6 +1,6 @@
 import type { ExerciseQuestion } from './activity-player';
 import type { OralPromptActivity, Resource, Sequence } from './curriculum.model';
-import type { PracticeProgress } from './practice-progress';
+import type { PracticeProgress, StoredPracticeProgress } from './practice-progress';
 
 export type ReadingContent = Resource | OralPromptActivity;
 
@@ -59,38 +59,70 @@ export function practiceSteps(sequence: Sequence): PracticeStep[] {
   });
 }
 
-/** Legacy saves keep their item queue and feedback; previously untracked readings remain to visit. */
+/** Migrate v1 item saves while keeping visited and feedback state in curriculum order. */
 export function withPracticeSteps(
-  progress: PracticeProgress,
+  progress: StoredPracticeProgress,
   steps: readonly PracticeStep[],
 ): PracticeProgress {
-  if (progress.journey) return progress;
-  const pending = new Set(progress.queue.map((id) => 'item:' + id));
-  const before = new Map<string, string[]>();
-  const trailing: string[] = [];
-  for (const [index, step] of steps.entries()) {
-    if (step.kind !== 'reading') continue;
-    const next = steps.slice(index + 1).find((candidate) => pending.has(candidate.id));
-    const readings = next ? (before.get(next.id) ?? []) : trailing;
-    readings.push(step.id);
-    if (next) before.set(next.id, readings);
+  if (progress.version === 2) {
+    if (
+      progress.journey.queue.length ||
+      progress.journey.visited.length ||
+      progress.skippedStepIds.length
+    ) {
+      return progress;
+    }
+    return {
+      ...progress,
+      queue: steps.filter((step) => step.kind === 'question').map((step) => step.question.item.id),
+      journey: { queue: steps.map(({ id }) => id), visited: [], reviewIndex: null },
+    };
   }
-  const queue = progress.queue.flatMap((id) => [...(before.get('item:' + id) ?? []), 'item:' + id]);
-  queue.push(...trailing);
-  if (progress.feedback) {
-    const currentId = 'item:' + progress.feedback.itemId;
-    queue.splice(queue.indexOf(currentId), 1);
-    queue.unshift(currentId);
+
+  const completed = new Set(progress.completedItemIds);
+  const feedbackItemId = progress.feedback?.itemId;
+  const visited = progress.journey?.visited ?? [...completed].map((id) => 'item:' + id);
+  const pendingFeedbackItemId =
+    feedbackItemId && !visited.includes('item:' + feedbackItemId) ? feedbackItemId : null;
+  const feedback = pendingFeedbackItemId ? progress.feedback : null;
+  const attemptedItemIds = [
+    ...new Set([
+      ...visited.filter((id) => id.startsWith('item:')).map((id) => id.slice(5)),
+      ...completed,
+    ]),
+  ].filter((id) => id !== pendingFeedbackItemId);
+  const completedItemIds = [...completed].filter((id) => id !== pendingFeedbackItemId);
+  const incorrectItemIds = attemptedItemIds.filter((id) => !completedItemIds.includes(id));
+  const skippedStepIds: string[] = [];
+  const journeyQueue = steps
+    .filter(
+      (step) =>
+        !visited.includes(step.id) &&
+        (step.kind !== 'question' || !completed.has(step.question.item.id)),
+    )
+    .map(({ id }) => id);
+  if (feedback) {
+    const feedbackStepId = 'item:' + pendingFeedbackItemId;
+    journeyQueue.splice(journeyQueue.indexOf(feedbackStepId), 1);
+    journeyQueue.unshift(feedbackStepId);
   }
+  const visitedSteps = [...new Set(visited)].filter(
+    (id) => id !== 'item:' + pendingFeedbackItemId && steps.some((step) => step.id === id),
+  );
+  const journey = {
+    queue: journeyQueue,
+    visited: visitedSteps,
+    reviewIndex: null,
+  };
   return {
-    ...progress,
-    journey: {
-      queue,
-      visited: steps
-        .filter((step) => step.kind === 'question' && !pending.has(step.id))
-        .map(({ id }) => id),
-      reviewIndex: null,
-    },
+    version: 2,
+    queue: journeyQueue.filter((id) => id.startsWith('item:')).map((id) => id.slice(5)),
+    attemptedItemIds,
+    completedItemIds,
+    incorrectItemIds,
+    skippedStepIds,
+    feedback,
+    journey,
   };
 }
 
@@ -105,19 +137,34 @@ export function advancePracticeStep(progress: PracticeProgress): PracticeProgres
   }
   const feedback = progress.feedback;
   if (!feedback || stepId !== 'item:' + feedback.itemId) return progress;
-  const nextQueue = progress.queue.slice(1);
   const accepted = feedback.outcome === 'correct' || feedback.outcome === 'correct-with-warning';
-  if (!accepted) {
-    nextQueue.push(feedback.itemId);
-    nextSteps.push(stepId);
-  }
   return {
     ...progress,
-    queue: nextQueue,
+    queue: progress.queue.filter((id) => id !== feedback.itemId),
+    attemptedItemIds: [...new Set([...progress.attemptedItemIds, feedback.itemId])],
     completedItemIds: accepted
       ? [...new Set([...progress.completedItemIds, feedback.itemId])]
       : progress.completedItemIds,
+    incorrectItemIds: accepted
+      ? progress.incorrectItemIds
+      : [...new Set([...progress.incorrectItemIds, feedback.itemId])],
     feedback: null,
     journey: { queue: nextSteps, visited, reviewIndex: null },
+  };
+}
+
+export function skipPracticeStep(progress: PracticeProgress): PracticeProgress {
+  const journey = progress.journey;
+  const stepId = journey.queue[0];
+  if (!stepId || journey.reviewIndex !== null || progress.feedback || !stepId.startsWith('item:')) {
+    return progress;
+  }
+  const itemId = stepId.slice(5);
+  return {
+    ...progress,
+    queue: progress.queue.filter((id) => id !== itemId),
+    skippedStepIds: [...new Set([...progress.skippedStepIds, stepId])],
+    feedback: null,
+    journey: { ...journey, queue: journey.queue.slice(1) },
   };
 }

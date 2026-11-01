@@ -12,12 +12,12 @@ import {
 
 const greetings = '/chapitres/chapter-1/sequences/greetings';
 
-test('readings are full-page steps, resume locally and never become attempts', async ({ page }) => {
+test('reading steps resume across devices and never become attempts', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto(greetings);
   const email = await signInWithGoogle(page);
   const uid = await learnerId(email);
-  await expect(page.getByRole('list', { name: /Sommaire/ })).toBeVisible();
+  await expect(page.getByRole('region', { name: /Résumé du parcours/ })).toBeVisible();
   await expect(page.getByText('Bonjour ! Je suis Miren. Et toi ?')).toHaveCount(0);
   await startCourse(page);
   await expect(page.getByRole('banner')).toHaveCount(0);
@@ -30,7 +30,7 @@ test('readings are full-page steps, resume locally and never become attempts', a
   await page.getByRole('button', { name: /Suivant/ }).click();
   await expect(page.getByRole('heading', { name: /Modèle de dialogue/ })).toBeVisible();
   await expect(page.locator('dt')).toHaveText(['Miren', 'Jon']);
-  await expect(page.locator('.practice-toolbar')).toContainText('1 / 2 lectures parcourues');
+  await expect(page.locator('.practice-toolbar')).toContainText('1 / 8 étapes');
 
   await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
   await expect(page.getByRole('banner')).toBeVisible();
@@ -44,15 +44,13 @@ test('readings are full-page steps, resume locally and never become attempts', a
   await expect(page.getByRole('heading', { name: /Modèle de dialogue/ })).toBeVisible();
   await page.getByRole('button', { name: /Suivant/ }).click();
   await expect(page.getByRole('textbox')).toBeFocused();
-  await expect(page.locator('.practice-toolbar')).toContainText('2 / 2 lectures parcourues');
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '0');
+  await expect(page.locator('.practice-toolbar')).toContainText('2 / 8 étapes');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 0');
   expect(await storedAttempts(uid)).toHaveLength(0);
 });
 
-test('reviewing keeps the current draft and cannot skip a question or create new attempts', async ({
-  page,
-}) => {
+test('reviewing keeps the current draft and does not create new attempts', async ({ page }) => {
   await page.clock.install();
   await page.goto(greetings);
   const email = await signInWithGoogle(page);
@@ -83,6 +81,26 @@ test('reviewing keeps the current draft and cannot skip a question or create new
   expect(await storedAttempts(uid)).toHaveLength(1);
 });
 
+test('skipping exercises completes the journey without counting success or recording attempts', async ({
+  page,
+}) => {
+  await page.goto(greetings);
+  const email = await signInWithGoogle(page);
+  const uid = await learnerId(email);
+  await startCourse(page);
+  await skipReadings(page);
+
+  for (let index = 0; index < 6; index++) {
+    await page.getByRole('button', { name: /Passer cette étape/ }).click();
+  }
+
+  await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
+  await expect(page.locator('.completion')).toContainText('0 / 6 exercices réussis');
+  await expect(page.locator('.completion')).toContainText('6 étapes ignorées');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '8');
+  expect(await storedAttempts(uid)).toHaveLength(0);
+});
+
 test('legacy item progress migrates without losing an answer or its pending feedback', async ({
   page,
 }) => {
@@ -100,24 +118,27 @@ test('legacy item progress migrates without losing an answer or its pending feed
   await page.evaluate(() => {
     const key = Object.keys(localStorage).find((key) => key.startsWith('ikasbide:practice:v1:'))!;
     const progress = JSON.parse(localStorage.getItem(key)!);
-    delete progress.journey;
-    localStorage.setItem(key, JSON.stringify(progress));
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        version: 1,
+        queue: progress.queue,
+        completedItemIds: [],
+        feedback: progress.feedback,
+      }),
+    );
   });
   await page.reload();
   await startCourse(page);
   await expect(page.locator('app-activity-feedback')).toContainText('Incorrect');
-  await expect(page.locator('.answer')).toContainText('faux');
+  await expect(page.locator('app-activity-player .prompt')).toContainText('Kaixo, Jon faux.');
   await page.getByRole('button', { name: /Continuer/ }).click();
-  await expect(page.locator('app-reading-player')).toBeVisible();
-  await skipReadings(page);
   await expect(page.getByRole('textbox')).toBeFocused();
   await expect(page.getByText('Je suis de Bayonne.')).toBeVisible();
   expect(await storedAttempts(uid)).toHaveLength(1);
 });
 
-test('invalid saved reading positions are reported instead of silently resuming', async ({
-  page,
-}) => {
+test('invalid local reading positions fall back to synchronized progress', async ({ page }) => {
   await page.goto(greetings);
   await signInWithGoogle(page);
   await startCourse(page);
@@ -128,8 +149,8 @@ test('invalid saved reading positions are reported instead of silently resuming'
     localStorage.setItem(key, JSON.stringify(progress));
   });
   await page.reload();
-  await expect(page.getByRole('alert')).toContainText('n’a pas pu être lue');
   await startCourse(page);
+  await expect(page.locator('app-reading-player')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Les salutations/ })).toBeVisible();
 });
 
@@ -160,20 +181,27 @@ test('links and oral prompts are optional full-page steps and the final review i
     await page.clock.fastForward(600);
     await expect(page.locator('app-activity-feedback')).toHaveCount(0);
   }
+  await page.getByRole('textbox').fill('zara');
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(page.locator('app-activity-feedback')).toHaveAttribute('data-result', 'correct');
+  await page.clock.fastForward(600);
   await expect(page.getByRole('heading', { name: /Dialogue à deux/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Vérifier/ })).toHaveCount(0);
   await page.getByRole('button', { name: /Suivant/ }).click();
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeFocused();
-  await expect(page.locator('.completion')).toContainText('4 / 4 exercices réussis');
+  await expect(page.locator('.completion')).toContainText('5 / 5 exercices réussis');
   await expect(page.locator('.completion')).toContainText('3 / 3 lectures parcourues, sans score.');
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4');
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 5');
   await page.getByRole('button', { name: /Relire le parcours/ }).click();
   await expect(page.getByRole('heading', { name: /Dialogue à deux/ })).toBeVisible();
   await expect(page.getByRole('banner')).toHaveCount(0);
   await page.getByRole('button', { name: /Précédent/ }).click();
   await expect(page.locator('.question-review')).toBeFocused();
+  await expect(page.locator('.question-review')).toContainText('Pantxoa');
+  await page.getByRole('button', { name: /Précédent/ }).click();
+  await expect(page.locator('.question-review')).toBeFocused();
   await expect(page.locator('.question-review')).toContainText('Bilbon');
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4');
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 5');
 });
 
 test('a failed local save explains the limitation and keeps the reading navigation usable', async ({

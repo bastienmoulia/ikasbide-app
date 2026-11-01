@@ -39,5 +39,42 @@ service cloud.firestore {
       // A reconnection may resend an already applied write; evidence itself never changes.
       allow update: if isOwner() && request.resource.data == resource.data;
     }
+
+    match /learners/{learnerId}/sequenceProgress/{progressId} {
+      function isOwner() {
+        return isGoogleLearner() && request.auth.uid == learnerId;
+      }
+
+      function isIdentifier(value) {
+        return value is string && value.size() > 0 && value.size() <= 128;
+      }
+
+      function isIdentifierList(value) {
+        return value is list
+          && value.size() <= 1000;
+      }
+
+      function isSequenceProgress(data) {
+        return data.keys().hasOnly([
+            'schemaVersion',
+            'chapterId',
+            'sequenceId',
+            'visitedStepIds',
+            'successfulItemIds',
+            'incorrectItemIds',
+            'skippedStepIds'
+          ])
+          && data.schemaVersion == 1
+          && isIdentifier(data.chapterId)
+          && isIdentifier(data.sequenceId)
+          && isIdentifierList(data.visitedStepIds)
+          && isIdentifierList(data.successfulItemIds)
+          && isIdentifierList(data.incorrectItemIds)
+          && isIdentifierList(data.skippedStepIds);
+      }
+
+      allow read: if isOwner();
+      allow create, update: if isOwner() && isSequenceProgress(request.resource.data);
+    }
   }
 }

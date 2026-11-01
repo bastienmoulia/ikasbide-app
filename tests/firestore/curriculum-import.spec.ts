@@ -56,6 +56,7 @@ test('the maintainer import publishes a book and ordered chapters', async () => 
     'origin-audio',
     'origin-translation',
     'origin-word-order',
+    'origin-dialect-gap',
     'origin-pair-talk',
   ]);
   expect(chapter?.['sequences'][1].contents[2].items[0].acceptedAnswers).toEqual([
@@ -235,8 +236,8 @@ const invalidSources: [string, (source: CurriculumSources) => void, string][] = 
   ],
   [
     'an optional oral prompt presented as corrected items',
-    ({ chapters }) => (chapters['chapter-1'].sequences[1].contents[4].items = []),
-    `${origin}[4].items: is not allowed for "oral-prompt"`,
+    ({ chapters }) => (chapters['chapter-1'].sequences[1].contents[5].items = []),
+    `${origin}[5].items: is not allowed for "oral-prompt"`,
   ],
   [
     'an unknown activity format',

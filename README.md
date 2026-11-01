@@ -159,23 +159,23 @@ par un retour à la ligne, avec le français plus petit via la classe globale
 
 ### Correction et progression
 
-La page de séquence présente un sommaire et un bouton « Commencer le parcours » ou
-« Reprendre le parcours ». Le parcours suit l’ordre des contenus : une note complète,
-un dialogue complet ou une question par page, avec défilement pour les textes longs.
-Les liens externes et consignes orales sont des étapes facultatives : « Suivant »
-reste disponible sans visite du lien ni validation de l’activité orale.
+La page de séquence propose un parcours guidé plutôt qu’un sommaire par type
+d’exercice : lectures et exercices alternent dans l’ordre pédagogique du curriculum.
+Une synthèse indique l’avancement et la prochaine étape, puis permet de commencer ou
+reprendre. Chaque étape occupe une page, avec défilement pour les textes longs.
+Les liens externes et consignes orales restent facultatifs.
 
 Pendant le parcours, l’en-tête et le pied de page habituels laissent place à une
 barre compacte : retour aux ressources, progression et choix du thème par icônes
 avec infobulles bilingues. L’interface normale revient à l’arrêt ou au bilan.
-Les lectures parcourues sont comptées séparément des exercices réussis et ne
-produisent ni tentative ni indice de maîtrise. La barre mesure les exercices réussis
-(ou les lectures si la séquence ne contient aucun exercice). « Précédent » permet
-de relire les étapes parcourues sans effacer la réponse en cours ; les exercices
-déjà parcourus s’affichent alors en lecture seule. La reprise mémorise la position
-sur ce navigateur, y compris pendant une relecture. Elle ne synchronise pas cette
-position entre appareils. Les anciennes sauvegardes conservent leurs réponses et
-corrections ; les lectures qui n’étaient pas suivies restent à parcourir.
+La progression compte les étapes parcourues et ignorées ; les exercices réussis,
+les erreurs et les étapes passées restent distingués. Une réponse incorrecte ne
+bloque pas la suite et n’est pas automatiquement reproposée. « Précédent » permet
+de relire les étapes parcourues sans créer de nouvelle tentative ; les exercices
+déjà parcourus s’affichent alors en lecture seule. La progression se synchronise
+entre appareils du même compte Google et fusionne les étapes parcourues et réussites.
+Les anciennes sauvegardes locales sont importées ; le texte des réponses n’est pas
+synchronisé.
 
 Les champs gardent un libellé accessible sans afficher « Réponse », reçoivent le
 focus automatiquement et demandent au navigateur de désactiver l’autocomplétion

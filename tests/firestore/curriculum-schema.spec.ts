@@ -132,7 +132,7 @@ const structuralErrors: [string, (book: any, chapters: Record<string, any>) => v
   ],
   [
     'an oral prompt with corrected items',
-    (_book, chapters) => (chapters['chapter-1'].sequences[1].contents[4].items = []),
+    (_book, chapters) => (chapters['chapter-1'].sequences[1].contents[5].items = []),
     false,
   ],
   [
