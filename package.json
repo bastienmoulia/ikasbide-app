@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "curriculum:validate": "node tools/curriculum/cli.ts validate",
     "curriculum:import": "node tools/curriculum/cli.ts import",
+    "curriculum:sync": "node tools/curriculum/cli.ts sync",
     "deploy": "npm run build && node scripts/check-deploy.mjs && firebase deploy --project default --only hosting,firestore:rules"
   },
   "engines": {
@@ -40,6 +41,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@google-cloud/firestore": "^9.4.0",
     "@angular/build": "^22.2.5",
     "@angular/cli": "^22.2.5",
     "@angular/compiler-cli": "^22.2.0",
