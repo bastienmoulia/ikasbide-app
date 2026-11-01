@@ -1,4 +1,5 @@
-import { Component, effect, ElementRef, inject, input } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, input } from '@angular/core';
+import { marked } from 'marked';
 import { BilingualText } from '../bilingual-text';
 import { NetworkStatus } from '../network-status';
 import {
@@ -21,6 +22,41 @@ import type { ReadingContent } from './practice-steps';
     .reading-body {
       white-space: pre-line;
     }
+
+    .markdown-note {
+      overflow-wrap: anywhere;
+    }
+
+    .markdown-note ::ng-deep :is(img, video) {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+    }
+
+    .markdown-note ::ng-deep table {
+      display: block;
+      max-width: 100%;
+      overflow-x: auto;
+      border-collapse: collapse;
+    }
+
+    .markdown-note ::ng-deep :is(th, td) {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--app-border-strong);
+      text-align: start;
+      vertical-align: top;
+    }
+
+    .markdown-note ::ng-deep th {
+      background: var(--app-surface-muted);
+    }
+
+    .markdown-note ::ng-deep blockquote {
+      margin-inline: 0;
+      padding: 0.5rem 1rem;
+      border-left: 4px solid var(--chapter-accent);
+      background: var(--app-surface-muted);
+    }
   `,
   host: {
     tabindex: '-1',
@@ -38,13 +74,17 @@ import type { ReadingContent } from './practice-steps';
       </h2>
       @switch (reading.kind) {
         @case ('note') {
-          <p>
-            <app-bilingual-text
-              class="reading-body"
-              [eu]="reading.body.eu"
-              [fr]="reading.body.fr"
-            />
-          </p>
+          @if ('markdown' in reading) {
+            <div class="markdown-note" [innerHTML]="markdown()"></div>
+          } @else {
+            <p>
+              <app-bilingual-text
+                class="reading-body"
+                [eu]="reading.body.eu"
+                [fr]="reading.body.fr"
+              />
+            </p>
+          }
         }
         @case ('dialogue') {
           <dl class="dialogue">
@@ -87,6 +127,11 @@ import type { ReadingContent } from './practice-steps';
 export class ReadingPlayer {
   readonly content = input.required<ReadingContent>();
   protected readonly labels = contentKindLabels;
+  /** Rendered once per note; Angular sanitizes the HTML bound to innerHTML. */
+  protected readonly markdown = computed(() => {
+    const reading = this.content();
+    return 'markdown' in reading ? marked.parse(reading.markdown, { async: false }) : '';
+  });
   protected readonly network = inject(NetworkStatus);
   protected readonly needsNetwork = externalLinkNeedsNetworkMessage;
   protected readonly offline = externalLinkOfflineMessage;

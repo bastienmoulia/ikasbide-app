@@ -55,6 +55,15 @@ export function practiceSteps(sequence: Sequence): PracticeStep[] {
             item,
           }),
         );
+      case 'matching':
+        return content.items.map((item) =>
+          step({
+            kind: 'matching',
+            title: content.title,
+            instructions: content.instructions,
+            item,
+          }),
+        );
     }
   });
 }

@@ -117,6 +117,12 @@ import { ReadingPlayer } from './reading-player';
                 <p [attr.lang]="step.question.item.direction === 'eu-fr' ? 'eu' : 'fr'">
                   {{ step.question.item.source }}
                 </p>
+              } @else if (step.question.kind === 'matching') {
+                <ul>
+                  @for (pair of step.question.item.pairs; track $index) {
+                    <li><app-bilingual-text [eu]="pair.eu" [fr]="pair.fr" /></li>
+                  }
+                </ul>
               } @else {
                 <p>
                   <app-bilingual-text
