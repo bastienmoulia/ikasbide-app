@@ -183,13 +183,18 @@ export function validateCurriculum(
         value,
         path,
         ['id', 'objectiveIds', ...fields],
-        fields.includes('acceptedAnswers') ? ['warningAnswers'] : [],
+        fields.includes('acceptedAnswers') ? ['warningAnswers', 'hint'] : ['hint'],
       );
       if (!record) return;
       id(record['id'], `${path}.id`, itemIds);
       objectiveReferences(record['objectiveIds'], `${path}.objectiveIds`);
       check(record);
       if ('warningAnswers' in record) texts(record['warningAnswers'], `${path}.warningAnswers`);
+      if ('hint' in record) {
+        list(record['hint'], `${path}.hint`).forEach((line, index) =>
+          bilingual(line, `${path}.hint[${index}]`),
+        );
+      }
     }
 
     function activityItems(activity: JsonObject, path: string): void {

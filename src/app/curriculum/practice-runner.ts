@@ -14,7 +14,12 @@ import { RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
 import { Icon } from '../icon';
 import { PracticeLayout } from '../practice-layout';
-import { ActivityPlayer, type ExerciseQuestion, type ItemResponse } from './activity-player';
+import {
+  ActivityPlayer,
+  ExerciseHint,
+  type ExerciseQuestion,
+  type ItemResponse,
+} from './activity-player';
 import type { Sequence } from './curriculum.model';
 import {
   createPracticeProgress,
@@ -33,7 +38,15 @@ import { ReadingPlayer } from './reading-player';
 
 @Component({
   selector: 'app-practice-runner',
-  imports: [ActivityPlayer, BilingualText, Icon, MatTooltipModule, RouterLink, ReadingPlayer],
+  imports: [
+    ActivityPlayer,
+    BilingualText,
+    ExerciseHint,
+    Icon,
+    MatTooltipModule,
+    RouterLink,
+    ReadingPlayer,
+  ],
   styleUrls: ['./practice-runner.css'],
   template: `
     @if (progress(); as state) {
@@ -82,6 +95,7 @@ import { ReadingPlayer } from './reading-player';
               [question]="presentation.question"
               [feedback]="state.feedback"
               [hidden]="reviewing()"
+              [(hintOpen)]="hintOpen"
               (attempted)="submit($event)"
             />
           }
@@ -110,6 +124,13 @@ import { ReadingPlayer } from './reading-player';
                     [fr]="step.question.item.prompt.fr"
                   />
                 </p>
+              }
+              @if (step.question.item.hint?.length) {
+                <app-exercise-hint
+                  [lines]="step.question.item.hint!"
+                  [open]="hintOpen()"
+                  (toggled)="hintOpen.set(!hintOpen())"
+                />
               }
               <p>
                 <app-bilingual-text
@@ -271,6 +292,7 @@ export class PracticeRunner {
   protected readonly progress = signal<PracticeProgress | null>(null);
   protected readonly storageError = signal<{ eu: string; fr: string } | null>(null);
   private readonly presentation = signal(0);
+  protected readonly hintOpen = signal(false);
   private readonly practiceLayout = inject(PracticeLayout);
   protected readonly currentQuestion = computed(() => {
     const step = this.currentStep();
@@ -305,6 +327,11 @@ export class PracticeRunner {
     effect(() => {
       const feedback = this.feedback();
       if (feedback && feedback.outcome !== 'correct-with-warning') this.attempted.emit(feedback);
+    });
+    effect(() => {
+      this.displayedStep();
+      this.reviewing();
+      this.hintOpen.set(false);
     });
     effect((onCleanup) => {
       this.practiceLayout.active.set(!!this.displayedStep());

@@ -63,6 +63,10 @@ test('the maintainer import publishes a book and ordered chapters', async () => 
     'Baionakoa naiz.',
     'Ni Baionakoa naiz.',
   ]);
+  expect(chapter?.['sequences'][1].contents[2].items[0].hint).toEqual([
+    { eu: 'Baiona', fr: 'Bayonne' },
+    { eu: 'Bilbokoa naiz.', fr: 'Je suis de Bilbao.' },
+  ]);
   expect(chapter?.['sequences'][0].contents[2].items[3].warningAnswers).toEqual(['Egun on']);
   expect(chapter?.['sequences'][1].contents[2].items[1].warningAnswers).toEqual([
     'Je réside à Bilbao.',
@@ -213,6 +217,17 @@ const invalidSources: [string, (source: CurriculumSources) => void, string][] = 
     ({ chapters }) =>
       (chapters['chapter-1'].sequences[0].contents[3].items[0].warningAnswers = ['Agur']),
     `${greetings}[3].items[0].warningAnswers: is not allowed`,
+  ],
+  [
+    'an empty hint',
+    ({ chapters }) => (chapters['chapter-1'].sequences[1].contents[2].items[0].hint = []),
+    `${origin}[2].items[0].hint: must contain at least 1 element(s)`,
+  ],
+  [
+    'a hint line without French',
+    ({ chapters }) =>
+      (chapters['chapter-1'].sequences[1].contents[2].items[0].hint = [{ eu: 'Baiona' }]),
+    `${origin}[2].items[0].hint[0].fr: is required`,
   ],
   [
     'a word-order warning answer that uses other words',

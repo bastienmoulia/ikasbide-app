@@ -89,6 +89,8 @@ interface ActivityBase {
 interface ItemBase {
   id: string;
   objectiveIds: string[];
+  /** Optional authored help (vocabulary, example phrasing) shown on demand; never the answer. */
+  hint?: BilingualText[];
 }
 
 export interface GapFillItem extends ItemBase {

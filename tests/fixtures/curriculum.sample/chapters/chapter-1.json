@@ -237,6 +237,10 @@
               "objectiveIds": ["say-origin-and-residence"],
               "direction": "fr-eu",
               "source": "Je suis de Bayonne.",
+              "hint": [
+                { "eu": "Baiona", "fr": "Bayonne" },
+                { "eu": "Bilbokoa naiz.", "fr": "Je suis de Bilbao." }
+              ],
               "acceptedAnswers": ["Baionakoa naiz.", "Ni Baionakoa naiz."]
             },
             {

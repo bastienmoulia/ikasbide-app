@@ -6,6 +6,7 @@ import {
   ElementRef,
   inject,
   input,
+  model,
   output,
   signal,
   ViewChild,
@@ -112,8 +113,81 @@ class ActivityFeedback {
 }
 
 @Component({
+  selector: 'app-exercise-hint',
+  imports: [BilingualText, Icon],
+  styles: `
+    :host {
+      display: grid;
+      justify-items: start;
+      gap: 0.5rem;
+    }
+
+    .hint-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.75rem;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--app-border-strong);
+      border-radius: 0.6rem;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .hint-toggle[aria-expanded='true'] {
+      border-color: var(--chapter-accent);
+    }
+
+    .hint-toggle:focus-visible {
+      outline: 3px solid var(--chapter-accent);
+      outline-offset: 3px;
+    }
+
+    .hint-panel {
+      display: grid;
+      gap: 0.5rem;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0.75rem 1rem;
+      border-left: 4px solid var(--chapter-accent);
+      border-radius: 0.65rem;
+      background: var(--app-surface-muted);
+      list-style: none;
+    }
+  `,
+  template: `
+    <button
+      type="button"
+      class="hint-toggle"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="panelId"
+      (click)="toggled.emit()"
+    >
+      <app-icon name="hint" />
+      <app-bilingual-text eu="Laguntza" fr="Aide" />
+    </button>
+    @if (open()) {
+      <ul class="hint-panel" [id]="panelId">
+        @for (line of lines(); track $index) {
+          <li><app-bilingual-text [eu]="line.eu" [fr]="line.fr" /></li>
+        }
+      </ul>
+    }
+  `,
+})
+export class ExerciseHint {
+  readonly lines = input.required<BilingualTextValue[]>();
+  readonly open = input.required<boolean>();
+  readonly toggled = output<void>();
+  protected readonly panelId = 'exercise-hint';
+}
+
+@Component({
   selector: 'app-activity-player',
-  imports: [ActivityFeedback, BilingualText, Icon],
+  imports: [ActivityFeedback, BilingualText, ExerciseHint, Icon],
   styleUrls: ['./activity-player.css'],
   host: {
     role: 'region',
@@ -135,6 +209,13 @@ class ActivityFeedback {
       @switch (currentQuestion.kind) {
         @case ('gap-fill') {
           @let blank = currentQuestion.item.prompt.eu.indexOf('___');
+          @if (currentQuestion.item.hint?.length) {
+            <app-exercise-hint
+              [lines]="currentQuestion.item.hint!"
+              [open]="hintOpen()"
+              (toggled)="toggleHint()"
+            />
+          }
           <form autocomplete="off" (submit)="grade(currentQuestion.item, $event)">
             <p class="prompt">
               <span lang="eu">{{ currentQuestion.item.prompt.eu.slice(0, blank) }}</span>
@@ -176,6 +257,13 @@ class ActivityFeedback {
             [eu]="currentQuestion.item.prompt.eu"
             [fr]="currentQuestion.item.prompt.fr"
           />
+          @if (currentQuestion.item.hint?.length) {
+            <app-exercise-hint
+              [lines]="currentQuestion.item.hint!"
+              [open]="hintOpen()"
+              (toggled)="toggleHint()"
+            />
+          }
           <fieldset class="choices">
             <legend>
               <app-bilingual-text eu="Aukeratu erantzuna" fr="Choisissez une réponse" />
@@ -198,6 +286,13 @@ class ActivityFeedback {
             [eu]="currentQuestion.item.prompt.eu"
             [fr]="currentQuestion.item.prompt.fr"
           />
+          @if (currentQuestion.item.hint?.length) {
+            <app-exercise-hint
+              [lines]="currentQuestion.item.hint!"
+              [open]="hintOpen()"
+              (toggled)="toggleHint()"
+            />
+          }
           @if (feedback(); as result) {
             <p class="answer" [attr.lang]="answerLang(currentQuestion, result.answer)">
               {{ result.answer }}
@@ -267,6 +362,13 @@ class ActivityFeedback {
           <p class="source" [attr.lang]="currentQuestion.item.direction === 'eu-fr' ? 'eu' : 'fr'">
             {{ currentQuestion.item.source }}
           </p>
+          @if (currentQuestion.item.hint?.length) {
+            <app-exercise-hint
+              [lines]="currentQuestion.item.hint!"
+              [open]="hintOpen()"
+              (toggled)="toggleHint()"
+            />
+          }
           @if (feedback(); as result) {
             <p class="answer" [attr.lang]="answerLang(currentQuestion, result.answer)">
               {{ result.answer }}
@@ -312,6 +414,7 @@ export class ActivityPlayer {
   readonly attempted = output<ItemResponse>();
   protected readonly answer = signal('');
   protected readonly selectedWords = signal<number[]>([]);
+  readonly hintOpen = model(false);
   protected readonly canSubmit = () => this.answer().trim().length > 0;
   protected readonly choices = computed(() => {
     const question = this.question();
@@ -339,6 +442,14 @@ export class ActivityPlayer {
       this.answer.set('');
       this.selectedWords.set([]);
     });
+    effect(() => {
+      this.question();
+      this.hintOpen.set(false);
+    });
+  }
+
+  protected toggleHint(): void {
+    this.hintOpen.update((open) => !open);
   }
 
   protected updateAnswer(event: Event): void {

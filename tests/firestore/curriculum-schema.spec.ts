@@ -119,6 +119,17 @@ const structuralErrors: [string, (book: any, chapters: Record<string, any>) => v
     false,
   ],
   [
+    'an empty hint',
+    (_book, chapters) => (chapters['chapter-1'].sequences[1].contents[2].items[0].hint = []),
+    false,
+  ],
+  [
+    'a hint line without French',
+    (_book, chapters) =>
+      (chapters['chapter-1'].sequences[1].contents[2].items[0].hint = [{ eu: 'Baiona' }]),
+    false,
+  ],
+  [
     'warning answers on a multiple-choice item',
     (_book, chapters) =>
       (chapters['chapter-1'].sequences[0].contents[3].items[0].warningAnswers = ['Agur']),

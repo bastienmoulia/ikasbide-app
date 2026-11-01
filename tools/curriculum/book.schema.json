@@ -430,6 +430,13 @@
         },
         "objectiveIds": {
           "$ref": "#/$defs/texts"
+        },
+        "hint": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/bilingual"
+          }
         }
       }
     },
