@@ -2,10 +2,12 @@ import { parseArgs } from 'node:util';
 import { publishCurriculum } from './publish.ts';
 import { readCurriculumDirectory } from './source.ts';
 import { validateCurriculum } from './validate.ts';
+import { syncCurriculum } from './sync.ts';
 
 const usage = `Usage:
   npm run curriculum:validate -- <book-directory>
-  npm run curriculum:import -- <book-directory> --project <firebase-project-id> [--chapter <id> ...]`;
+  npm run curriculum:import -- <book-directory> --project <firebase-project-id> [--chapter <id> ...]
+  npm run curriculum:sync -- <content-repository> --project <firebase-project-id>`;
 
 async function main(): Promise<void> {
   const { positionals, values, tokens } = parseArgs({
@@ -35,10 +37,20 @@ async function main(): Promise<void> {
   if (
     positionals.length < 2 ||
     !directory ||
-    (command === 'validate' && chapterIds) ||
-    !(command === 'validate' || (command === 'import' && values.project))
+    (command !== 'import' && chapterIds) ||
+    !(command === 'validate' || ((command === 'import' || command === 'sync') && values.project))
   ) {
     throw new UsageError(usage);
+  }
+
+  if (command === 'sync' && values.project) {
+    const db = await firestore(values.project);
+    try {
+      await syncCurriculum(db, directory);
+    } finally {
+      await db.terminate();
+    }
+    return;
   }
 
   const source = await readCurriculumDirectory(directory);
@@ -56,30 +68,31 @@ async function main(): Promise<void> {
     return;
   }
   if (!values.project) throw new UsageError(usage);
-  const [{ initializeApp, applicationDefault }, { getFirestore }] = await Promise.all([
-    import('firebase-admin/app'),
-    import('firebase-admin/firestore'),
-  ]);
+  const db = await firestore(values.project);
+  try {
+    const summary = await publishCurriculum(db, curriculum, chapterIds);
+    console.log(
+      `Published book ${summary.bookId}, ${plural(summary.chapters, 'chapter')} ` +
+        `to ${values.project} (${summary.removed} removed).`,
+    );
+  } finally {
+    await db.terminate();
+  }
+}
+
+async function firestore(projectId: string) {
   const emulator = process.env['FIRESTORE_EMULATOR_HOST'];
-  if (Boolean(emulator) !== values.project.startsWith('demo-')) {
+  if (Boolean(emulator) !== projectId.startsWith('demo-')) {
     throw new UsageError(
       emulator
-        ? `Refusing to import into ${values.project} through the emulator: use a demo- project.`
-        : `Refusing to import into ${values.project} without FIRESTORE_EMULATOR_HOST.`,
+        ? `Refusing to import into ${projectId} through the emulator: use a demo- project.`
+        : `Refusing to import into ${projectId} without FIRESTORE_EMULATOR_HOST.`,
     );
   }
-  // Production imports use Application Default Credentials kept outside the repository.
+  // The Google Cloud client supports WIF external-account ADC, unlike Firebase Admin auth.
   if (emulator) process.env['METADATA_SERVER_DETECTION'] = 'none';
-  const app = initializeApp(
-    emulator
-      ? { projectId: values.project }
-      : { projectId: values.project, credential: applicationDefault() },
-  );
-  const summary = await publishCurriculum(getFirestore(app), curriculum, chapterIds);
-  console.log(
-    `Published book ${summary.bookId}, ${plural(summary.chapters, 'chapter')} ` +
-      `to ${values.project} (${summary.removed} removed).`,
-  );
+  const { Firestore } = await import('@google-cloud/firestore');
+  return new Firestore({ projectId });
 }
 
 function plural(count: number, noun: string): string {

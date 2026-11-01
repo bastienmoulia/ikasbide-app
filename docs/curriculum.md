@@ -215,3 +215,50 @@ npm run emulators
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
   npm run curriculum:import -- tests/fixtures/curriculum.sample --project demo-ikasbide
 ```
+
+## Republication automatique depuis Git
+
+```bash
+npm run curriculum:sync -- /chemin/ikasbide-content --project PROJECT_ID
+```
+
+`sync` exige la racine d’un dépôt Git et une révision HEAD propre. Il découvre tous les
+livres versionnés, y compris dans des sous-dossiers, à partir de `book.json` et
+`chapters/<id>.json`. Les sources référencées doivent appartenir au commit, pas seulement
+exister localement. Il compare HEAD au dernier SHA publié avec succès, conservé dans
+`curriculumPublications/ikasbide-content`. Ce document technique n’est pas lisible par
+l’application ; il ne contient aucun texte pédagogique.
+
+Un manifeste modifié sélectionne le livre complet ; des chapitres seuls sélectionnent
+une publication partielle unique par livre. Tous les livres concernés sont validés en
+entier avant la première écriture. Les identifiants des livres et chapitres sont également
+vérifiés dans tous les manifestes versionnés, y compris ceux des livres non ciblés :
+un nouveau livre ne peut pas usurper leur identité. Une suppression de chapitre exige
+un manifeste cohérent. Un livre
+supprimé entièrement est refusé lorsque sa suppression est détectée : la suppression
+automatique de livres n’est pas prise en charge.
+
+Le SHA de réussite n’avance qu’après toutes les publications. Si un import échoue,
+l’exécution suivante reprend le cumul des différences depuis ce SHA ; les imports déjà
+réussis peuvent être rejoués. La sélection inclut tous les chemins touchés par les commits
+intermédiaires, même si un changement a ensuite été annulé : un livre écrit avant l’échec
+doit être réconcilié avec HEAD. L’atomicité reste **par livre**, pas multi-livres. Les échecs
+d’import (permissions, collision avec un document existant, limite de transaction, etc.)
+restent explicites et peuvent survenir après la publication d’un autre livre valide.
+
+Une révision déjà publiée ou ancêtre du SHA publié ne fait aucune écriture. Sans base
+utilisable (premier lancement, commit absent, SHA invalide ou historique divergent), tous
+les livres présents sont publiés complètement, avec un message explicite dans les logs.
+Sans changement de source, aucun document, même le checkpoint, n’est écrit. Cette
+absence de mise à jour du checkpoint n’omet pas les changements suivants.
+
+**Les appels doivent être sérialisés par l’appelant.** Le workflow dans le dépôt privé
+utilise un groupe de concurrence sans annulation de l’exécution active et récupère la
+dernière source de `main` au démarrage du job, pas le SHA de l’événement ancien.
+Ne pas lancer simultanément un import manuel et ce workflow.
+
+Le CLI utilise directement `@google-cloud/firestore` et ses Application Default
+Credentials : cette voie accepte les identifiants temporaires WIF de
+`google-github-actions/auth`, sans passer par l’authentification Firebase Admin.
+L’import manuel et les protections des projets émulateur restent identiques.
+Voir [la configuration OIDC et l’activation](curriculum-publication.md).

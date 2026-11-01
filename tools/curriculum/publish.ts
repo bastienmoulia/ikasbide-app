@@ -1,4 +1,4 @@
-import type { Firestore } from 'firebase-admin/firestore';
+import type { DocumentData, Firestore } from '@google-cloud/firestore';
 import type {
   CurriculumSource,
   PublishedBook,
@@ -52,7 +52,7 @@ export async function publishCurriculum(
       : [];
     const chapterSnapshot = selectedIds ? undefined : await transaction.get(chapters);
     const unitSnapshot = selectedIds ? undefined : await transaction.get(units);
-    const publishedChapters = new Map<string, FirebaseFirestore.DocumentData>();
+    const publishedChapters = new Map<string, DocumentData>();
 
     for (const chapter of sourceSnapshots) {
       const data = chapter.data();

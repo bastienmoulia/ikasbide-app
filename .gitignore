@@ -50,3 +50,4 @@ Thumbs.db
 *-debug.log*
 /playwright-report/
 /test-results/
+gha-creds-*.json
