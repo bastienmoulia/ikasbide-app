@@ -1,6 +1,8 @@
 name: Deploy Firebase Hosting
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
@@ -12,10 +14,12 @@ permissions:
 concurrency:
   group: firebase-hosting-production
   cancel-in-progress: false
+  queue: max
 
 jobs:
   deploy:
     if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'release' &&
       github.event.action == 'published' &&
       startsWith(github.event.release.tag_name, 'v')) ||
@@ -25,7 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || 'main' }}
+          ref: >-
+            ${{ (github.event_name == 'release' && github.event.release.tag_name) ||
+            (github.event_name == 'push' && github.sha) || 'main' }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v5
@@ -47,14 +53,14 @@ jobs:
             git checkout --detach "$release_sha"
           else
             if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-              echo "Manual deployment is available only from main." >&2
+              echo "Push and manual deployments are available only from main." >&2
               exit 1
             fi
             release_sha="$(git rev-parse HEAD)"
           fi
           echo "release_sha=$release_sha" >> "$GITHUB_OUTPUT"
-      - name: Require CI for the exact release commit
-        if: github.event_name == 'release'
+      - name: Require CI for the exact deployment commit
+        if: github.event_name == 'release' || github.event_name == 'push'
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}

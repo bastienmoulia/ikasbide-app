@@ -87,8 +87,11 @@ utiliser cette URL HTTPS et non une adresse IP locale en HTTP.
 ## Déployer avec GitHub Actions
 
 Le workflow `.github/workflows/deploy.yml` déploie Hosting et les règles Firestore
-après une release GitHub publiée ; il conserve également le lancement manuel depuis
-`main` pour les récupérations.
+à chaque push sur `main` et après une release GitHub publiée avec un tag `vX.Y.Z` ;
+il conserve également le lancement manuel depuis `main` pour les récupérations.
+Chaque push déclenche une exécution pour son dernier commit, même s’il en contient
+plusieurs. Les déploiements automatiques attendent la réussite de la CI pour le
+commit exact.
 
 Dans **Settings → Secrets and variables → Actions** du dépôt, configurer :
 
@@ -109,10 +112,11 @@ est ignoré. Le workflow installe les dépendances verrouillées, génère la co
 locale et réutilise `npm run deploy` avec ses vérifications. Le compte de service est
 écrit dans un fichier temporaire privé, utilisé via Application Default Credentials,
 puis supprimé même en cas d’échec. Aucun `firebase login` interactif n’est nécessaire.
-Les déploiements sont sérialisés.
+Les déploiements sont sérialisés, avec jusqu’à 100 exécutions en attente ; GitHub
+annule les suivantes si cette file est pleine et ne garantit pas leur ordre.
 
 La configuration Release Please, la validation des titres, la vérification CI sur
-le SHA exact du tag, les paramètres de fusion et la procédure de nouvelle tentative
+le SHA exact du commit, les paramètres de fusion et la procédure de nouvelle tentative
 sont décrits dans [releases.md](releases.md).
 
 ## Installer la PWA
