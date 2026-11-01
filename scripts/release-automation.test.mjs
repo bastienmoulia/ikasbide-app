@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { isConventionalPullRequestTitle } from './validate-pr-title.mjs';
 import { requireSuccessfulCi } from './check-release-ci.mjs';
 
@@ -249,7 +253,74 @@ test('deploys main pushes at their exact commit after successful CI', async () =
   );
 });
 
-test('Release Please bootstraps at 0.1.0 without changing the current build version', async () => {
+test('release metadata checks allow version changes and reject inconsistencies', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'ikasbide-release-'));
+  const environment = { ...process.env };
+  // The nested test runner must not inherit the parent worker's context.
+  delete environment.NODE_TEST_CONTEXT;
+  const checkMetadata = () =>
+    spawnSync(
+      process.execPath,
+      [
+        '--test',
+        '--test-reporter=tap',
+        '--test-name-pattern=^Release Please configuration and package versions remain consistent$',
+        fileURLToPath(import.meta.url),
+      ],
+      { cwd: directory, encoding: 'utf8', env: environment },
+    );
+  const writeVersions = async ({ manifest, packageVersion, lock, lockRoot }) => {
+    await Promise.all([
+      writeFile(
+        join(directory, '.release-please-manifest.json'),
+        JSON.stringify({ '.': manifest }),
+      ),
+      writeFile(join(directory, 'package.json'), JSON.stringify({ version: packageVersion })),
+      writeFile(
+        join(directory, 'package-lock.json'),
+        JSON.stringify({ version: lock, packages: { '': { version: lockRoot } } }),
+      ),
+    ]);
+  };
+
+  try {
+    await writeFile(
+      join(directory, 'release-please-config.json'),
+      await readFile('release-please-config.json', 'utf8'),
+    );
+
+    for (const version of ['0.0.0', '0.1.0', '0.1.1', '0.2.0', '1.0.0']) {
+      await writeVersions({
+        manifest: version,
+        packageVersion: version,
+        lock: version,
+        lockRoot: version,
+      });
+      const result = checkMetadata();
+      assert.ifError(result.error);
+      assert.match(result.stdout, /^# tests 1$/m, result.stderr);
+      assert.equal(result.status, 0, `Version ${version}:\n${result.stdout}\n${result.stderr}`);
+    }
+
+    for (const versions of [
+      { manifest: '0.0.0', packageVersion: '0.1.0', lock: '0.1.0', lockRoot: '0.1.0' },
+      { manifest: '0.1.0', packageVersion: '0.1.0', lock: '0.0.0', lockRoot: '0.1.0' },
+      { manifest: '0.1.0', packageVersion: '0.1.0', lock: '0.1.0', lockRoot: '0.0.0' },
+      { manifest: 'invalid', packageVersion: 'invalid', lock: 'invalid', lockRoot: 'invalid' },
+    ]) {
+      await writeVersions(versions);
+      const result = checkMetadata();
+      assert.ifError(result.error);
+      assert.match(result.stdout, /^# tests 1$/m, result.stderr);
+      assert.notEqual(result.status, 0, `Accepted invalid versions: ${JSON.stringify(versions)}`);
+      assert.match(result.stdout, /AssertionError/);
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('Release Please configuration and package versions remain consistent', async () => {
   const [config, manifest, packageJson, packageLock] = await Promise.all([
     readFile('release-please-config.json', 'utf8').then(JSON.parse),
     readFile('.release-please-manifest.json', 'utf8').then(JSON.parse),
@@ -261,7 +332,8 @@ test('Release Please bootstraps at 0.1.0 without changing the current build vers
   assert.equal(config.packages['.']['bump-patch-for-minor-pre-major'], undefined);
   assert.equal(config['include-component-in-tag'], false);
   assert.equal(config['include-v-in-tag'], true);
-  assert.equal(manifest['.'], '0.0.0');
-  assert.equal(packageJson.version, '0.0.0');
+  assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
+  assert.equal(manifest['.'], packageJson.version);
   assert.equal(packageLock.version, packageJson.version);
+  assert.equal(packageLock.packages[''].version, packageJson.version);
 });
