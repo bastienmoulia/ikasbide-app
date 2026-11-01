@@ -1,9 +1,12 @@
 import { Component, computed, inject } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
+import { OverlayModule, type ConnectedPosition } from '@angular/cdk/overlay';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterOutlet } from '@angular/router';
+import packageJson from '../../package.json';
 import { AuthService } from './auth.service';
 import { BilingualText } from './bilingual-text';
 import { DisplayModeService } from './display-mode.service';
@@ -13,6 +16,7 @@ import { PracticeLayout } from './practice-layout';
 
 @Component({
   imports: [
+    A11yModule,
     MatButtonModule,
     DisplayModeControl,
     MatCardModule,
@@ -21,6 +25,7 @@ import { PracticeLayout } from './practice-layout';
     RouterLink,
     RouterOutlet,
     BilingualText,
+    OverlayModule,
   ],
   selector: 'app-root',
   styleUrl: './app.css',
@@ -34,32 +39,74 @@ import { PracticeLayout } from './practice-layout';
           <span class="brand-mark" aria-hidden="true">i</span>
           Ikasbide
         </a>
-        <app-display-mode-control />
         @if (auth.status() === 'ready' && auth.user()) {
           <div class="account">
-            <span class="account-name">
-              @if (firstName(); as name) {
-                {{ name }}
-              } @else {
-                <app-bilingual-text eu="Kontua" fr="Compte" />
-              }
-            </span>
             <button
-              class="logout-button"
-              mat-icon-button
+              #accountMenuOrigin="cdkOverlayOrigin"
+              cdkOverlayOrigin
+              class="account-trigger"
               type="button"
-              aria-label="Se déconnecter"
-              matTooltip="Se déconnecter"
-              [disabled]="auth.pending()"
-              (click)="auth.signOut()"
+              aria-haspopup="dialog"
+              [attr.aria-controls]="accountMenuOpen ? 'account-menu' : null"
+              [attr.aria-expanded]="accountMenuOpen"
+              (click)="toggleAccountMenu()"
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zm-5 4h8a2 2 0 0 0 2-2v-3h-2v3H5V5h8v3h2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"
-                />
+              <span class="account-name">
+                @if (firstName(); as name) {
+                  {{ name }}
+                } @else {
+                  <app-bilingual-text eu="Kontua" fr="Compte" />
+                }
+              </span>
+              <svg class="account-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 10 5 5 5-5z" />
               </svg>
             </button>
           </div>
+          <ng-template
+            cdkConnectedOverlay
+            [cdkConnectedOverlayOrigin]="accountMenuOrigin"
+            [cdkConnectedOverlayOpen]="accountMenuOpen"
+            [cdkConnectedOverlayPositions]="accountMenuPositions"
+            [cdkConnectedOverlayPush]="true"
+            (overlayOutsideClick)="closeAccountMenu()"
+            (overlayKeydown)="onAccountMenuKeydown($event)"
+          >
+            <section
+              id="account-menu"
+              class="account-menu"
+              role="dialog"
+              aria-modal="false"
+              aria-label="Kontua / Compte"
+              [cdkTrapFocus]="false"
+              [cdkTrapFocusAutoCapture]="true"
+            >
+              <div class="account-menu-display-mode">
+                <app-display-mode-control />
+              </div>
+              <div class="account-menu-version" aria-label="Bertsioa / Version">
+                <app-bilingual-text eu="Bertsioa" fr="Version" />
+                <span>{{ version }}</span>
+              </div>
+              <hr role="separator" />
+              <button
+                class="account-menu-sign-out"
+                mat-button
+                type="button"
+                [disabled]="auth.pending()"
+                (click)="signOut()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zm-5 4h8a2 2 0 0 0 2-2v-3h-2v3H5V5h8v3h2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"
+                  />
+                </svg>
+                <app-bilingual-text eu="Amaitu saioa" fr="Se déconnecter" />
+              </button>
+            </section>
+          </ng-template>
+        } @else {
+          <app-display-mode-control />
         }
       </header>
     }
@@ -178,11 +225,36 @@ import { PracticeLayout } from './practice-layout';
   `,
 })
 export class App {
+  protected accountMenuOpen = false;
+  protected readonly accountMenuPositions: ConnectedPosition[] = [
+    { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 8 },
+    { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 8 },
+  ];
   protected readonly auth = inject(AuthService);
   protected readonly displayMode = inject(DisplayModeService);
   protected readonly practiceLayout = inject(PracticeLayout);
   protected readonly network = inject(NetworkStatus);
+  protected readonly version = packageJson.version;
   protected readonly firstName = computed(
     () => this.auth.user()?.displayName?.trim().split(/\s+/)[0] ?? '',
   );
+
+  protected toggleAccountMenu(): void {
+    this.accountMenuOpen = !this.accountMenuOpen;
+  }
+
+  protected closeAccountMenu(): void {
+    this.accountMenuOpen = false;
+  }
+
+  protected onAccountMenuKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeAccountMenu();
+    }
+  }
+
+  protected signOut(): void {
+    void this.auth.signOut();
+  }
 }

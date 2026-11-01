@@ -54,7 +54,11 @@ test('practice keeps only a compact toolbar and restores the shell on exit or na
   await signInWithGoogle(page);
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
-  await page.getByRole('radio', { name: /Iluna Sombre/ }).click();
+  await page.locator('header .account-trigger').click();
+  await page
+    .getByRole('dialog', { name: 'Kontua / Compte' })
+    .getByRole('radio', { name: /Iluna Sombre/ })
+    .click();
 
   await startPractice(page);
   await expect(page.getByRole('banner')).toHaveCount(0);
@@ -86,7 +90,12 @@ test('practice keeps only a compact toolbar and restores the shell on exit or na
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
+  await page.locator('header .account-trigger').click();
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Kontua / Compte' })
+      .getByRole('radio', { name: /Iluna Sombre/ }),
+  ).toBeChecked();
 
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
   await page
