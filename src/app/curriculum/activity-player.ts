@@ -445,9 +445,12 @@ function normalizeAnswer(value: string): string {
     .normalize('NFC')
     .toLowerCase()
     .normalize('NFC')
+    .replace(/[’]/gu, "'")
+    .replace(/[‐‑]/gu, '-')
+    .replace(/\p{P}/gu, (punctuation) =>
+      punctuation === "'" || punctuation === '-' ? punctuation : ' ',
+    )
     .replace(/\s+/gu, ' ')
-    .trim()
-    .replace(/\p{P}+$/gu, '')
     .trim();
 }
 
