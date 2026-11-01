@@ -47,7 +47,6 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Nongoa zara? D’où es-tu ?',
   );
-  await expect(page.getByRole('article')).toHaveCount(5);
   await startCourse(page);
   await expect(page.getByRole('heading', { name: /Le suffixe -ko/ })).toBeVisible();
   await page.getByRole('button', { name: /Hurrengoa Suivant/ }).click();

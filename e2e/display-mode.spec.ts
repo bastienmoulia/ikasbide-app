@@ -224,13 +224,16 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
 
   await page.goto('/chapitres/chapter-1/sequences/origin');
-  const resourceArticle = page.getByRole('article').first();
+  const exerciseCard = page.locator('.exercise-item');
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
-    await expect(resourceArticle).toHaveCSS(
+    await startPractice(page);
+    await expect(exerciseCard).toHaveCSS(
       'background-color',
       mode === 'dark' ? 'rgb(43, 44, 47)' : 'rgb(255, 255, 255)',
     );
+    await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
+    await expect(page.getByRole('banner')).toBeVisible();
   }
   await startPractice(page);
   const translationAnswer = page.locator('app-activity-player').getByRole('textbox');
