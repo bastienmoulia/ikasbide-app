@@ -12,4 +12,5 @@ test-results/
 playwright-report/
 public/firebase-config.json
 package-lock.json
+CHANGELOG.md
 *-debug.log*
