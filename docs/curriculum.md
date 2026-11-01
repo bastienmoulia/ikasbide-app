@@ -68,6 +68,26 @@ Les ressources ont `type: "resource"`, `id`, `kind` et `title` ; les activités 
 `type: "activity"`, `id`, `kind`, `title` et `instructions`. Chaque item corrigé a
 un `id` et des `objectiveIds` qui référencent des objectifs du même chapitre.
 
+### Aide facultative (`hint`)
+
+Chaque item corrigé (`gap-fill`, `translation`, `multiple-choice`, `word-order`) peut porter
+un champ facultatif `hint` : une liste non vide de lignes bilingues courtes, rédigées par
+l’auteur, qui apportent du vocabulaire ou une tournure illustrée par un autre exemple.
+L’aide ne doit jamais révéler la réponse attendue, le bon choix ou l’ordre des mots.
+
+```json
+"hint": [
+  { "eu": "Donostia", "fr": "Saint-Sébastien" },
+  { "eu": "Baionakoa naiz.", "fr": "Je viens de Bayonne." }
+]
+```
+
+Sans `hint`, aucun bouton d’aide n’est affiché. Sinon, un bouton « Laguntza / Aide »
+ouvre et referme la zone juste avant la saisie ou les choix ; chaque ligne affiche le basque
+puis le français en plus petit. L’aide est masquée au départ et à chaque changement de
+question, y compris lors de la relecture d’une question déjà répondue. La consulter n’est
+pas enregistrée et ne modifie ni la correction ni la progression.
+
 ## Règles de validation
 
 L’import refuse le livre entier s’il contient une incohérence et liste toutes les erreurs
@@ -79,6 +99,7 @@ avec leur chemin source. Aucune écriture n’a lieu si le livre ou un chapitre 
 - Les numéros de chapitre sont déduits de la position dans `book.json`.
 - Lettres de séquences : une majuscule, en ordre alphabétique.
 - QCM : au moins deux choix, réponses correctes existantes.
+- `hint`, s’il est présent : au moins une ligne, chacune bilingue et complète.
 - Remise en ordre : au moins deux mots ; chaque réponse acceptée utilise exactement ces
   mots (casse et ponctuation finale ignorées).
 - Chaque objectif est évalué par au moins trois items corrigés, sans quoi il ne pourrait

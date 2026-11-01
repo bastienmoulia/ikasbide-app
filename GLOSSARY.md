@@ -35,6 +35,10 @@ _Avoid_: Exercice (comme terme générique pour toute activité)
 Question ou élément individuel auquel l'apprenant répond dans une activité.
 _Avoid_: Activité
 
+**Aide** :
+Vocabulaire ou tournure illustrée par un autre exemple, rédigé par l'auteur pour un item et affiché à la demande ; elle ne révèle jamais la réponse et n'affecte ni la correction ni la progression.
+_Avoid_: Indice (confusion avec les indices de maîtrise), Solution
+
 **Objectif d'apprentissage** :
 Capacité de communication que l'apprenant cherche à acquérir et dont les activités apportent des indices de maîtrise.
 _Avoid_: Compétence (si elle désigne un objectif de chapitre)

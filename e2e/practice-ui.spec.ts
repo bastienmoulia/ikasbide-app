@@ -223,3 +223,46 @@ test('question transitions are brief and respect reduced motion', async ({ page 
   await expect(player).toHaveCSS('animation-name', 'none');
   await expect(page.getByRole('textbox')).toBeFocused();
 });
+
+test('an authored hint opens on demand before the answer and closes on each question change', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await signInWithGoogle(page);
+  await startPractice(page);
+  const toggle = page.getByRole('button', { name: /Laguntza.*Aide/ });
+  const panel = page.locator('.hint-panel');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByRole('textbox')).toBeFocused();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(panel.locator('li')).toHaveCount(2);
+  await expect(panel.locator('li').first().locator('[lang]')).toHaveText(['Baiona', 'Bayonne']);
+  await expect(panel.locator('li').first().locator('[lang]').first()).toHaveAttribute('lang', 'eu');
+  const [hintBottom, inputTop] = await Promise.all([
+    panel.evaluate((element) => element.getBoundingClientRect().bottom),
+    page.getByRole('textbox').evaluate((element) => element.getBoundingClientRect().top),
+  ]);
+  expect(hintBottom).toBeLessThanOrEqual(inputTop);
+  await toggle.click();
+  await expect(panel).toHaveCount(0);
+  await toggle.click();
+  await expect(panel).toBeVisible();
+
+  await answerCurrentText(page, 'Ni Baionakoa naiz.');
+  await expect(toggle).toHaveCount(0);
+
+  await page.getByRole('button', { name: /Précédent/ }).click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(panel).toHaveCount(0);
+  await toggle.click();
+  await expect(panel).toContainText('Bilbokoa naiz.');
+  await page.getByRole('button', { name: /Suivant/ }).click();
+  await expect(toggle).toHaveCount(0);
+  await page.getByRole('button', { name: /Précédent/ }).click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(panel).toHaveCount(0);
+});
