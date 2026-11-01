@@ -68,19 +68,11 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Nongoa zara? D’où es-tu ?',
   );
-  await expect(page.getByRole('article')).toHaveText([
-    /Note.*Le suffixe -ko/,
-    /Ressource externe.*Enregistrements audio/,
-    /Traduction.*2 questions dans la série/,
-    /Remise en ordre.*2 questions dans la série/,
-    /Activité orale facultative.*Dialogue à deux/,
-  ]);
-  const oralPrompt = page
-    .getByRole('article')
-    .filter({ has: page.getByRole('heading', { name: /Dialogue à deux/ }) });
-  await expect(oralPrompt.getByRole('textbox')).toHaveCount(0);
-  await expect(oralPrompt.getByRole('radio')).toHaveCount(0);
-  await expect(oralPrompt.getByRole('button')).toHaveCount(0);
+  const overview = page.getByRole('region', { name: /Résumé du parcours/ });
+  await expect(overview).toContainText('8 étapes à découvrir');
+  await expect(overview).toContainText('Prochaine étape');
+  await expect(overview).toContainText('Le suffixe -ko');
+  await expect(page.getByRole('article')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Enregistrements audio/ })).toHaveCount(0);
   // Accepted answers are never revealed while browsing.
   await expect(page.getByText('Baionakoa naiz.')).toHaveCount(0);
@@ -88,12 +80,10 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
 
   await page.getByRole('link', { name: /Séquence précédente/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Kaixo! Bonjour !');
-  await expect(page.getByRole('article')).toHaveText([
-    /Note.*Les salutations/,
-    /Dialogue.*Modèle de dialogue/,
-    /Texte à trous.*Complétez les phrases.*4 questions dans la série/,
-    /QCM.*Choisissez la salutation.*2 questions dans la série/,
-  ]);
+  await expect(page.getByRole('region', { name: /Résumé du parcours/ })).toContainText(
+    '8 étapes à découvrir',
+  );
+  await expect(page.getByRole('article')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Kaixo! Bonjour !');
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
@@ -113,8 +103,9 @@ test('a learner gets item-level feedback for gap-fill answers', async ({ page })
   await expectFeedbackIconBesideText(page);
   await expect(page.getByText('faux', { exact: true })).toBeVisible();
   await expect(page.getByText('naiz', { exact: true })).toBeVisible();
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '0');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await page.getByRole('button', { name: /Continuer/ }).click();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await expect(page.getByRole('textbox')).toHaveCount(1);
 });
 
@@ -129,8 +120,8 @@ test('a learner starts a sequence practice with one item and advances after a co
     page.getByRole('button', { name: /Hasi ibilbidea|Commencer le parcours/ }),
   ).toBeVisible();
   await startPractice(page);
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '0');
-  await expect(page.getByRole('progressbar')).toHaveAttribute('max', '6');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('max', '8');
   await expect(page.getByRole('heading', { name: /Complétez les phrases/ })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: /Choisissez la salutation/ })).toHaveCount(0);
@@ -141,8 +132,9 @@ test('a learner starts a sequence practice with one item and advances after a co
   await expect(page.getByRole('status').filter({ hasText: /Zuzena|Correct/ })).toBeVisible();
   await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('✓');
   await expectFeedbackIconBesideText(page);
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '1');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await page.clock.fastForward(600);
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await expect(page.getByText('Je suis de Bayonne.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Complétez les phrases/ })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveCount(1);
@@ -169,17 +161,17 @@ test('a warning waits for Continue, survives reload and resolves without retryin
   await expectBilingualPresentation(page);
   await page.clock.fastForward(2_000);
   await expect(warning).toBeVisible();
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '5');
   expect(await storedAttempts(uid)).toHaveLength(3);
 
   await page.reload();
   await startPractice(page);
   await expect(warning).toBeVisible();
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '5');
   expect(await storedAttempts(uid)).toHaveLength(3);
 
   await page.getByRole('button', { name: /Continuer/ }).click();
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '4');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '6');
   await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4');
   const attempts = await storedAttempts(uid);
   expect(
@@ -190,7 +182,7 @@ test('a warning waits for Continue, survives reload and resolves without retryin
   await answerCurrentChoice(page, 'Agur');
   await answerCurrentChoice(page, 'Egun on');
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '6');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '8');
   await page.reload();
   await startPractice(page);
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
@@ -211,7 +203,7 @@ test('translation and word-order warning variants show the canonical expected an
   await expect(warning).toBeVisible();
   await expect(page.locator('.correction > span')).toHaveText('J’habite à Bilbao.');
   await expect(page.locator('.correction > span')).toHaveAttribute('lang', 'fr');
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '1');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await page.getByRole('button', { name: /Continuer/ }).click();
 
   for (const word of ['Zu', 'nongoa', 'zara']) {
@@ -227,7 +219,7 @@ test('translation and word-order warning variants show the canonical expected an
   await expect(page.locator('.correction > span')).toHaveText('Bilbon bizi naiz.');
   await expect(page.locator('.correction > span')).toHaveAttribute('lang', 'eu');
   await page.clock.fastForward(2_000);
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '5');
   await page.getByRole('button', { name: /Continuer/ }).click();
   await expect(page.getByRole('textbox')).toBeVisible();
   await page.getByRole('textbox').fill('zira');
@@ -273,12 +265,9 @@ test('a learner can answer a multiple-choice item', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
   await page.clock.fastForward(600);
-  await player.getByRole('button', { name: 'Agur' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
-  await page.clock.fastForward(600);
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '6');
-  await expect(page.getByRole('progressbar')).toHaveAttribute('max', '6');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '8');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('max', '8');
   await expect(page.getByRole('link', { name: /Séquence suivante/ })).toBeVisible();
 });
 
@@ -334,6 +323,10 @@ test('a learner can build a word-order answer from the offered words', async ({ 
   await page.getByRole('button', { name: 'Bilbon', exact: true }).click();
   await page.getByRole('button', { name: 'bizi', exact: true }).click();
   await page.getByRole('button', { name: 'naiz', exact: true }).click();
+  await page.getByRole('button', { name: /Vérifier/ }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
+  await page.clock.fastForward(600);
+  await page.getByRole('textbox').fill('zara');
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
   await page.clock.fastForward(600);

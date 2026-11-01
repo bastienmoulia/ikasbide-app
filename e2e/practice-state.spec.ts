@@ -2,11 +2,15 @@ import { expect, test } from '@playwright/test';
 import type { Sequence } from '../src/app/curriculum/curriculum.model';
 import {
   createPracticeProgress,
+  mergeSyncedPracticeProgress,
+  toSyncedPracticeProgress,
+  type LegacyPracticeProgress,
   type PracticeProgress,
 } from '../src/app/curriculum/practice-progress';
 import {
   advancePracticeStep,
   practiceSteps,
+  skipPracticeStep,
   withPracticeSteps,
 } from '../src/app/curriculum/practice-steps';
 
@@ -55,28 +59,62 @@ function feedback(
   };
 }
 
-test('steps preserve course order and incorrect items retry after the remaining content', () => {
+test('steps preserve course order and wrong answers remain distinct from successes', () => {
   let state = withPracticeSteps(createPracticeProgress(['one', 'two']), practiceSteps(sequence));
   expect(state.journey?.queue).toEqual(['content:note', 'item:one', 'item:two', 'content:oral']);
   state = advancePracticeStep(state);
   expect(state.completedItemIds).toEqual([]);
   expect(state.feedback).toBeNull();
   state = advancePracticeStep(feedback(state, 'incorrect'));
-  expect(state.queue).toEqual(['two', 'one']);
-  expect(state.journey?.queue).toEqual(['item:two', 'content:oral', 'item:one']);
+  expect(state.queue).toEqual(['two']);
+  expect(state.attemptedItemIds).toEqual(['one']);
+  expect(state.incorrectItemIds).toEqual(['one']);
+  expect(state.journey?.queue).toEqual(['item:two', 'content:oral']);
   state = advancePracticeStep(feedback(state, 'correct-with-warning'));
   expect(state.completedItemIds).toEqual(['two']);
   state = advancePracticeStep(state);
-  expect(state.journey?.queue).toEqual(['item:one']);
-  state = advancePracticeStep(feedback(state, 'correct'));
   expect(state.journey?.queue).toEqual([]);
-  expect(state.completedItemIds).toEqual(['two', 'one']);
-  expect(state.journey?.visited).toEqual([
-    'content:note',
-    'item:one',
-    'item:two',
-    'content:oral',
-    'item:one',
+  expect(state.completedItemIds).toEqual(['two']);
+  expect(state.journey?.visited).toEqual(['content:note', 'item:one', 'item:two', 'content:oral']);
+});
+
+test('learners can skip a question and the next step stays in editorial order', () => {
+  let state = withPracticeSteps(createPracticeProgress(['one', 'two']), practiceSteps(sequence));
+  state = advancePracticeStep(state);
+  state = skipPracticeStep(state);
+  expect(state.skippedStepIds).toEqual(['item:one']);
+  expect(state.queue).toEqual(['two']);
+  expect(state.journey.queue).toEqual(['item:two', 'content:oral']);
+  state = advancePracticeStep(feedback(state, 'correct'));
+  state = advancePracticeStep(state);
+  expect(state.journey.queue).toEqual([]);
+  expect(state.completedItemIds).toEqual(['two']);
+});
+
+test('sync merges visited steps and successes without storing submitted answers', () => {
+  let local = withPracticeSteps(createPracticeProgress(['one', 'two']), practiceSteps(sequence));
+  local = advancePracticeStep(local);
+  local = advancePracticeStep(feedback(local, 'incorrect'));
+
+  const merged = mergeSyncedPracticeProgress(
+    local,
+    {
+      visitedStepIds: ['item:two'],
+      successfulItemIds: ['two'],
+      incorrectItemIds: [],
+      skippedStepIds: [],
+    },
+    practiceSteps(sequence).map(({ id }) => id),
+  );
+  expect(merged.incorrectItemIds).toEqual(['one']);
+  expect(merged.completedItemIds).toEqual(['two']);
+  expect(merged.journey.queue).toEqual(['content:oral']);
+  expect(merged.journey.visited).toEqual(['content:note', 'item:one', 'item:two']);
+  expect(Object.keys(toSyncedPracticeProgress(local)).sort()).toEqual([
+    'incorrectItemIds',
+    'skippedStepIds',
+    'successfulItemIds',
+    'visitedStepIds',
   ]);
 });
 
@@ -96,7 +134,7 @@ test('read-only sequences work without graded items and cannot advance during re
 });
 
 test('legacy completion retains completed items without claiming that readings were visited', () => {
-  const legacy: PracticeProgress = {
+  const legacy: LegacyPracticeProgress = {
     version: 1,
     queue: [],
     completedItemIds: ['one', 'two'],

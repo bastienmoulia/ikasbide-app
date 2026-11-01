@@ -75,7 +75,7 @@ test('a near match shows the correction and does not advance the series progress
   await expect(page.getByRole('status').filter({ hasText: 'Presque' })).toBeVisible();
   await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('≈');
   await expect(page.locator('.correction')).toContainText('Kaixo');
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '5');
   await expectSynced(page, 4);
 
   await page.getByRole('button', { name: /Continuer/ }).click();

@@ -102,7 +102,7 @@ export async function waitForOfflineShell(page: Page): Promise<void> {
 
 export async function startCourse(page: Page): Promise<void> {
   const start = page.getByRole('button', {
-    name: /Commencer le parcours|Reprendre le parcours/,
+    name: /Commencer le parcours|Reprendre le parcours|Voir le bilan/,
   });
   await expect(start).toBeVisible();
   await start.click();

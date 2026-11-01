@@ -50,7 +50,7 @@ Visite d'une séquence pendant laquelle l'apprenant répond à des items ; ouvri
 _Avoid_: Session (pour la connexion au compte)
 
 **Série d'entraînement** :
-Parcours d'une séquence qui alterne ressources pédagogiques et items autocorrigés dans l'ordre du cours, et repose les items ratés jusqu'à leur réussite. Les lectures parcourues sont distinctes des items réussis et de la maîtrise estimée par la carte de progression du chapitre.
+Parcours d'une séquence qui alterne ressources pédagogiques et items autocorrigés dans l'ordre du cours, sans imposer de réessai après une erreur. Les étapes parcourues ou ignorées sont distinctes des items réussis et de la maîtrise estimée par la carte de progression du chapitre.
 _Avoid_: Session de pratique, Activité
 
 **Carte de progression** :

@@ -1,68 +1,26 @@
-.contents {
+.journey-overview {
   display: grid;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-article {
+  gap: 1.25rem;
+  max-width: 42rem;
+  margin: 1.5rem auto;
   padding: 1.25rem;
   border: 1px solid var(--app-border);
   border-top: 4px solid var(--chapter-accent);
   border-radius: 0.75rem;
   background: var(--app-surface);
-  overflow-wrap: anywhere;
 }
 
-article h2 {
-  margin: 0.25rem 0 0.75rem;
-}
-
-.kind {
+.journey-overview p {
   margin: 0;
-  color: var(--chapter-accent);
-  font-size: 0.85rem;
+}
+
+.journey-progress {
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
-:host-context(html[data-display-mode='dark']) .kind {
-  color: color-mix(in srgb, var(--chapter-accent) 50%, white);
-}
-
-.dialogue {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.5rem 1rem;
-}
-
-.dialogue dt {
-  font-weight: 700;
-}
-
-.dialogue dd {
-  margin: 0;
-}
-
-.items {
-  display: grid;
-  gap: 0.75rem;
-  padding-left: 1.5rem;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.chip {
-  padding: 0.25rem 0.75rem;
-  border: 1px solid var(--app-border-subtle);
-  border-radius: 1rem;
-  background: var(--app-background);
+.journey-overview mat-progress-bar {
+  --mdc-linear-progress-active-indicator-color: var(--chapter-accent);
+  --mdc-linear-progress-track-color: var(--app-surface-muted);
 }
 
 .pager {

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  answerCurrentText,
   attemptSummary,
   learnerId,
   signInWithGoogle,
@@ -9,7 +10,7 @@ import {
 
 const sequenceUrl = '/chapitres/chapter-2/sequences/family-words';
 
-test('attempts stay immutable and shared while local practice progress stays on one device', async ({
+test('attempt evidence stays immutable and sequence progress resumes on another device', async ({
   page,
   browser,
   baseURL,
@@ -31,22 +32,15 @@ test('attempts stay immutable and shared while local practice progress stays on 
   await page.getByRole('button', { name: 'anaia', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
   await page.clock.fastForward(600);
-  await page.getByRole('button', { name: 'ama', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
-  await page.clock.fastForward(600);
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4 · en attente : 0');
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 3 · en attente : 0');
 
   const uid = await learnerId(email);
   const firstItemAttempts = (await storedAttempts(uid)).filter(
     ({ fields }) => fields['itemId'] === 'family-choice-1',
   );
-  expect(firstItemAttempts).toHaveLength(2);
-  expect(firstItemAttempts.map(({ fields }) => fields['outcome']).sort()).toEqual([
-    'correct',
-    'incorrect',
-  ]);
-  expect(firstItemAttempts[0].fields['sessionId']).toBe(firstItemAttempts[1].fields['sessionId']);
+  expect(firstItemAttempts).toHaveLength(1);
+  expect(firstItemAttempts[0].fields['outcome']).toBe('incorrect');
   for (const { fields } of firstItemAttempts) {
     expect(Object.keys(fields).sort()).toEqual([
       'chapterId',
@@ -65,26 +59,33 @@ test('attempts stay immutable and shared while local practice progress stays on 
   await page.getByRole('button', { name: /Recommencer/ }).click();
   await page.getByRole('button', { name: 'ama', exact: true }).click();
   await page.clock.fastForward(600);
-  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 5 · en attente : 0');
+  await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 4 · en attente : 0');
   const allFirstItemAttempts = (await storedAttempts(uid)).filter(
     ({ fields }) => fields['itemId'] === 'family-choice-1',
   );
-  expect(allFirstItemAttempts).toHaveLength(3);
+  expect(allFirstItemAttempts).toHaveLength(2);
+  expect(allFirstItemAttempts.map(({ fields }) => fields['outcome']).sort()).toEqual([
+    'correct',
+    'incorrect',
+  ]);
   expect(new Set(allFirstItemAttempts.map(({ fields }) => fields['sessionId'])).size).toBe(2);
 
   const otherDevice = await browser.newContext({ baseURL, serviceWorkers: 'block' });
   try {
+    const sharedSequence = '/chapitres/chapter-1/sequences/greetings';
+    await page.goto(sharedSequence);
+    await startPractice(page);
+    await answerCurrentText(page, 'naiz');
+    await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 1');
+
     const otherPage = await otherDevice.newPage();
-    await otherPage.goto(sequenceUrl);
+    await otherPage.goto(sharedSequence);
     await signInWithGoogle(otherPage, 'Apprenant fictif', email);
-    await expect(attemptSummary(otherPage)).toContainText('Tentatives synchronisées : 5');
-    await expect(otherPage.getByRole('button', { name: /Commencer le parcours/ })).toBeVisible();
-    await expect(otherPage.getByRole('button', { name: /Reprendre le parcours/ })).toHaveCount(0);
+    await expect(attemptSummary(otherPage)).toContainText('Tentatives synchronisées : 1');
+    await expect(otherPage.getByRole('button', { name: /Reprendre le parcours/ })).toBeVisible();
 
     await startPractice(otherPage);
-    await otherPage.getByRole('button', { name: 'ama', exact: true }).click();
-    await expect(otherPage.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
-    await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 6');
+    await expect(otherPage.getByText('Je suis de Bayonne.')).toBeVisible();
   } finally {
     await otherDevice.close();
   }

@@ -65,7 +65,7 @@ test('practice keeps only a compact toolbar and restores the shell on exit or na
   await expect(toolbar.getByRole('button', { name: /Arrêter pour le moment/ })).toBeVisible();
   await expect(toolbar.getByRole('radio')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-display-mode', 'dark');
-  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '0');
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await expectBilingualPresentation(page);
 
   const answer = page.getByRole('textbox', { name: /Erantzuna.*Réponse/ });
@@ -167,24 +167,16 @@ test('QCM choices shuffle per presentation, stay stable during answers and grade
   await answerCurrentChoice(page, 'aita');
   await page.evaluate(() => (Math.random = () => 0.999));
   await answerCurrentChoice(page, 'anaia');
-
-  await expect(choices).toHaveText(['ama', 'aita']);
-  await expect(player).toBeFocused();
-  await page.evaluate(() => (Math.random = () => 0));
-  await page.getByRole('button', { name: 'aita', exact: true }).click();
-  await page.getByRole('button', { name: /Continuer/ }).click();
-  // The final retry has the same item id but is a new presentation.
-  await expect(choices).toHaveText(['aita', 'ama']);
-  await expect(player).toBeFocused();
-  await expect(player.locator('.choice[aria-pressed="true"]')).toHaveCount(0);
-  await expect(page.locator('app-activity-feedback')).toHaveCount(0);
-  await answerCurrentChoice(page, 'ama');
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeFocused();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
   await page.getByRole('button', { name: /Recommencer/ }).click();
   await expect(page.getByRole('banner')).toHaveCount(0);
   await expect(player).toBeFocused();
+  await expect(choices).toHaveText(['ama', 'aita']);
+  await page.getByRole('button', { name: 'ama', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
 });
 
 test('translation inputs autofocus and word-order questions receive neutral focus', async ({

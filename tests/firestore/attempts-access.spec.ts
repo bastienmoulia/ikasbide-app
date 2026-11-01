@@ -122,3 +122,31 @@ test('recorded attempts are immutable evidence but can be safely resent', async 
   await assertFails(updateDoc(ref, { outcome: 'incorrect' }));
   await assertFails(deleteDoc(ref));
 });
+
+test('sequence progress sync is private to the owning Google account and excludes answers', async () => {
+  const ownerId = uniqueLearner('progress-owner');
+  const path = `learners/${ownerId}/sequenceProgress/9:chapter-1greetings`;
+  const progress = {
+    schemaVersion: 1,
+    chapterId: 'chapter-1',
+    sequenceId: 'greetings',
+    visitedStepIds: ['content:note', 'item:greetings-gap-1'],
+    successfulItemIds: ['greetings-gap-1'],
+    incorrectItemIds: [],
+    skippedStepIds: [],
+  };
+  const owner = googleLearner(ownerId);
+  await assertSucceeds(setDoc(doc(owner, path), progress));
+  await assertSucceeds(getDoc(doc(owner, path)));
+
+  const other = googleLearner(uniqueLearner('progress-other'));
+  await assertFails(getDoc(doc(other, path)));
+  await assertFails(setDoc(doc(other, path), progress));
+  await assertFails(
+    setDoc(doc(owner, `learners/${ownerId}/sequenceProgress/with-answer`), {
+      ...progress,
+      answer: 'naiz',
+    }),
+  );
+  await assertFails(setDoc(doc(environment.unauthenticatedContext().firestore(), path), progress));
+});

@@ -23,7 +23,12 @@ import {
   practiceProgressKey,
   writePracticeProgress,
 } from './practice-progress';
-import { advancePracticeStep, practiceSteps, withPracticeSteps } from './practice-steps';
+import {
+  advancePracticeStep,
+  practiceSteps,
+  skipPracticeStep,
+  withPracticeSteps,
+} from './practice-steps';
 import { ReadingPlayer } from './reading-player';
 
 @Component({
@@ -45,18 +50,32 @@ import { ReadingPlayer } from './reading-player';
               <app-icon name="previous" />
             </button>
             <p class="progress-label">
-              {{ state.completedItemIds.length + visitedReadingCount() }} /
-              {{ questions().length + readingCount() }}
+              <app-bilingual-text
+                [eu]="
+                  state.journey.visited.length +
+                  state.skippedStepIds.length +
+                  ' / ' +
+                  steps().length +
+                  ' urrats · ' +
+                  state.completedItemIds.length +
+                  ' ariketa gaindituta'
+                "
+                [fr]="
+                  state.journey.visited.length +
+                  state.skippedStepIds.length +
+                  ' / ' +
+                  steps().length +
+                  ' étapes · ' +
+                  state.completedItemIds.length +
+                  ' exercices réussis'
+                "
+              />
             </p>
           </div>
           <progress
-            [value]="questions().length ? state.completedItemIds.length : visitedReadingCount()"
-            [max]="questions().length || readingCount()"
-            [attr.aria-label]="
-              questions().length
-                ? 'Ariketen aurrerapena / Progression des exercices'
-                : 'Irakurketaren aurrerapena / Progression des lectures'
-            "
+            [value]="state.journey.visited.length + state.skippedStepIds.length"
+            [max]="steps().length"
+            aria-label="Ibilbidearen aurrerapena / Progression du parcours"
           ></progress>
           @for (presentation of presentedQuestions(); track presentation.key) {
             <app-activity-player
@@ -113,6 +132,12 @@ import { ReadingPlayer } from './reading-player';
                 <app-icon name="next" />
               </button>
             }
+            @if (!reviewing() && step.kind === 'question' && !state.feedback) {
+              <button type="button" class="continue" (click)="skip()">
+                <app-bilingual-text eu="Saltatu" fr="Passer cette étape" />
+                <app-icon name="next" />
+              </button>
+            }
             @if (!reviewing() && state.feedback && state.feedback.outcome !== 'correct') {
               <button type="button" class="continue" (click)="continue()">
                 <app-bilingual-text eu="Jarraitu" fr="Continuer" />
@@ -133,20 +158,18 @@ import { ReadingPlayer } from './reading-player';
           </h2>
           <p class="progress-label">
             <app-bilingual-text
-              [eu]="state.completedItemIds.length + ' / ' + questions().length + ' ariketa'"
+              [eu]="
+                state.completedItemIds.length + ' / ' + questions().length + ' ariketa gaindituta'
+              "
               [fr]="
                 state.completedItemIds.length + ' / ' + questions().length + ' exercices réussis'
               "
             />
           </p>
           <progress
-            [value]="questions().length ? state.completedItemIds.length : visitedReadingCount()"
-            [max]="questions().length || readingCount()"
-            [attr.aria-label]="
-              questions().length
-                ? 'Ariketen aurrerapena / Progression des exercices'
-                : 'Irakurketaren aurrerapena / Progression des lectures'
-            "
+            [value]="state.journey.visited.length + state.skippedStepIds.length"
+            [max]="steps().length"
+            aria-label="Ibilbidearen aurrerapena / Progression du parcours"
           ></progress>
           <p>
             <app-bilingual-text eu="Ibilbidea amaitu duzu." fr="Vous avez terminé le parcours." />
@@ -157,6 +180,18 @@ import { ReadingPlayer } from './reading-player';
               [fr]="
                 visitedReadingCount() + ' / ' + readingCount() + ' lectures parcourues, sans score.'
               "
+            />
+          </p>
+          <p>
+            <app-bilingual-text
+              [eu]="state.incorrectItemIds.length + ' ariketa berrikusteko'"
+              [fr]="state.incorrectItemIds.length + ' exercices à revoir'"
+            />
+          </p>
+          <p>
+            <app-bilingual-text
+              [eu]="state.skippedStepIds.length + ' urrats saltatuta'"
+              [fr]="state.skippedStepIds.length + ' étapes ignorées'"
             />
           </p>
           <nav class="completion-actions">
@@ -265,7 +300,7 @@ export class PracticeRunner {
       const progress = withPracticeSteps(this.initialProgress(), this.steps());
       this.progress.set(progress);
       this.storageError.set(this.initialStorageError());
-      if (!this.initialProgress().journey) this.save(progress);
+      if (progress !== this.initialProgress()) this.save(progress);
     });
     effect(() => {
       const feedback = this.feedback();
@@ -311,11 +346,7 @@ export class PracticeRunner {
       ...response,
       sessionId: this.practiceSessionId(),
     };
-    const completedItemIds =
-      response.outcome === 'correct'
-        ? [...new Set([...current.completedItemIds, response.itemId])]
-        : current.completedItemIds;
-    this.save({ ...current, completedItemIds, feedback });
+    this.save({ ...current, feedback });
   }
 
   protected continue(): void {
@@ -362,6 +393,13 @@ export class PracticeRunner {
     } else if (this.currentStep()?.kind === 'reading') {
       this.advance();
     }
+  }
+
+  protected skip(): void {
+    const current = this.progress();
+    if (!current) return;
+    const next = skipPracticeStep(current);
+    if (next !== current) this.save(next);
   }
 
   private advance(): void {
