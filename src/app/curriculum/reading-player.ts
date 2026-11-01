@@ -67,10 +67,14 @@ import type { ReadingContent } from './practice-steps';
     @let reading = content();
     <article>
       <p class="kind">
-        <app-bilingual-text [eu]="labels[reading.kind].eu" [fr]="labels[reading.kind].fr" />
+        <app-bilingual-text
+          mode="stacked"
+          [eu]="labels[reading.kind].eu"
+          [fr]="labels[reading.kind].fr"
+        />
       </p>
       <h2 id="reading-heading">
-        <app-bilingual-text [eu]="reading.title.eu" [fr]="reading.title.fr" />
+        <app-bilingual-text mode="stacked" [eu]="reading.title.eu" [fr]="reading.title.fr" />
       </h2>
       @switch (reading.kind) {
         @case ('note') {
@@ -79,6 +83,7 @@ import type { ReadingContent } from './practice-steps';
           } @else {
             <p>
               <app-bilingual-text
+                mode="reveal"
                 class="reading-body"
                 [eu]="reading.body.eu"
                 [fr]="reading.body.fr"
@@ -90,31 +95,41 @@ import type { ReadingContent } from './practice-steps';
           <dl class="dialogue">
             @for (line of reading.lines; track $index) {
               <dt>{{ line.speaker }}</dt>
-              <dd><app-bilingual-text [eu]="line.text.eu" [fr]="line.text.fr" /></dd>
+              <dd><app-bilingual-text mode="reveal" [eu]="line.text.eu" [fr]="line.text.fr" /></dd>
             }
           </dl>
         }
         @case ('external-link') {
           <p>
-            <app-bilingual-text [eu]="reading.description.eu" [fr]="reading.description.fr" />
+            <app-bilingual-text
+              mode="reveal"
+              [eu]="reading.description.eu"
+              [fr]="reading.description.fr"
+            />
           </p>
           <a [href]="reading.url" target="_blank" rel="noopener noreferrer">
             <app-bilingual-text
+              mode="stacked"
               [eu]="reading.title.eu + ' (kanpoko orria)'"
               [fr]="reading.title.fr + ' (page externe)'"
             />
           </a>
           <p>
             @let availability = network.online() ? needsNetwork : offline;
-            <app-bilingual-text [eu]="availability.eu" [fr]="availability.fr" />
+            <app-bilingual-text mode="stacked" [eu]="availability.eu" [fr]="availability.fr" />
           </p>
         }
         @case ('oral-prompt') {
           <p>
-            <app-bilingual-text [eu]="reading.instructions.eu" [fr]="reading.instructions.fr" />
+            <app-bilingual-text
+              mode="reveal"
+              [eu]="reading.instructions.eu"
+              [fr]="reading.instructions.fr"
+            />
           </p>
           <p>
             <app-bilingual-text
+              mode="reveal"
               eu="Nahi baduzu egiteko jarduera; ez da automatikoki zuzentzen."
               fr="Activité à faire si vous le souhaitez ; elle n’est pas corrigée automatiquement."
             />

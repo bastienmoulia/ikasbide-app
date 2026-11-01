@@ -92,7 +92,7 @@ export interface ItemResponse {
   `,
   template: `
     <span class="feedback-icon" aria-hidden="true">{{ symbols[result()] }}</span>
-    <app-bilingual-text [eu]="labels[result()].eu" [fr]="labels[result()].fr" />
+    <app-bilingual-text mode="stacked" [eu]="labels[result()].eu" [fr]="labels[result()].fr" />
   `,
 })
 class ActivityFeedback {
@@ -169,12 +169,12 @@ class ActivityFeedback {
       (click)="toggled.emit()"
     >
       <app-icon name="hint" />
-      <app-bilingual-text eu="Laguntza" fr="Aide" />
+      <app-bilingual-text mode="stacked" eu="Laguntza" fr="Aide" />
     </button>
     @if (open()) {
       <ul class="hint-panel" [id]="panelId">
         @for (line of lines(); track $index) {
-          <li><app-bilingual-text [eu]="line.eu" [fr]="line.fr" /></li>
+          <li><app-bilingual-text mode="reveal" [eu]="line.eu" [fr]="line.fr" /></li>
         }
       </ul>
     }
@@ -200,10 +200,15 @@ export class ExerciseHint {
     @let currentQuestion = question();
     <article class="exercise-item">
       <h2 id="exercise-heading">
-        <app-bilingual-text [eu]="currentQuestion.title.eu" [fr]="currentQuestion.title.fr" />
+        <app-bilingual-text
+          mode="stacked"
+          [eu]="currentQuestion.title.eu"
+          [fr]="currentQuestion.title.fr"
+        />
       </h2>
       <p class="instructions">
         <app-bilingual-text
+          mode="reveal"
           [eu]="currentQuestion.instructions.eu"
           [fr]="currentQuestion.instructions.fr"
         />
@@ -232,7 +237,12 @@ export class ExerciseHint {
                 >
               } @else {
                 <label class="inline-answer">
-                  <app-bilingual-text class="visually-hidden" eu="Erantzuna" fr="Réponse" />
+                  <app-bilingual-text
+                    mode="stacked"
+                    class="visually-hidden"
+                    eu="Erantzuna"
+                    fr="Réponse"
+                  />
                   <input
                     #answerInput
                     type="text"
@@ -249,13 +259,14 @@ export class ExerciseHint {
             @if (!feedback()) {
               <button type="submit" [disabled]="!canSubmit()">
                 <app-icon name="check" />
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
               </button>
             }
           </form>
         }
         @case ('multiple-choice') {
           <app-bilingual-text
+            mode="reveal"
             [eu]="currentQuestion.item.prompt.eu"
             [fr]="currentQuestion.item.prompt.fr"
           />
@@ -268,7 +279,11 @@ export class ExerciseHint {
           }
           <fieldset class="choices">
             <legend>
-              <app-bilingual-text eu="Aukeratu erantzuna" fr="Choisissez une réponse" />
+              <app-bilingual-text
+                mode="stacked"
+                eu="Aukeratu erantzuna"
+                fr="Choisissez une réponse"
+              />
             </legend>
             @for (choice of choices(); track choice.id) {
               <button
@@ -285,6 +300,7 @@ export class ExerciseHint {
         }
         @case ('word-order') {
           <app-bilingual-text
+            mode="reveal"
             [eu]="currentQuestion.item.prompt.eu"
             [fr]="currentQuestion.item.prompt.fr"
           />
@@ -312,6 +328,7 @@ export class ExerciseHint {
               }
               @if (!selectedWords().length) {
                 <app-bilingual-text
+                  mode="reveal"
                   class="empty-answer"
                   eu="Hautatu hitzak erantzuna osatzeko."
                   fr="Choisissez les mots pour composer la réponse."
@@ -334,7 +351,7 @@ export class ExerciseHint {
             <div class="word-actions">
               <button class="secondary" type="button" (click)="resetWords()">
                 <app-icon name="restart" />
-                <app-bilingual-text eu="Hasi berriz" fr="Recommencer" />
+                <app-bilingual-text mode="stacked" eu="Hasi berriz" fr="Recommencer" />
               </button>
               <button
                 #wordSubmitButton
@@ -343,7 +360,7 @@ export class ExerciseHint {
                 [disabled]="!canSubmit()"
               >
                 <app-icon name="check" />
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
               </button>
             </div>
           }
@@ -421,7 +438,7 @@ export class ExerciseHint {
             <div class="word-actions">
               <button class="secondary" type="button" (click)="resetLinks()">
                 <app-icon name="restart" />
-                <app-bilingual-text eu="Hasi berriz" fr="Recommencer" />
+                <app-bilingual-text mode="stacked" eu="Hasi berriz" fr="Recommencer" />
               </button>
               <button
                 #matchingSubmitButton
@@ -430,13 +447,14 @@ export class ExerciseHint {
                 [disabled]="!allLinked()"
               >
                 <app-icon name="check" />
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
               </button>
             </div>
           }
         }
         @case ('translation') {
           <app-bilingual-text
+            mode="stacked"
             [eu]="
               currentQuestion.item.direction === 'eu-fr'
                 ? 'Euskaratik frantsesera'
@@ -465,7 +483,12 @@ export class ExerciseHint {
           } @else {
             <form autocomplete="off" (submit)="grade(currentQuestion.item, $event)">
               <label class="answer">
-                <app-bilingual-text class="visually-hidden" eu="Erantzuna" fr="Réponse" />
+                <app-bilingual-text
+                  mode="stacked"
+                  class="visually-hidden"
+                  eu="Erantzuna"
+                  fr="Réponse"
+                />
                 <input
                   #answerInput
                   type="text"
@@ -477,7 +500,7 @@ export class ExerciseHint {
               </label>
               <button type="submit" [disabled]="!canSubmit()">
                 <app-icon name="check" />
-                <app-bilingual-text eu="Egiaztatu" fr="Vérifier" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
               </button>
             </form>
           }
@@ -487,7 +510,9 @@ export class ExerciseHint {
         <app-activity-feedback [result]="result.outcome" />
         @if (result.outcome !== 'correct' && currentQuestion.kind !== 'matching') {
           <p class="correction">
-            <strong><app-bilingual-text eu="Erantzun zuzena" fr="Réponse attendue" /></strong>
+            <strong
+              ><app-bilingual-text mode="stacked" eu="Erantzun zuzena" fr="Réponse attendue"
+            /></strong>
             <span [attr.lang]="answerLang(currentQuestion)">{{
               correctAnswer(currentQuestion)
             }}</span>

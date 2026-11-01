@@ -22,35 +22,37 @@ import {
   template: `
     <a class="back" routerLink="/">
       <app-icon name="previous" />
-      <app-bilingual-text eu="Ibilbidera itzuli" fr="Retour au parcours" />
+      <app-bilingual-text mode="stacked" eu="Ibilbidera itzuli" fr="Retour au parcours" />
     </a>
     @if (chapter.isLoading()) {
       <p id="chapter-loading" role="status">
-        <app-bilingual-text [eu]="loading.eu" [fr]="loading.fr" />
+        <app-bilingual-text mode="stacked" [eu]="loading.eu" [fr]="loading.fr" />
       </p>
       <mat-progress-bar mode="indeterminate" aria-labelledby="chapter-loading" />
     } @else if (chapter.error(); as error) {
       @let message = errorMessage(error);
       <p role="alert">
-        <app-bilingual-text [eu]="message.eu" [fr]="message.fr" />
+        <app-bilingual-text mode="stacked" [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (chapter.value(); as chapter) {
       <p class="eyebrow">
         <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
         <app-bilingual-text
+          mode="stacked"
           [eu]="chapter.number + '. kapitulua'"
           [fr]="'Chapitre ' + chapter.number"
         />
       </p>
       <h1>
-        <app-bilingual-text [eu]="chapter.title.eu" [fr]="chapter.title.fr" />
+        <app-bilingual-text mode="stacked" [eu]="chapter.title.eu" [fr]="chapter.title.fr" />
       </h1>
       <section aria-labelledby="objectives-heading">
         <h2 id="objectives-heading">
-          <app-bilingual-text eu="Aurrerapen-mapa" fr="Carte de progression" />
+          <app-bilingual-text mode="stacked" eu="Aurrerapen-mapa" fr="Carte de progression" />
         </h2>
         <p class="muted">
           <app-bilingual-text
+            mode="stacked"
             eu="Zure erantzunetatik ateratako estimazioa, ez nota bat. Helburu bat eskuratua da hiru item ezberdin ondo erantzun dituzunean, gutxienez bi saiotan."
             fr="Estimation tirée de vos réponses, pas une note. Un objectif est acquis quand trois items différents sont réussis, sur au moins deux sessions de pratique."
           />
@@ -65,10 +67,15 @@ import {
               </span>
               <span class="stack">
                 <strong>
-                  <app-bilingual-text [eu]="objective.label.eu" [fr]="objective.label.fr" />
+                  <app-bilingual-text
+                    mode="stacked"
+                    [eu]="objective.label.eu"
+                    [fr]="objective.label.fr"
+                  />
                 </strong>
                 <span class="objective-status">
                   <app-bilingual-text
+                    mode="stacked"
                     [eu]="statusLabels[status].eu"
                     [fr]="statusLabels[status].fr"
                   />
@@ -80,10 +87,11 @@ import {
       </section>
       <section aria-labelledby="sequences-heading">
         <h2 id="sequences-heading">
-          <app-bilingual-text eu="Sekuentziak" fr="Séquences" />
+          <app-bilingual-text mode="stacked" eu="Sekuentziak" fr="Séquences" />
         </h2>
         <p class="muted">
           <app-bilingual-text
+            mode="stacked"
             eu="Gomendatutako ordena. Sekuentzia guztiak beti daude eskuragarri."
             fr="Ordre recommandé. Toutes les séquences restent accessibles."
           />
@@ -94,7 +102,11 @@ import {
               <a [routerLink]="['/chapitres', chapter.id, 'sequences', sequence.id]">
                 <span class="sequence-letter">{{ sequence.letter }}</span>
                 <strong>
-                  <app-bilingual-text [eu]="sequence.title.eu" [fr]="sequence.title.fr" />
+                  <app-bilingual-text
+                    mode="stacked"
+                    [eu]="sequence.title.eu"
+                    [fr]="sequence.title.fr"
+                  />
                 </strong>
               </a>
             </li>
@@ -103,7 +115,7 @@ import {
       </section>
     } @else {
       <p role="alert">
-        <app-bilingual-text [eu]="notPublished.eu" [fr]="notPublished.fr" />
+        <app-bilingual-text mode="stacked" [eu]="notPublished.eu" [fr]="notPublished.fr" />
       </p>
     }
   `,
