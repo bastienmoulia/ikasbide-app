@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.1.0...v0.2.0) (2026-11-01)
+
+
+### Features
+
+* **curriculum:** scope chapters and progress by book ([#50](https://github.com/bastienmoulia/ikasbide-app/issues/50)) ([a598810](https://github.com/bastienmoulia/ikasbide-app/commit/a5988108cd55c3b9af6bcde8d2954932cde8651d))
+
 ## 0.1.0 (2026-11-01)
 
 
