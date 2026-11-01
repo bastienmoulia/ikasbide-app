@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import {
   expectBilingualPresentation,
@@ -9,6 +9,15 @@ import {
 
 test.use({ serviceWorkers: 'allow' });
 
+async function expectVersionInAbout(page: Page, version: string): Promise<void> {
+  const accountMenu = page.getByRole('dialog', { name: 'Kontua / Compte' });
+  await accountMenu.getByRole('button', { name: /À propos/ }).click();
+
+  const aboutDialog = page.getByRole('dialog').filter({ hasText: version });
+  await expect(aboutDialog.getByText(version, { exact: true })).toBeVisible();
+  await aboutDialog.getByRole('button', { name: /Fermer/ }).click();
+}
+
 test('a learner reads previously consulted curriculum offline', async ({ page, context }) => {
   await page.goto('/');
   await signInWithGoogle(page);
@@ -16,9 +25,11 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await waitForOfflineShell(page);
 
   await page.locator('header .account-trigger').click();
-  const accountMenu = page.getByRole('dialog', { name: 'Kontua / Compte' });
   const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { version: string };
-  await expect(accountMenu.getByText(packageJson.version, { exact: true })).toBeVisible();
+  await expectVersionInAbout(page, packageJson.version);
+
+  await page.locator('header .account-trigger').click();
+  const accountMenu = page.getByRole('dialog', { name: 'Kontua / Compte' });
   const displayModes = accountMenu.getByRole('radiogroup', { name: /Mode d’affichage/ });
   await displayModes.getByRole('radio', { name: /Iluna Sombre/ }).click();
   await page.keyboard.press('Escape');
@@ -35,8 +46,10 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
 
   await expect(page.getByRole('status').filter({ hasText: 'Vous êtes hors ligne' })).toBeVisible();
   await page.locator('header .account-trigger').click();
+  await expectVersionInAbout(page, packageJson.version);
+
+  await page.locator('header .account-trigger').click();
   const offlineAccountMenu = page.getByRole('dialog', { name: 'Kontua / Compte' });
-  await expect(offlineAccountMenu.getByText(packageJson.version, { exact: true })).toBeVisible();
   const offlineDisplayModes = offlineAccountMenu.getByRole('radiogroup', {
     name: /Mode d’affichage/,
   });
