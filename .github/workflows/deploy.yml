@@ -1,10 +1,13 @@
 name: Deploy Firebase Hosting
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: firebase-hosting-production
@@ -12,19 +15,52 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'release' &&
+      github.event.action == 'published' &&
+      startsWith(github.event.release.tag_name, 'v')) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || 'main' }}
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Resolve deployment commit
+        id: revision
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "release" ]]; then
+            tag="$GITHUB_REF_NAME"
+            if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Refusing unexpected release tag: $tag" >&2
+              exit 1
+            fi
+            release_sha="$(git rev-parse --verify "${tag}^{commit}")"
+            git checkout --detach "$release_sha"
+          else
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "Manual deployment is available only from main." >&2
+              exit 1
+            fi
+            release_sha="$(git rev-parse HEAD)"
+          fi
+          echo "release_sha=$release_sha" >> "$GITHUB_OUTPUT"
+      - name: Require CI for the exact release commit
+        if: github.event_name == 'release'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ steps.revision.outputs.release_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: node scripts/check-release-ci.mjs
       - name: Build and deploy Hosting
         env:
           FIREBASE_CONFIG: ${{ vars.FIREBASE_CONFIG }}
@@ -35,6 +71,9 @@ jobs:
           import { writeFileSync } from 'node:fs';
           import { parseFirebaseConfig } from './scripts/parse-firebase-config.mjs';
 
+          if (!process.env.FIREBASE_CONFIG || !process.env.FIREBASE_SERVICE_ACCOUNT) {
+            throw new Error('FIREBASE_CONFIG and FIREBASE_SERVICE_ACCOUNT must be configured.');
+          }
           const config = parseFirebaseConfig(process.env.FIREBASE_CONFIG);
           const credentials = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
           if (!config.projectId || credentials.project_id !== config.projectId) {

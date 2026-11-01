@@ -116,7 +116,30 @@ a[mat-stroked-button] {
   margin-left: auto;
 }
 
+.account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  width: 12rem;
+  max-width: 100%;
+  min-height: 3rem;
+  padding-inline: 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.account-trigger:hover {
+  background: var(--app-surface-muted);
+}
+
 .account-name {
+  flex: 1 1 0;
+  width: 0;
   min-width: 0;
   max-width: 10rem;
   overflow: hidden;
@@ -124,17 +147,61 @@ a[mat-stroked-button] {
   white-space: nowrap;
 }
 
-.account button {
-  flex-shrink: 0;
+.account-chevron {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  fill: currentColor;
 }
 
-.account .logout-button {
-  width: 3rem;
-  height: 3rem;
-  padding: 0;
+.account-menu {
+  display: grid;
+  gap: 0.75rem;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(32rem, calc(100dvh - 2rem));
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+  background: var(--app-surface);
+  color: var(--mat-sys-on-surface);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 20%);
 }
 
-.logout-button svg {
+.account-menu-display-mode {
+  display: flex;
+  justify-content: center;
+}
+
+.account-menu-version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0.25rem;
+  color: var(--app-text-muted);
+}
+
+.account-menu-version > span {
+  color: var(--mat-sys-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.account-menu hr {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--app-border);
+}
+
+.account-menu-sign-out {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  min-height: 3rem;
+}
+
+.account-menu-sign-out svg {
   width: 1.5rem;
   height: 1.5rem;
   fill: currentColor;

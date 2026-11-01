@@ -86,9 +86,9 @@ utiliser cette URL HTTPS et non une adresse IP locale en HTTP.
 
 ## Déployer avec GitHub Actions
 
-Le workflow `.github/workflows/deploy.yml` construit et déploie uniquement Hosting
-depuis `main`. Il est **manuel uniquement** pour commencer : aucun push ni aucune
-pull request ne déclenche de déploiement.
+Le workflow `.github/workflows/deploy.yml` déploie Hosting et les règles Firestore
+après une release GitHub publiée ; il conserve également le lancement manuel depuis
+`main` pour les récupérations.
 
 Dans **Settings → Secrets and variables → Actions** du dépôt, configurer :
 
@@ -103,26 +103,17 @@ Dans **Settings → Secrets and variables → Actions** du dépôt, configurer :
   qu’un rôle Owner ou Editor. Ne jamais placer ce JSON dans une variable, le dépôt
   ou `public/`.
 
-Une fois le workflow présent sur la branche par défaut, ouvrir **Actions →
-Deploy Firebase Hosting → Run workflow**, sélectionner **main**, puis lancer.
-Un lancement sur une autre branche est ignoré. Le workflow récupère `main`, installe
-les dépendances verrouillées avec `npm ci`, génère la configuration locale et
-réutilise `npm run deploy` avec ses vérifications. Le compte de service est écrit
-dans un fichier temporaire privé, utilisé via Application Default Credentials,
+Pour une récupération manuelle, ouvrir **Actions → Deploy Firebase Hosting → Run
+workflow**, sélectionner **main**, puis lancer. Un lancement sur une autre branche
+est ignoré. Le workflow installe les dépendances verrouillées, génère la configuration
+locale et réutilise `npm run deploy` avec ses vérifications. Le compte de service est
+écrit dans un fichier temporaire privé, utilisé via Application Default Credentials,
 puis supprimé même en cas d’échec. Aucun `firebase login` interactif n’est nécessaire.
-Les déploiements sont sérialisés pour ne pas interrompre une publication en cours.
+Les déploiements sont sérialisés.
 
-Pour activer plus tard le déploiement à chaque changement de `main`, ajouter le
-déclencheur suivant sous `on:`, en conservant `workflow_dispatch:` :
-
-```yaml
-push:
-  branches: [main]
-```
-
-Le workflow ne déploie ni règles Firestore ni configuration Authentication.
-Après le premier lancement, vérifier l’application sur son URL HTTPS comme pour
-le déploiement local.
+La configuration Release Please, la validation des titres, la vérification CI sur
+le SHA exact du tag, les paramètres de fusion et la procédure de nouvelle tentative
+sont décrits dans [releases.md](releases.md).
 
 ## Installer la PWA
 

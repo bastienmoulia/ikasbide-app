@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import {
   expectBilingualPresentation,
   signInWithGoogle,
@@ -14,6 +15,14 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await expect(page.getByRole('link', { name: /Chapitre 2/ })).toBeVisible();
   await waitForOfflineShell(page);
 
+  await page.locator('header .account-trigger').click();
+  const accountMenu = page.getByRole('dialog', { name: 'Kontua / Compte' });
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { version: string };
+  await expect(accountMenu.getByText(packageJson.version, { exact: true })).toBeVisible();
+  const displayModes = accountMenu.getByRole('radiogroup', { name: /Mode d’affichage/ });
+  await displayModes.getByRole('radio', { name: /Iluna Sombre/ }).click();
+  await page.keyboard.press('Escape');
+
   await page.goto('/chapitres/chapter-1/sequences/origin');
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Nongoa zara? D’où es-tu ?',
@@ -21,13 +30,17 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await expect(page.getByRole('status').filter({ hasText: 'hors ligne' })).toHaveCount(0);
 
   await context.setOffline(true);
-  const displayModes = page.getByRole('radiogroup', { name: /Mode d’affichage/ });
-  await displayModes.getByRole('radio', { name: /Iluna Sombre/ }).click();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.reload();
 
   await expect(page.getByRole('status').filter({ hasText: 'Vous êtes hors ligne' })).toBeVisible();
-  await expect(displayModes.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
+  await page.locator('header .account-trigger').click();
+  const offlineAccountMenu = page.getByRole('dialog', { name: 'Kontua / Compte' });
+  await expect(offlineAccountMenu.getByText(packageJson.version, { exact: true })).toBeVisible();
+  const offlineDisplayModes = offlineAccountMenu.getByRole('radiogroup', {
+    name: /Mode d’affichage/,
+  });
+  await expect(offlineDisplayModes.getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#202124');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await expect(page.getByText('Apprenant', { exact: true })).toBeVisible();

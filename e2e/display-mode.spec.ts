@@ -36,8 +36,12 @@ async function setDisplayMode(
   page: import('@playwright/test').Page,
   mode: 'light' | 'dark',
 ): Promise<void> {
+  const control = displayModeControl(page);
+  if (!(await control.isVisible())) {
+    await page.locator('header .account-trigger').click();
+  }
   const names = { light: /Argia Clair/, dark: /Iluna Sombre/ };
-  const option = displayModeControl(page).getByRole('radio', { name: names[mode] });
+  const option = control.getByRole('radio', { name: names[mode] });
   await option.click();
   await expect(option).toBeChecked();
   await expectAppearance(page, mode);
@@ -139,10 +143,14 @@ test('the device choice remains available across sign-in and sign-out', async ({
     'background-color',
     'rgb(43, 44, 47)',
   );
+  await page.locator('header .account-trigger').click();
   await expect(displayModeControl(page).getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expectAppearance(page, 'dark');
 
-  await page.getByRole('button', { name: 'Se déconnecter' }).click();
+  await page
+    .getByRole('dialog', { name: 'Kontua / Compte' })
+    .getByRole('button', { name: /Amaitu saioa/ })
+    .click();
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeVisible();
   await expect(displayModeControl(page).getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expectAppearance(page, 'dark');

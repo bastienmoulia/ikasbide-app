@@ -44,7 +44,7 @@ export async function signInWithGoogle(
   await popup.locator('#email-input').fill(email);
   await popup.locator('#display-name-input').fill(displayName);
   await popup.getByRole('button', { name: /Sign in with Google/i }).click();
-  await expect(page.getByRole('button', { name: 'Se déconnecter' })).toBeVisible();
+  await expect(page.locator('header .account-trigger')).toBeVisible();
   return email;
 }
 
