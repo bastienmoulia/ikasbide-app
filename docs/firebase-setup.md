@@ -194,8 +194,9 @@ La CI exécute les mêmes commandes sans secrets.
 | Installation non proposée                         | Vérifier HTTPS, le navigateur, et que l’application n’est pas déjà installée.                                                           |
 
 Les règles Firestore (`firestore.rules`) n’autorisent que la lecture du curriculum par
-les comptes Google connectés, et la seule écriture depuis l’application est la création
-des tentatives d’un compte dans `learners/{uid}/attempts`, lisibles uniquement par ce
-compte et non modifiables.
+les comptes Google connectés. L’application peut créer les tentatives immuables d’un compte
+dans `learners/{uid}/attempts` et synchroniser sa progression par livre dans
+`learners/{uid}/books/{bookId}/chapters/{chapterId}/sequenceProgress/{sequenceId}` ;
+ces données sont lisibles uniquement par leur propriétaire.
 L’authentification de l’interface ne remplace pas ces règles : toujours les déployer
 avec `npm run deploy`.

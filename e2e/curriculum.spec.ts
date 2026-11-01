@@ -50,7 +50,7 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
   await expectBilingualPresentation(page);
 
   await chapters.nth(0).getByRole('link').click();
-  await expect(page).toHaveURL(/\/chapitres\/chapter-1$/);
+  await expect(page).toHaveURL(/\/a1\/chapter-1$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Aurkezpenak Les présentations',
   );
@@ -64,7 +64,7 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
 
   // No score-based lock: the second sequence opens without practising the first.
   await sequences.nth(1).getByRole('link').click();
-  await expect(page).toHaveURL(/\/chapitres\/chapter-1\/sequences\/origin$/);
+  await expect(page).toHaveURL(/\/a1\/chapter-1\/origin$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Nongoa zara? D’où es-tu ?',
   );
@@ -92,7 +92,7 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
 });
 
 test('a learner gets item-level feedback for gap-fill answers', async ({ page }) => {
-  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  await page.goto('/a1/chapter-1/greetings');
   await signInWithGoogle(page);
   await startPractice(page);
 
@@ -113,7 +113,7 @@ test('a learner starts a sequence practice with one item and advances after a co
   page,
 }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  await page.goto('/a1/chapter-1/greetings');
   await signInWithGoogle(page);
 
   await expect(
@@ -144,7 +144,7 @@ test('a warning waits for Continue, survives reload and resolves without retryin
   page,
 }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  await page.goto('/a1/chapter-1/greetings');
   const email = await signInWithGoogle(page);
   await startPractice(page);
   for (const answer of ['naiz', 'koa', 'on']) await answerCurrentText(page, answer);
@@ -193,7 +193,7 @@ test('translation and word-order warning variants show the canonical expected an
   page,
 }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startPractice(page);
   await answerCurrentText(page, 'Ni Baionakoa naiz.');
@@ -236,7 +236,7 @@ test('translation and word-order warning variants show the canonical expected an
 
 test('a learner can answer a multiple-choice item', async ({ page }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  await page.goto('/a1/chapter-1/greetings');
   await signInWithGoogle(page);
 
   await startPractice(page);
@@ -275,7 +275,7 @@ test('translation answers accept listed variants and preserve diacritic distinct
   page,
 }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startPractice(page);
 
@@ -298,7 +298,7 @@ test('translation answers accept listed variants and preserve diacritic distinct
 
 test('translation answers accept apostrophe and punctuation variants', async ({ page }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startPractice(page);
 
@@ -315,7 +315,7 @@ test('translation answers accept apostrophe and punctuation variants', async ({ 
 
 test('translation answers do not accept a missing apostrophe', async ({ page }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startPractice(page);
 
@@ -332,7 +332,7 @@ test('translation answers do not accept a missing apostrophe', async ({ page }) 
 
 test('a learner can build a word-order answer from the offered words', async ({ page }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startPractice(page);
 
@@ -373,9 +373,9 @@ test('unknown curriculum addresses show an explicit not-found state', async ({ p
   await page.goto('/');
   await signInWithGoogle(page);
   await expect(page.getByRole('link', { name: /Chapitre 1/ })).toBeVisible();
-  await page.goto('/chapitres/chapter-99');
+  await page.goto('/a1/chapter-99');
   await expect(page.getByRole('alert')).toContainText('Ce chapitre n’est pas publié.');
-  await page.goto('/chapitres/chapter-1/sequences/missing');
+  await page.goto('/a1/chapter-1/missing');
   await expect(page.getByRole('alert')).toContainText(
     'Cette séquence n’existe pas dans ce chapitre.',
   );
@@ -385,7 +385,7 @@ test('unknown curriculum addresses show an explicit not-found state', async ({ p
 test('a signed-out visitor following a curriculum link sees only the sign-in entry point', async ({
   page,
 }) => {
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeVisible();
   await expect(page.getByText('D’où es-tu ?')).toHaveCount(0);
 });

@@ -27,8 +27,8 @@ A1/
 `fr` facultatif) et la liste ordonnée des identifiants de chapitres. Chaque identifiant
 correspond à un fichier `chapters/<chapterId>.json`. Le numéro du chapitre est sa position
 dans la liste (à partir de 1) : aucun numéro n’est répété dans les sources. Les fichiers
-JSON de `chapters/` doivent tous être référencés par le livre. Les identifiants de
-chapitres restent globaux et uniques, car les tentatives les référencent seuls.
+JSON de `chapters/` doivent tous être référencés par le livre. Un identifiant de chapitre
+est unique dans son livre : deux livres différents peuvent réutiliser le même identifiant.
 
 La version 1 monolithique est refusée : les deux types de fichiers exigent
 `schemaVersion: 2`. Lorsque les dépôts `ikasbide-content` et `ikasbide-app` sont
@@ -180,10 +180,11 @@ exactement les mots proposés. Sans ce champ, le comportement existant reste inc
 
 ## Données publiées
 
-| Document         | Contenu                                                                         |
-| ---------------- | ------------------------------------------------------------------------------- |
-| `books/{bookId}` | titre (`eu`, `fr` facultatif), sommaire ordonné (`id`, `number`, `title`)       |
-| `chapters/{id}`  | `bookId`, `number`, `title`, `objectives`, `sequences` avec tous leurs contenus |
+| Document                                  | Contenu                                                                         |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| `books/{bookId}`                          | titre (`eu`, `fr` facultatif), sommaire ordonné (`id`, `number`, `title`)       |
+| `books/{bookId}/chapters/{chapterId}`     | `bookId`, `number`, `title`, `objectives`, `sequences` avec tous leurs contenus |
+| `chapters/{chapterId}` (ancienne version) | document historique figé conservant la preuve du livre propriétaire             |
 
 Sans `--chapter`, l’import publie le livre et tous ses chapitres dans une transaction atomique.
 Les chapitres du livre absents de sa source et les documents de l’ancienne collection
@@ -192,21 +193,49 @@ chapitres sélectionnés sont publiés ; aucune suppression n’a lieu. Les docu
 livres restent inchangés.
 
 Le sommaire republié doit rester cohérent avec les chapitres non ciblés : chacun doit déjà
-être publié pour ce livre avec le même numéro et le même titre que dans la source. Sinon,
-l’import partiel est refusé avant toute écriture ; cibler aussi les chapitres concernés ou
-publier le livre complet. Un identifiant de chapitre déjà attribué à un autre livre est
-également refusé. Ces vérifications et les écritures partagent la même transaction, y compris
-en cas de publications simultanées. Chaque transaction comprend au plus 400 écritures, y
-compris les suppressions : un grand livre peut donc être validé et publié par chapitre même
-si sa publication complète dépasse cette limite.
+être publié pour ce livre avec le même numéro et le même titre que dans la source. Un chapitre
+historique non ciblé reste utilisable s’il appartient à ce livre et correspond au sommaire.
+Sinon, l’import partiel est refusé avant toute écriture ; cibler aussi les chapitres
+concernés ou publier le livre complet. Ces vérifications et les écritures partagent la
+même transaction, y compris en cas de publications simultanées. Chaque transaction comprend
+au plus 400 écritures, y compris les suppressions : un grand livre peut donc être validé et
+publié par chapitre même si sa publication complète dépasse cette limite.
 
 Les réponses acceptées sont publiées pour la correction côté client (ticket #4) mais ne
-sont jamais affichées pendant la navigation. Aucun versionnement du cache hors ligne n’est
-ajouté ; Firestore relit les chapitres lors de leur prochaine consultation en ligne.
+sont jamais affichées pendant la navigation. Après le changement de chemin, un chapitre
+déjà mis en cache peut nécessiter une nouvelle consultation en ligne avant d’être disponible
+hors ligne.
 
-Les [règles Firestore](../firestore.rules) autorisent la lecture de `books` et `chapters`
-aux seuls comptes connectés avec Google et interdisent toute écriture depuis l’application.
+Les [règles Firestore](../firestore.rules) autorisent la lecture des livres et chapitres
+aux seuls comptes connectés avec Google et interdisent leur écriture depuis l’application.
 Seul l’import, avec des identifiants d’administration, peut publier.
+
+## Navigation et transition multi-livres
+
+Un chapitre utilise l’URL `/{bookId}/{chapterId}` et une séquence l’URL
+`/{bookId}/{chapterId}/{sequenceId}`. `/` reste le seul sommaire : le retour depuis un
+chapitre, le logo et l’actualisation conservent le livre courant dans cet onglet. Un nouvel
+onglet ouvert directement sur `/` utilise le livre configuré par défaut (`a1` dans
+`src/app/curriculum/book-context.ts`). Il n’y a pas de sélecteur de livre ni de sommaire
+`/{bookId}`. Si le livre par défaut manque alors que d’autres sont publiés, une erreur
+est affichée. Les anciennes URL ne sont pas maintenues.
+
+Les nouvelles tentatives portent `bookId` et la progression synchronisée est rangée sous
+`learners/{uid}/books/{bookId}/chapters/{chapterId}/sequenceProgress/{sequenceId}`.
+Les données synchronisées avant la transition sont automatiquement lues pour leur livre
+d’origine lorsque le document historique `chapters/{chapterId}` en prouve la propriété.
+Les enregistrements dont l’origine ne peut pas être établie restent stockés séparément,
+sans attribution. Ne pas supprimer ni modifier les anciens documents `chapters` et ne pas
+utiliser un ancien importeur susceptible de les écraser ou de les supprimer.
+
+Avant le déploiement, reconnecter les anciens clients pour synchroniser leurs écritures
+en attente et publier chaque livre avec un import complet utilisant le nouvel importeur.
+Un `sync` dont le SHA est déjà enregistré ne republie rien : il ne suffit donc pas à créer
+les nouveaux documents sans modification du contenu. Déployer ensuite l’application et ses
+règles ensemble, puis actualiser les clients. Il n’y a **aucune période de compatibilité** :
+une ancienne application ou des écritures hors ligne encore en attente peuvent être refusées
+après le changement de règles. Les anciennes sauvegardes locales ne sont pas reprises.
+Voir [ADR 0006](adr/0006-book-scoped-identities.md).
 
 ## Valider et importer
 
@@ -260,10 +289,10 @@ l’application ; il ne contient aucun texte pédagogique.
 
 Un manifeste modifié sélectionne le livre complet ; des chapitres seuls sélectionnent
 une publication partielle unique par livre. Tous les livres concernés sont validés en
-entier avant la première écriture. Les identifiants des livres et chapitres sont également
-vérifiés dans tous les manifestes versionnés, y compris ceux des livres non ciblés :
-un nouveau livre ne peut pas usurper leur identité. Une suppression de chapitre exige
-un manifeste cohérent. Un livre
+entier avant la première écriture. Les identifiants des livres et l’unicité des chapitres
+dans chaque livre sont également vérifiés dans tous les manifestes versionnés, y compris
+ceux des livres non ciblés ; les identifiants de chapitres peuvent être réutilisés d’un
+livre à l’autre. Une suppression de chapitre exige un manifeste cohérent. Un livre
 supprimé entièrement est refusé lorsque sa suppression est détectée : la suppression
 automatique de livres n’est pas prise en charge.
 

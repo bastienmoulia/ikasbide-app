@@ -10,7 +10,7 @@ import {
 
 test.use({ serviceWorkers: 'allow' });
 
-const sequenceUrl = '/chapitres/chapter-1/sequences/greetings';
+const sequenceUrl = '/a1/chapter-1/greetings';
 
 test('a submitted answer is restored offline and synchronized exactly once', async ({
   page,

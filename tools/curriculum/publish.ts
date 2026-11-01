@@ -23,7 +23,7 @@ export async function publishCurriculum(
   chapterIds?: readonly string[],
 ): Promise<PublishSummary> {
   const books = db.collection('books');
-  const chapters = db.collection('chapters');
+  const legacyChapters = db.collection('chapters');
   const units = db.collection('units');
   const sourceChapterIds = new Set(curriculum.chapters.map(({ id }) => id));
   const selectedIds = chapterIds ? new Set(chapterIds) : undefined;
@@ -41,31 +41,40 @@ export async function publishCurriculum(
     ? curriculum.chapters.filter(({ id }) => selectedIds.has(id))
     : curriculum.chapters;
   const bookReference = books.doc(curriculum.id);
+  const chapters = bookReference.collection('chapters');
   const chapterReferences = curriculum.chapters.map(({ id }) => chapters.doc(id));
 
   return db.runTransaction(async (transaction) => {
     // Serialize publications of the same book, including its initial creation.
     await transaction.get(bookReference);
-    // Read missing chapters too, so different books cannot claim the same IDs concurrently.
-    const sourceSnapshots = chapterReferences.length
-      ? await transaction.getAll(...chapterReferences)
-      : [];
+    const sourceSnapshots =
+      selectedIds && chapterReferences.length ? await transaction.getAll(...chapterReferences) : [];
     const chapterSnapshot = selectedIds ? undefined : await transaction.get(chapters);
-    const unitSnapshot = selectedIds ? undefined : await transaction.get(units);
     const publishedChapters = new Map<string, DocumentData>();
 
-    for (const chapter of sourceSnapshots) {
+    for (const chapter of selectedIds ? sourceSnapshots : (chapterSnapshot?.docs ?? [])) {
       const data = chapter.data();
       if (!data) continue;
       publishedChapters.set(chapter.id, data);
       if (Object.hasOwn(data, 'bookId') && data['bookId'] !== curriculum.id) {
         throw new Error(
-          `Cannot publish chapter "${chapter.id}": it is already assigned to book "${String(data['bookId'])}".`,
+          `Cannot publish chapter "${chapter.id}": its stored book ID is "${String(data['bookId'])}", not "${curriculum.id}".`,
         );
       }
     }
 
     if (selectedIds) {
+      const missingReferences = curriculum.chapters
+        .filter(({ id }) => !selectedIds.has(id) && !publishedChapters.has(id))
+        .map(({ id }) => legacyChapters.doc(id));
+      const legacySnapshots = missingReferences.length
+        ? await transaction.getAll(...missingReferences)
+        : [];
+      for (const chapter of legacySnapshots) {
+        const data = chapter.data();
+        if (data?.['bookId'] === curriculum.id) publishedChapters.set(chapter.id, data);
+      }
+
       for (const chapter of curriculum.chapters) {
         if (selectedIds.has(chapter.id)) continue;
         const published = publishedChapters.get(chapter.id);
@@ -91,13 +100,10 @@ export async function publishCurriculum(
       }
     }
 
+    const unitSnapshot = selectedIds ? undefined : await transaction.get(units);
     const staleChapters =
       chapterSnapshot?.docs
-        .filter((chapter) => {
-          const data = chapter.data();
-          const belongsToBook = data['bookId'] === curriculum.id || !Object.hasOwn(data, 'bookId');
-          return belongsToBook && !sourceChapterIds.has(chapter.id);
-        })
+        .filter((chapter) => !sourceChapterIds.has(chapter.id))
         .map((chapter) => chapter.ref) ?? [];
     const unitReferences = unitSnapshot?.docs.map((unit) => unit.ref) ?? [];
     const writeCount = 1 + selectedChapters.length + staleChapters.length + unitReferences.length;

@@ -1,6 +1,7 @@
 # Livre et chapitres publiés séparément
 
-Status: accepted
+Status: accepted; chapter identity and storage are partially superseded by
+[ADR 0006](0006-book-scoped-identities.md).
 
 ## Context
 

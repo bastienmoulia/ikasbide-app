@@ -7,10 +7,19 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.firebase.sign_in_provider == 'google.com';
     }
 
-    match /books/{bookId} {
-      allow read: if isGoogleLearner();
+    function isBookIdentifier(value) {
+      return value is string && value.size() > 0 && value.size() <= 1500;
     }
 
+    match /books/{bookId} {
+      allow read: if isGoogleLearner();
+
+      match /chapters/{chapterId} {
+        allow read: if isGoogleLearner();
+      }
+    }
+
+    // Frozen legacy chapters retain the original owner of pre-migration learner data.
     match /chapters/{chapterId} {
       allow read: if isGoogleLearner();
     }
@@ -26,7 +35,8 @@ service cloud.firestore {
       }
 
       function isAttempt(data) {
-        return data.keys().hasOnly(['chapterId', 'itemId', 'outcome', 'occurredAt', 'sessionId'])
+        return data.keys().hasOnly(['bookId', 'chapterId', 'itemId', 'outcome', 'occurredAt', 'sessionId'])
+          && isBookIdentifier(data.bookId)
           && isIdentifier(data.chapterId)
           && isIdentifier(data.itemId)
           && data.outcome in ['correct', 'correct-with-warning', 'almost', 'incorrect']
@@ -37,10 +47,20 @@ service cloud.firestore {
       allow read: if isOwner();
       allow create: if isOwner() && isAttempt(request.resource.data);
       // A reconnection may resend an already applied write; evidence itself never changes.
-      allow update: if isOwner() && request.resource.data == resource.data;
+      allow update: if isOwner() && isAttempt(request.resource.data)
+        && request.resource.data == resource.data;
     }
 
+    // Legacy progress is retained read-only and associated with its original chapter owner.
     match /learners/{learnerId}/sequenceProgress/{progressId} {
+      function isOwner() {
+        return isGoogleLearner() && request.auth.uid == learnerId;
+      }
+
+      allow read: if isOwner();
+    }
+
+    match /learners/{learnerId}/books/{bookId}/chapters/{chapterId}/sequenceProgress/{sequenceId} {
       function isOwner() {
         return isGoogleLearner() && request.auth.uid == learnerId;
       }
@@ -57,6 +77,7 @@ service cloud.firestore {
       function isSequenceProgress(data) {
         return data.keys().hasOnly([
             'schemaVersion',
+            'bookId',
             'chapterId',
             'sequenceId',
             'visitedStepIds',
@@ -64,9 +85,13 @@ service cloud.firestore {
             'incorrectItemIds',
             'skippedStepIds'
           ])
-          && data.schemaVersion == 1
+          && data.schemaVersion == 2
+          && isBookIdentifier(data.bookId)
           && isIdentifier(data.chapterId)
           && isIdentifier(data.sequenceId)
+          && data.bookId == bookId
+          && data.chapterId == chapterId
+          && data.sequenceId == sequenceId
           && isIdentifierList(data.visitedStepIds)
           && isIdentifierList(data.successfulItemIds)
           && isIdentifierList(data.incorrectItemIds)

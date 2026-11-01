@@ -2,11 +2,13 @@ import { Injectable, signal } from '@angular/core';
 import { loadFirestore } from '../firestore';
 import type { ItemAttempt } from './activity-player';
 import type { BilingualText } from './curriculum.model';
+import { legacyChapterOwner } from './legacy-chapter-owner';
 
 export type AttemptOutcome = 'correct' | 'correct-with-warning' | 'almost' | 'incorrect';
 
 /** A corrected response, without the submitted answer. */
 export interface Attempt extends ItemAttempt {
+  bookId: string;
   chapterId: string;
   /** Practice session in which the Item was answered (ADR 0004). */
   sessionId: string;
@@ -30,6 +32,11 @@ export const attemptNotSavedMessage: BilingualText = {
   fr: 'Une tentative n’a pas pu être enregistrée. Vérifiez votre connexion puis répondez à nouveau.',
 };
 
+const attemptHistoryUnavailableMessage: BilingualText = {
+  eu: 'Ezin izan da saiakeren historia kargatu.',
+  fr: 'Impossible de charger l’historique des tentatives.',
+};
+
 /**
  * Keeps the learner's attempt evidence in `learners/{uid}/attempts`. Writes go through
  * Firestore's persistent queue, so attempts made offline survive reloads and are sent once
@@ -38,6 +45,7 @@ export const attemptNotSavedMessage: BilingualText = {
 @Injectable({ providedIn: 'root' })
 export class AttemptService {
   readonly error = signal<BilingualText | null>(null);
+  readonly historyError = signal<BilingualText | null>(null);
 
   async record(learnerId: string, attempt: Attempt): Promise<void> {
     try {
@@ -51,6 +59,7 @@ export class AttemptService {
       );
       // Resolves only once the server confirms; the write is already queued locally.
       await sdk.setDoc(ref, {
+        bookId: attempt.bookId,
         chapterId: attempt.chapterId,
         itemId: attempt.itemId,
         outcome: attempt.outcome,
@@ -68,11 +77,12 @@ export class AttemptService {
   /** Follows how many attempts on the given Items are synchronized or still queued. */
   watch(
     learnerId: string,
+    bookId: string,
     chapterId: string,
     itemIds: ReadonlySet<string>,
     onSummary: (summary: AttemptSummary) => void,
   ): () => void {
-    return this.watchChapter(learnerId, chapterId, (attempts) => {
+    return this.watchChapter(learnerId, bookId, chapterId, (attempts) => {
       const summary = { synced: 0, pending: 0 };
       for (const attempt of attempts) {
         if (!itemIds.has(attempt.itemId)) continue;
@@ -86,39 +96,53 @@ export class AttemptService {
   /** Follows every attempt of the chapter, including those still queued on this device. */
   watchChapter(
     learnerId: string,
+    bookId: string,
     chapterId: string,
     onAttempts: (attempts: RecordedAttempt[]) => void,
   ): () => void {
     let stopped = false;
     let unsubscribe = () => {};
-    void loadFirestore().then(({ db, sdk }) => {
+    this.historyError.set(null);
+    const reportWatchError = (error: unknown) => {
       if (stopped) return;
-      const attempts = sdk.query(
-        sdk.collection(db, 'learners', learnerId, 'attempts'),
-        sdk.where('chapterId', '==', chapterId),
-      );
-      unsubscribe = sdk.onSnapshot(
-        attempts,
-        { includeMetadataChanges: true },
-        (snapshot) =>
-          onAttempts(
-            snapshot.docs.map((attempt) => ({
-              itemId: attempt.get('itemId'),
-              outcome: attempt.get('outcome'),
-              sessionId: attempt.get('sessionId'),
-              pending: attempt.metadata.hasPendingWrites,
-            })),
-          ),
-        reportWatchError,
-      );
-    }, reportWatchError);
+      console.error('Attempt history could not be followed.', error);
+      this.historyError.set(attemptHistoryUnavailableMessage);
+    };
+    void loadFirestore()
+      .then(async (connection) => {
+        const owner = await legacyChapterOwner(connection, chapterId);
+        if (stopped) return;
+        const { db, sdk } = connection;
+        const attempts = sdk.query(
+          sdk.collection(db, 'learners', learnerId, 'attempts'),
+          sdk.where('chapterId', '==', chapterId),
+        );
+        unsubscribe = sdk.onSnapshot(
+          attempts,
+          { includeMetadataChanges: true },
+          (snapshot) => {
+            if (stopped) return;
+            this.historyError.set(null);
+            const matching = snapshot.docs.filter((attempt) => {
+              const attemptBookId: unknown = attempt.get('bookId');
+              return attemptBookId === bookId || (attemptBookId === undefined && owner === bookId);
+            });
+            onAttempts(
+              matching.map((attempt) => ({
+                itemId: attempt.get('itemId'),
+                outcome: attempt.get('outcome'),
+                sessionId: attempt.get('sessionId'),
+                pending: attempt.metadata.hasPendingWrites,
+              })),
+            );
+          },
+          reportWatchError,
+        );
+      })
+      .catch(reportWatchError);
     return () => {
       stopped = true;
       unsubscribe();
     };
   }
-}
-
-function reportWatchError(error: unknown): void {
-  console.error('Attempt history could not be followed.', error);
 }

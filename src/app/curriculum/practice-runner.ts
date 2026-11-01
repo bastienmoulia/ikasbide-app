@@ -239,7 +239,7 @@ import { ReadingPlayer } from './reading-player';
           </p>
           <nav class="completion-actions">
             @if (nextSequenceId(); as nextId) {
-              <a [routerLink]="['/chapitres', chapterId(), 'sequences', nextId]">
+              <a [routerLink]="['/', bookId(), chapterId(), nextId]">
                 <app-bilingual-text
                   mode="stacked"
                   eu="Hurrengo sekuentzia"
@@ -248,7 +248,7 @@ import { ReadingPlayer } from './reading-player';
                 <app-icon name="next" />
               </a>
             } @else {
-              <a [routerLink]="['/chapitres', chapterId()]">
+              <a [routerLink]="['/', bookId(), chapterId()]">
                 <app-icon name="previous" />
                 <app-bilingual-text mode="stacked" eu="Itzuli kapitulura" fr="Retour au chapitre" />
               </a>
@@ -280,6 +280,7 @@ import { ReadingPlayer } from './reading-player';
 })
 export class PracticeRunner {
   readonly sequence = input.required<Sequence>();
+  readonly bookId = input.required<string>();
   readonly chapterId = input.required<string>();
   readonly learnerId = input.required<string>();
   readonly practiceSessionId = input.required<string>();
@@ -467,7 +468,7 @@ export class PracticeRunner {
   private save(progress: PracticeProgress): void {
     this.storageError.set(
       writePracticeProgress(
-        practiceProgressKey(this.learnerId(), this.chapterId(), this.sequence().id),
+        practiceProgressKey(this.learnerId(), this.bookId(), this.chapterId(), this.sequence().id),
         progress,
       ),
     );

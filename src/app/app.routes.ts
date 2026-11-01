@@ -6,12 +6,12 @@ export const routes: Routes = [
     loadComponent: () => import('./curriculum/curriculum-home').then((m) => m.CurriculumHome),
   },
   {
-    path: 'chapitres/:chapterId',
-    loadComponent: () => import('./curriculum/chapter-page').then((m) => m.ChapterPage),
+    path: ':bookId/:chapterId/:sequenceId',
+    loadComponent: () => import('./curriculum/sequence-page').then((m) => m.SequencePage),
   },
   {
-    path: 'chapitres/:chapterId/sequences/:sequenceId',
-    loadComponent: () => import('./curriculum/sequence-page').then((m) => m.SequencePage),
+    path: ':bookId/:chapterId',
+    loadComponent: () => import('./curriculum/chapter-page').then((m) => m.ChapterPage),
   },
   { path: '**', redirectTo: '' },
 ];

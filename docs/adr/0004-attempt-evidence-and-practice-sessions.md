@@ -1,5 +1,9 @@
 # Attempt evidence and practice sessions
 
+The identity and storage paths in this decision are partially superseded by
+[ADR 0006](0006-book-scoped-identities.md). The session boundary, immutable attempt
+evidence, privacy and progress-merging principles remain in force.
+
 Each corrected Item is stored as an immutable attempt in `learners/{uid}/attempts/{attemptId}` with only `chapterId` and `itemId` (Item ids are unique per chapter), `outcome`, `occurredAt` and `sessionId`; the submitted answer is never kept. Security rules allow only the owning Google account to read and create them; an update is accepted only when it is identical, so a write resent after a lost acknowledgement succeeds without becoming a second piece of evidence, while deletion and changes are refused.
 
 Writes go through Firestore's persistent cache (see [ADR 0003](0003-device-cache-for-offline-reading.md)) rather than a custom queue: offline attempts survive reloads, are kept per account, and are sent on reconnection. The client-generated document id is the synchronization identifier, so retries never duplicate evidence. Attempts queued by one account stay on the device until that account signs in online again.

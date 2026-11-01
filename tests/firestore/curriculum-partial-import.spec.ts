@@ -85,9 +85,16 @@ test('partial publication updates the book and selected chapter without deleting
       chapters: [],
     });
     await setDoc(doc(context.firestore(), 'books', 'other-book'), { marker: 'other-book' });
-    await setDoc(doc(context.firestore(), 'chapters', selectedId), { marker: 'old-selected' });
-    await setDoc(doc(context.firestore(), 'chapters', unselectedId), publishedUnselected);
-    await setDoc(doc(context.firestore(), 'chapters', orphanId), { marker: 'orphan' });
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', selectedId), {
+      marker: 'old-selected',
+    });
+    await setDoc(
+      doc(context.firestore(), 'books', bookId, 'chapters', unselectedId),
+      publishedUnselected,
+    );
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', orphanId), {
+      marker: 'orphan',
+    });
     await setDoc(doc(context.firestore(), 'units', 'legacy-unit'), { marker: 'legacy-unit' });
   });
 
@@ -109,14 +116,18 @@ test('partial publication updates the book and selected chapter without deleting
       { id: unselectedId, number: 2 },
     ],
   });
-  expect((await getDoc(doc(learner(), 'chapters', selectedId))).data()).toMatchObject({
+  expect(
+    (await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).data(),
+  ).toMatchObject({
     bookId,
     title: { eu: 'Kapitulua eguneratua' },
   });
-  expect((await getDoc(doc(learner(), 'chapters', unselectedId))).data()).toEqual(
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', unselectedId))).data()).toEqual(
     publishedUnselected,
   );
-  expect((await getDoc(doc(learner(), 'chapters', orphanId))).data()).toEqual({ marker: 'orphan' });
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', orphanId))).data()).toEqual({
+    marker: 'orphan',
+  });
   expect((await getDoc(doc(learner(), 'books', 'other-book'))).data()).toEqual({
     marker: 'other-book',
   });
@@ -137,7 +148,9 @@ test('an invalid unselected chapter prevents all partial publication writes', as
 
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'books', bookId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', selectedId), { marker: 'unchanged' });
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', selectedId), {
+      marker: 'unchanged',
+    });
   });
 
   const result = await runCurriculumCli(
@@ -153,7 +166,7 @@ test('an invalid unselected chapter prevents all partial publication writes', as
   expect(result.stderr).toContain(unselectedId);
   expect(result.stdout).not.toContain('Published');
   expect((await getDoc(doc(learner(), 'books', bookId))).data()).toEqual({ marker: 'unchanged' });
-  expect((await getDoc(doc(learner(), 'chapters', selectedId))).data()).toEqual({
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).data()).toEqual({
     marker: 'unchanged',
   });
 });
@@ -166,7 +179,9 @@ test('partial publication refuses an unpublished unselected chapter', async ({},
   const [selectedId, unselectedId] = chapterIds;
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'books', bookId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', selectedId), { marker: 'unchanged' });
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', selectedId), {
+      marker: 'unchanged',
+    });
   });
 
   const result = await runCurriculumCli(
@@ -182,9 +197,74 @@ test('partial publication refuses an unpublished unselected chapter', async ({},
   expect(result.stderr).toContain(unselectedId);
   expect(result.stderr).toContain('select');
   expect((await getDoc(doc(learner(), 'books', bookId))).data()).toEqual({ marker: 'unchanged' });
-  expect((await getDoc(doc(learner(), 'chapters', selectedId))).data()).toEqual({
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).data()).toEqual({
     marker: 'unchanged',
   });
+});
+
+test('partial publication can retain an unselected legacy chapter without changing its owner', async ({}, testInfo) => {
+  const { directory, bookId, chapterIds } = await copySample(
+    `legacy-${randomUUID().slice(0, 8)}`,
+    testInfo,
+  );
+  const [selectedId, unselectedId] = chapterIds;
+  const unselected = JSON.parse(
+    await readFile(join(directory, 'chapters', `${unselectedId}.json`), 'utf8'),
+  );
+  const legacy = { bookId, number: 2, title: unselected.title };
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'chapters', unselectedId), legacy);
+  });
+
+  const result = await runCurriculumCli(
+    'import',
+    directory,
+    '--chapter',
+    selectedId,
+    '--project',
+    projectId,
+  );
+
+  expect(result.code, result.stderr).toBe(0);
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).exists()).toBe(
+    true,
+  );
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', unselectedId))).exists()).toBe(
+    false,
+  );
+  expect((await getDoc(doc(learner(), 'chapters', unselectedId))).data()).toEqual(legacy);
+});
+
+test('partial publication cannot borrow a legacy chapter owned by another book', async ({}, testInfo) => {
+  const { directory, bookId, chapterIds } = await copySample(
+    `legacy-other-${randomUUID().slice(0, 8)}`,
+    testInfo,
+  );
+  const [selectedId, unselectedId] = chapterIds;
+  const unselected = JSON.parse(
+    await readFile(join(directory, 'chapters', `${unselectedId}.json`), 'utf8'),
+  );
+  const legacy = { bookId: 'another-book', number: 2, title: unselected.title };
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'chapters', unselectedId), legacy);
+  });
+
+  const result = await runCurriculumCli(
+    'import',
+    directory,
+    '--chapter',
+    selectedId,
+    '--project',
+    projectId,
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain(`chapter "${unselectedId}" is not published for this book`);
+  expect((await getDoc(doc(learner(), 'books', bookId))).exists()).toBe(false);
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).exists()).toBe(
+    false,
+  );
+  expect((await getDoc(doc(learner(), 'chapters', unselectedId))).data()).toEqual(legacy);
 });
 
 test('partial publication refuses a changed unselected chapter title', async ({}, testInfo) => {
@@ -201,8 +281,10 @@ test('partial publication refuses a changed unselected chapter title', async ({}
 
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'books', bookId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', selectedId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', unselectedId), {
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', selectedId), {
+      marker: 'unchanged',
+    });
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', unselectedId), {
       bookId,
       number: 2,
       title: publishedTitle,
@@ -222,7 +304,7 @@ test('partial publication refuses a changed unselected chapter title', async ({}
   expect(result.stderr).toContain(unselectedId);
   expect(result.stderr).toContain('select');
   expect((await getDoc(doc(learner(), 'books', bookId))).data()).toEqual({ marker: 'unchanged' });
-  expect((await getDoc(doc(learner(), 'chapters', selectedId))).data()).toEqual({
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).data()).toEqual({
     marker: 'unchanged',
   });
 });
@@ -243,8 +325,10 @@ test('partial publication refuses to renumber an unselected chapter', async ({},
 
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'books', bookId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', selectedId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', unselectedId), {
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', selectedId), {
+      marker: 'unchanged',
+    });
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', unselectedId), {
       bookId,
       number: 2,
       title: unselected.title,
@@ -264,7 +348,7 @@ test('partial publication refuses to renumber an unselected chapter', async ({},
   expect(result.stderr).toContain(unselectedId);
   expect(result.stderr).toContain('select');
   expect((await getDoc(doc(learner(), 'books', bookId))).data()).toEqual({ marker: 'unchanged' });
-  expect((await getDoc(doc(learner(), 'chapters', selectedId))).data()).toEqual({
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).data()).toEqual({
     marker: 'unchanged',
   });
 });
@@ -275,7 +359,9 @@ test('one or more chapter flags can select multiple chapters without deleting or
   const [firstId, secondId] = chapterIds;
   const orphanId = `${prefix}-orphan`;
   await environment.withSecurityRulesDisabled(async (context) => {
-    await setDoc(doc(context.firestore(), 'chapters', orphanId), { marker: 'orphan' });
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', orphanId), {
+      marker: 'orphan',
+    });
   });
 
   const result = await runCurriculumCli(
@@ -296,15 +382,21 @@ test('one or more chapter flags can select multiple chapters without deleting or
     { id: firstId, number: 1 },
     { id: secondId, number: 2 },
   ]);
-  expect((await getDoc(doc(learner(), 'chapters', firstId))).data()).toMatchObject({
-    bookId,
-    number: 1,
-  });
-  expect((await getDoc(doc(learner(), 'chapters', secondId))).data()).toMatchObject({
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', firstId))).data()).toMatchObject(
+    {
+      bookId,
+      number: 1,
+    },
+  );
+  expect(
+    (await getDoc(doc(learner(), 'books', bookId, 'chapters', secondId))).data(),
+  ).toMatchObject({
     bookId,
     number: 2,
   });
-  expect((await getDoc(doc(learner(), 'chapters', orphanId))).data()).toEqual({ marker: 'orphan' });
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', orphanId))).data()).toEqual({
+    marker: 'orphan',
+  });
 });
 
 test('an unknown selected chapter prevents every write', async ({}, testInfo) => {
@@ -314,7 +406,9 @@ test('an unknown selected chapter prevents every write', async ({}, testInfo) =>
   const unknownId = `${prefix}-not-in-book`;
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'books', bookId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', selectedId), { marker: 'unchanged' });
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', selectedId), {
+      marker: 'unchanged',
+    });
   });
 
   const result = await runCurriculumCli(
@@ -331,7 +425,7 @@ test('an unknown selected chapter prevents every write', async ({}, testInfo) =>
   expect(result.stderr).toContain(unknownId);
   expect(result.stderr).toContain('not listed');
   expect((await getDoc(doc(learner(), 'books', bookId))).data()).toEqual({ marker: 'unchanged' });
-  expect((await getDoc(doc(learner(), 'chapters', selectedId))).data()).toEqual({
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', selectedId))).data()).toEqual({
     marker: 'unchanged',
   });
 });
@@ -342,7 +436,7 @@ test('chapter selection is only accepted for import', async () => {
   expect(result.stderr).toContain('Usage:');
 });
 
-test('partial publication refuses chapter IDs already owned by another book', async ({}, testInfo) => {
+test('partial publication refuses a mismatched book ID inside the book namespace', async ({}, testInfo) => {
   const { directory, bookId, chapterIds } = await copySample(
     `collision-${randomUUID().slice(0, 8)}`,
     testInfo,
@@ -351,7 +445,7 @@ test('partial publication refuses chapter IDs already owned by another book', as
   const existing = { bookId: 'other-book', marker: 'unchanged' };
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'books', bookId), { marker: 'unchanged' });
-    await setDoc(doc(context.firestore(), 'chapters', firstId), existing);
+    await setDoc(doc(context.firestore(), 'books', bookId, 'chapters', firstId), existing);
   });
 
   const result = await runCurriculumCli(
@@ -366,10 +460,14 @@ test('partial publication refuses chapter IDs already owned by another book', as
 
   expect(result.code).toBe(1);
   expect(result.stderr).toContain(firstId);
-  expect(result.stderr).toContain('already assigned');
+  expect(result.stderr).toContain('stored book ID');
   expect((await getDoc(doc(learner(), 'books', bookId))).data()).toEqual({ marker: 'unchanged' });
-  expect((await getDoc(doc(learner(), 'chapters', firstId))).data()).toEqual(existing);
-  expect((await getDoc(doc(learner(), 'chapters', secondId))).exists()).toBe(false);
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', firstId))).data()).toEqual(
+    existing,
+  );
+  expect((await getDoc(doc(learner(), 'books', bookId, 'chapters', secondId))).exists()).toBe(
+    false,
+  );
 });
 
 test('concurrent partial publications keep chapter summaries consistent', async ({}, testInfo) => {
@@ -400,7 +498,7 @@ test('concurrent partial publications keep chapter summaries consistent', async 
       })),
     });
     for (const [index, chapter] of chapters.entries()) {
-      batch.set(doc(firestore, 'chapters', chapterIds[index]), {
+      batch.set(doc(firestore, 'books', bookId, 'chapters', chapterIds[index]), {
         bookId,
         number: index + 1,
         title: chapter.title,
@@ -424,7 +522,9 @@ test('concurrent partial publications keep chapter summaries consistent', async 
   ]);
   const publishedBook = (await getDoc(doc(learner(), 'books', bookId))).data();
   const publishedChapters = await Promise.all(
-    chapterIds.map(async (id) => (await getDoc(doc(learner(), 'chapters', id))).data()),
+    chapterIds.map(async (id) =>
+      (await getDoc(doc(learner(), 'books', bookId, 'chapters', id))).data(),
+    ),
   );
 
   expect(publishedBook?.['chapters'].map((chapter: { title: unknown }) => chapter.title)).toEqual(
@@ -433,7 +533,7 @@ test('concurrent partial publications keep chapter summaries consistent', async 
   expect(results.map((result) => result.code).sort()).toEqual([0, 1]);
 });
 
-test('concurrent books cannot claim the same unpublished chapter IDs', async ({}, testInfo) => {
+test('concurrent books can publish the same chapter IDs independently', async ({}, testInfo) => {
   const prefix = `ownership-${randomUUID().slice(0, 8)}`;
   const { directory, bookId, chapterIds } = await copySample(prefix, testInfo);
   const otherDirectory = testInfo.outputPath(`${prefix}-other`);
@@ -455,8 +555,7 @@ test('concurrent books cannot claim the same unpublished chapter IDs', async ({}
       runCurriculumCli('import', directory, '--project', raceProjectId),
       runCurriculumCli('import', otherDirectory, '--project', raceProjectId),
     ]);
-    expect(results.map((result) => result.code).sort(), JSON.stringify(results)).toEqual([0, 1]);
-    expect(results.find((result) => result.code !== 0)?.stderr).toContain('already assigned');
+    expect(results.map((result) => result.code).sort(), JSON.stringify(results)).toEqual([0, 0]);
 
     const firestore = raceEnvironment
       .authenticatedContext('ownership-reader', {
@@ -466,10 +565,13 @@ test('concurrent books cannot claim the same unpublished chapter IDs', async ({}
     const books = await Promise.all(
       [bookId, otherBookId].map(async (id) => getDoc(doc(firestore, 'books', id))),
     );
-    expect(books.filter((book) => book.exists())).toHaveLength(1);
-    const winner = books[0].exists() ? bookId : otherBookId;
-    for (const id of chapterIds) {
-      expect((await getDoc(doc(firestore, 'chapters', id))).data()?.['bookId']).toBe(winner);
+    expect(books.filter((book) => book.exists())).toHaveLength(2);
+    for (const owner of [bookId, otherBookId]) {
+      for (const id of chapterIds) {
+        expect(
+          (await getDoc(doc(firestore, 'books', owner, 'chapters', id))).data()?.['bookId'],
+        ).toBe(owner);
+      }
     }
   } finally {
     await raceEnvironment.cleanup();
@@ -500,7 +602,7 @@ test('a large book can publish one chapter even when a complete import exceeds t
       const firestore = context.firestore();
       const batch = writeBatch(firestore);
       for (let index = 1; index < chapterIds.length; index++) {
-        batch.set(doc(firestore, 'chapters', chapterIds[index]), {
+        batch.set(doc(firestore, 'books', bookId, 'chapters', chapterIds[index]), {
           bookId,
           number: index + 1,
           title: index === 1 ? secondChapter.title : firstTitle,
@@ -520,7 +622,9 @@ test('a large book can publish one chapter even when a complete import exceeds t
     expect(partial.code, partial.stderr).toBe(0);
     const publishedBook = (await getDoc(doc(learner(), 'books', bookId))).data();
     expect(publishedBook?.['chapters']).toHaveLength(400);
-    expect((await getDoc(doc(learner(), 'chapters', chapterIds[0]))).data()).toMatchObject({
+    expect(
+      (await getDoc(doc(learner(), 'books', bookId, 'chapters', chapterIds[0]))).data(),
+    ).toMatchObject({
       bookId,
       number: 1,
     });
@@ -555,7 +659,7 @@ test('a large book can publish one chapter even when a complete import exceeds t
     await environment.withSecurityRulesDisabled(async (context) => {
       const firestore = context.firestore();
       const batch = writeBatch(firestore);
-      for (const id of chapterIds) batch.delete(doc(firestore, 'chapters', id));
+      for (const id of chapterIds) batch.delete(doc(firestore, 'books', bookId, 'chapters', id));
       batch.delete(doc(firestore, 'books', bookId));
       await batch.commit();
     });

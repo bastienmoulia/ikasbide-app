@@ -23,7 +23,13 @@ séquences.
 Aucun contenu du livre n’est embarqué dans ce dépôt ; voir
 [docs/curriculum.md](docs/curriculum.md).
 Le format v2 et la publication du livre complet sont décrits dans
-[l’ADR 0005](docs/adr/0005-book-and-chapter-publication.md).
+[l’ADR 0005](docs/adr/0005-book-and-chapter-publication.md) ; l’identité des chapitres
+par livre et la transition des données sont décrites dans
+[l’ADR 0006](docs/adr/0006-book-scoped-identities.md).
+
+Les adresses des chapitres et séquences incluent l’identifiant du livre :
+`/{bookId}/{chapterId}` et `/{bookId}/{chapterId}/{sequenceId}`. Le sommaire `/` conserve
+le livre courant dans l’onglet ; une ouverture directe dans un nouvel onglet utilise `a1`.
 
 Les tickets [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) à
 [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) sont également livrés et
@@ -109,7 +115,9 @@ env -u FIRESTORE_EMULATOR_HOST npm run curriculum:import -- \
 
 Les identifiants restent sur la machine, jamais dans les dépôts. Sans `--chapter`,
 **l’import publie le livre et tous ses chapitres dans une transaction atomique** : les chapitres
-absents du manifeste sont supprimés, ainsi que l’ancienne collection `units`.
+de ce livre absents du manifeste sont supprimés dans le nouveau rangement, ainsi que l’ancienne
+collection `units`. Les anciens documents de la collection globale `chapters` restent figés
+pour identifier le livre d’origine des données synchronisées.
 
 Pour republier seulement certains chapitres après une première publication complète :
 
@@ -174,8 +182,9 @@ bloque pas la suite et n’est pas automatiquement reproposée. « Précédent �
 de relire les étapes parcourues sans créer de nouvelle tentative ; les exercices
 déjà parcourus s’affichent alors en lecture seule. La progression se synchronise
 entre appareils du même compte Google et fusionne les étapes parcourues et réussites.
-Les anciennes sauvegardes locales sont importées ; le texte des réponses n’est pas
-synchronisé.
+Les données synchronisées avant le passage aux identifiants par livre sont reprises lorsque
+leur livre d’origine est identifiable ; les anciennes sauvegardes locales non synchronisées
+ne sont pas reprises. Le texte des réponses n’est pas synchronisé.
 
 Les champs gardent un libellé accessible sans afficher « Réponse », reçoivent le
 focus automatiquement et demandent au navigateur de désactiver l’autocomplétion

@@ -44,7 +44,7 @@ test('the maintainer import publishes a book and ordered chapters', async () => 
     ],
   });
 
-  const chapter = (await getDoc(doc(learner(), 'chapters/chapter-1'))).data();
+  const chapter = (await getDoc(doc(learner(), 'books/a1/chapters/chapter-1'))).data();
   expect(chapter?.['bookId']).toBe('a1');
   expect(chapter?.['number']).toBe(1);
   expect(chapter?.['sequences'].map((sequence: { letter: string }) => sequence.letter)).toEqual([
@@ -76,10 +76,14 @@ test('the maintainer import publishes a book and ordered chapters', async () => 
   ]);
 });
 
-test('a complete import removes stale chapters and legacy units atomically', async () => {
+test('a complete import removes only scoped stale chapters and preserves legacy ownership', async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     const firestore = context.firestore();
     await Promise.all([
+      setDoc(doc(firestore, 'books', 'a1', 'chapters', 'chapter-stale'), { bookId: 'a1' }),
+      setDoc(doc(firestore, 'books', 'other-book', 'chapters', 'chapter-stale'), {
+        bookId: 'other-book',
+      }),
       setDoc(doc(firestore, 'chapters', 'chapter-stale'), { bookId: 'a1' }),
       setDoc(doc(firestore, 'chapters', 'chapter-legacy'), { number: 9 }),
       setDoc(doc(firestore, 'units', 'unit-1'), { number: 1 }),
@@ -90,8 +94,18 @@ test('a complete import removes stale chapters and legacy units atomically', asy
   expect(result.code).toBe(0);
   await environment.withSecurityRulesDisabled(async (context) => {
     const firestore = context.firestore();
-    expect((await getDoc(doc(firestore, 'chapters', 'chapter-stale'))).exists()).toBe(false);
-    expect((await getDoc(doc(firestore, 'chapters', 'chapter-legacy'))).exists()).toBe(false);
+    expect(
+      (await getDoc(doc(firestore, 'books', 'a1', 'chapters', 'chapter-stale'))).exists(),
+    ).toBe(false);
+    expect(
+      (await getDoc(doc(firestore, 'books', 'other-book', 'chapters', 'chapter-stale'))).data(),
+    ).toEqual({ bookId: 'other-book' });
+    expect((await getDoc(doc(firestore, 'chapters', 'chapter-stale'))).data()).toEqual({
+      bookId: 'a1',
+    });
+    expect((await getDoc(doc(firestore, 'chapters', 'chapter-legacy'))).data()).toEqual({
+      number: 9,
+    });
     expect((await getDoc(doc(firestore, 'units', 'unit-1'))).exists()).toBe(false);
   });
 });
@@ -151,8 +165,8 @@ test('an invalid chapter blocks the entire import', async ({}, testInfo) => {
   expect(result.code).toBe(1);
   expect(result.stderr).toContain('chapters/chapter-1.json.title.fr');
   expect(result.stdout).not.toContain('Published');
-  expect((await getDoc(doc(learner(), 'chapters/chapter-6'))).exists()).toBe(false);
-  expect((await getDoc(doc(learner(), 'chapters/chapter-1'))).data()?.['title']).toEqual({
+  expect((await getDoc(doc(learner(), 'books/a1/chapters/chapter-6'))).exists()).toBe(false);
+  expect((await getDoc(doc(learner(), 'books/a1/chapters/chapter-1'))).data()?.['title']).toEqual({
     eu: 'Aurkezpenak',
     fr: 'Les présentations',
   });

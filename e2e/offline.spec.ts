@@ -34,7 +34,7 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
   await displayModes.getByRole('radio', { name: /Iluna Sombre/ }).click();
   await page.keyboard.press('Escape');
 
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Nongoa zara? D’où es-tu ?',
   );

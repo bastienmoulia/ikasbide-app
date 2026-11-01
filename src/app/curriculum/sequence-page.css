@@ -65,3 +65,8 @@
   outline: 3px solid var(--chapter-accent);
   outline-offset: 3px;
 }
+
+.start-practice:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

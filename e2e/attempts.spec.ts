@@ -8,7 +8,7 @@ import {
   storedAttempts,
 } from './support.ts';
 
-const sequenceUrl = '/chapitres/chapter-2/sequences/family-words';
+const sequenceUrl = '/a1/chapter-2/family-words';
 
 test('attempt evidence stays immutable and sequence progress resumes on another device', async ({
   page,
@@ -43,13 +43,18 @@ test('attempt evidence stays immutable and sequence progress resumes on another 
   expect(firstItemAttempts[0].fields['outcome']).toBe('incorrect');
   for (const { fields } of firstItemAttempts) {
     expect(Object.keys(fields).sort()).toEqual([
+      'bookId',
       'chapterId',
       'itemId',
       'occurredAt',
       'outcome',
       'sessionId',
     ]);
-    expect(fields).toMatchObject({ chapterId: 'chapter-2', itemId: 'family-choice-1' });
+    expect(fields).toMatchObject({
+      bookId: 'a1',
+      chapterId: 'chapter-2',
+      itemId: 'family-choice-1',
+    });
     expect(JSON.stringify(fields)).not.toContain('aita');
   }
 
@@ -72,7 +77,7 @@ test('attempt evidence stays immutable and sequence progress resumes on another 
 
   const otherDevice = await browser.newContext({ baseURL, serviceWorkers: 'block' });
   try {
-    const sharedSequence = '/chapitres/chapter-1/sequences/greetings';
+    const sharedSequence = '/a1/chapter-1/greetings';
     await page.goto(sharedSequence);
     await startPractice(page);
     await answerCurrentText(page, 'naiz');

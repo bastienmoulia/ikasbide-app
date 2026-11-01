@@ -1,10 +1,11 @@
-import { Component, inject, resource } from '@angular/core';
+import { Component, computed, inject, resource } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { BilingualText } from '../bilingual-text';
+import { BookContext } from './book-context';
 import { chapterColor } from './chapter-color';
-import { loadErrorMessage, loadingMessage } from './content-labels';
+import { bookNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
 import { CurriculumService } from './curriculum.service';
 
 @Component({
@@ -33,14 +34,14 @@ import { CurriculumService } from './curriculum.service';
         <app-bilingual-text mode="stacked" [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (books.value()?.length) {
-      <p class="muted">
-        <app-bilingual-text
-          mode="stacked"
-          eu="Jarraitu gomendatutako ordena edo ireki nahi duzun kapitulua."
-          fr="Suivez l’ordre recommandé ou ouvrez le chapitre de votre choix."
-        />
-      </p>
-      @for (book of books.value()?.slice(0, 1); track book.id) {
+      @if (book(); as book) {
+        <p class="muted">
+          <app-bilingual-text
+            mode="stacked"
+            eu="Jarraitu gomendatutako ordena edo ireki nahi duzun kapitulua."
+            fr="Suivez l’ordre recommandé ou ouvrez le chapitre de votre choix."
+          />
+        </p>
         <section [attr.aria-labelledby]="'book-' + book.id">
           <h2 [id]="'book-' + book.id">
             @if (book.title.fr; as titleFr) {
@@ -52,7 +53,7 @@ import { CurriculumService } from './curriculum.service';
           <ol class="cards">
             @for (chapter of book.chapters; track chapter.id) {
               <li [style.--chapter-accent]="color(chapter.number)">
-                <a [routerLink]="['/chapitres', chapter.id]">
+                <a [routerLink]="['/', book.id, chapter.id]">
                   <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
                   <span class="stack">
                     <app-bilingual-text
@@ -73,6 +74,14 @@ import { CurriculumService } from './curriculum.service';
             }
           </ol>
         </section>
+      } @else {
+        <p role="alert">
+          <app-bilingual-text
+            mode="stacked"
+            [eu]="bookNotPublished.eu"
+            [fr]="bookNotPublished.fr"
+          />
+        </p>
       }
     } @else {
       <mat-card appearance="outlined">
@@ -98,8 +107,14 @@ import { CurriculumService } from './curriculum.service';
 })
 export class CurriculumHome {
   private readonly curriculum = inject(CurriculumService);
+  private readonly context = inject(BookContext);
+  protected readonly bookId = this.context.restore(inject(Router));
   protected readonly books = resource({ loader: () => this.curriculum.books() });
+  protected readonly book = computed(() =>
+    this.books.value()?.find(({ id }) => id === this.bookId),
+  );
   protected readonly color = chapterColor;
   protected readonly loading = loadingMessage;
+  protected readonly bookNotPublished = bookNotPublishedMessage;
   protected readonly errorMessage = loadErrorMessage;
 }

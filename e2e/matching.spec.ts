@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { signInWithGoogle, startCourse } from './support.ts';
 
-const matching = '/chapitres/chapter-2/sequences/family-matching';
+const matching = '/a1/chapter-2/family-matching';
 
 async function openMatching(page: Page): Promise<void> {
   await page.goto(matching);
