@@ -194,7 +194,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
     await expectContrast(initialStatus, progressMap.getByRole('listitem').first(), 4.5);
   }
 
-  await page.goto('/chapitres/chapter-1/sequences/greetings');
+  await page.goto('/a1/chapter-1/greetings');
   await startPractice(page);
   const player = page.locator('app-activity-player');
   const gapAnswer = player.getByRole('textbox');
@@ -223,7 +223,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await choice.click();
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
 
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   const exerciseCard = page.locator('.exercise-item');
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
@@ -257,7 +257,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
 
-  await page.goto('/chapitres/chapter-1');
+  await page.goto('/a1/chapter-1');
   const greetingObjective = progressMap
     .getByRole('listitem')
     .filter({ hasText: /Saluer et se présenter/ });
@@ -277,7 +277,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
     expect(contrastRatio(darkAccentHex, '#2b2c2f')).toBeGreaterThanOrEqual(4.5);
   }
 
-  await page.goto('/chapitres/chapter-99');
+  await page.goto('/a1/chapter-99');
   const notPublishedError = page.getByRole('alert');
   await expect(notPublishedError).toBeVisible();
   for (const mode of ['light', 'dark'] as const) {

@@ -66,8 +66,8 @@ test('sync bootstraps a Git source then publishes cumulative chapters without re
       initial,
     );
 
-    await db.doc('chapters/chapter-2').update({ marker: 'preserved' });
-    const untouched = await db.doc('chapters/chapter-2').get();
+    await db.doc('books/a1/chapters/chapter-2').update({ marker: 'preserved' });
+    const untouched = await db.doc('books/a1/chapters/chapter-2').get();
     await changeTitle(directory, 'chapter-1', 'Berria');
     await commit(directory);
     await changeTitle(directory, 'chapter-1', 'Azkena');
@@ -76,12 +76,14 @@ test('sync bootstraps a Git source then publishes cumulative chapters without re
     expect(partial.stderr).toBe('');
     expect(partial.code).toBe(0);
     expect(partial.stdout).toContain('chapter-1');
-    expect((await db.doc('chapters/chapter-1').get()).data()?.['title']).toMatchObject({
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).data()?.['title']).toMatchObject({
       eu: 'Azkena',
     });
 
     expect(
-      (await db.doc('chapters/chapter-2').get()).updateTime?.isEqual(untouched.updateTime!),
+      (await db.doc('books/a1/chapters/chapter-2').get()).updateTime?.isEqual(
+        untouched.updateTime!,
+      ),
     ).toBe(true);
     expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()?.['sha']).toBe(
       latest,
@@ -100,7 +102,7 @@ test('a reordered old event cannot restore obsolete content or advance the succe
     await changeTitle(directory, 'chapter-1', 'Azken bertsioa');
     const latest = await commit(directory);
     expect((await runCurriculumCli('sync', directory, '--project', projectId)).code).toBe(0);
-    const published = await db.doc('chapters/chapter-1').get();
+    const published = await db.doc('books/a1/chapters/chapter-1').get();
     const checkpoint = await db.doc('curriculumPublications/ikasbide-content').get();
     await git(directory, 'checkout', '--detach', old);
     const stale = await runCurriculumCli('sync', directory, '--project', projectId);
@@ -108,7 +110,9 @@ test('a reordered old event cannot restore obsolete content or advance the succe
     expect(stale.code).toBe(0);
     expect(stale.stdout).toContain('obsolete');
     expect(
-      (await db.doc('chapters/chapter-1').get()).updateTime?.isEqual(published.updateTime!),
+      (await db.doc('books/a1/chapters/chapter-1').get()).updateTime?.isEqual(
+        published.updateTime!,
+      ),
     ).toBe(true);
     const after = await db.doc('curriculumPublications/ikasbide-content').get();
     expect(after.data()?.['sha']).toBe(latest);
@@ -118,7 +122,7 @@ test('a reordered old event cannot restore obsolete content or advance the succe
   }
 });
 
-test('chapter IDs claimed by two affected books fail before the first production write', async ({}, testInfo) => {
+test('two affected books can publish the same chapter IDs independently', async ({}, testInfo) => {
   const directory = await repository(testInfo.outputPath('source'));
   const duplicate = join(directory, 'B1');
   await cp(join(directory, 'A1'), duplicate, { recursive: true });
@@ -131,11 +135,39 @@ test('chapter IDs claimed by two affected books fail before the first production
   const db = new Firestore({ projectId });
   try {
     const result = await runCurriculumCli('sync', directory, '--project', projectId);
-    expect(result.code).toBe(1);
-    expect(result.stderr).toContain('chapter-1');
-    expect((await db.collection('books').get()).empty).toBe(true);
+    expect(result.code, result.stderr).toBe(0);
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).data()?.['bookId']).toBe('a1');
+    expect((await db.doc('books/b1/chapters/chapter-1').get()).data()?.['bookId']).toBe('b1');
     expect((await db.collection('chapters').get()).empty).toBe(true);
-    expect((await db.doc('curriculumPublications/ikasbide-content').get()).exists).toBe(false);
+    expect((await db.doc('curriculumPublications/ikasbide-content').get()).exists).toBe(true);
+  } finally {
+    await db.terminate();
+  }
+});
+
+test('duplicate chapter IDs in an unaffected book still block publication', async ({}, testInfo) => {
+  const directory = await repository(testInfo.outputPath('source'));
+  const other = await secondBook(directory);
+  const path = join(other, 'book.json');
+  const book = JSON.parse(await readFile(path, 'utf8'));
+  book.chapters.push(book.chapters[0]);
+  await writeFile(path, JSON.stringify(book));
+  const initial = await commit(directory);
+  const projectId = `demo-sync-${randomUUID().slice(0, 8)}`;
+  const db = new Firestore({ projectId });
+  try {
+    await db.doc('curriculumPublications/ikasbide-content').set({ sha: initial });
+    await db.doc('books/a1').set({ marker: 'unchanged' });
+    await changeTitle(directory, 'chapter-1', 'Berria');
+    await commit(directory);
+
+    const result = await runCurriculumCli('sync', directory, '--project', projectId);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('Duplicate chapter ID "b1-chapter-1" in book "b1"');
+    expect((await db.doc('books/a1').get()).data()).toEqual({ marker: 'unchanged' });
+    expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()?.['sha']).toBe(
+      initial,
+    );
   } finally {
     await db.terminate();
   }
@@ -149,7 +181,7 @@ test('all affected books are validated before any write and a repaired push reco
   try {
     const initial = await commit(directory);
     expect((await runCurriculumCli('sync', directory, '--project', projectId)).code).toBe(0);
-    const before = await db.doc('chapters/chapter-1').get();
+    const before = await db.doc('books/a1/chapters/chapter-1').get();
     await changeTitle(directory, 'chapter-1', 'Argitaratu beharrekoa');
     const invalidPath = join(other, 'chapters', 'b1-chapter-2.json');
     const validContents = await readFile(invalidPath, 'utf8');
@@ -159,9 +191,9 @@ test('all affected books are validated before any write and a repaired push reco
     expect(failed.code).toBe(1);
     expect(failed.stderr).toContain('b1-chapter-2');
     expect(failed.stdout).not.toContain('Published book');
-    expect((await db.doc('chapters/chapter-1').get()).updateTime?.isEqual(before.updateTime!)).toBe(
-      true,
-    );
+    expect(
+      (await db.doc('books/a1/chapters/chapter-1').get()).updateTime?.isEqual(before.updateTime!),
+    ).toBe(true);
     expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()?.['sha']).toBe(
       initial,
     );
@@ -170,7 +202,7 @@ test('all affected books are validated before any write and a repaired push reco
     const retried = await runCurriculumCli('sync', directory, '--project', projectId);
     expect(retried.stderr).toBe('');
     expect(retried.code).toBe(0);
-    expect((await db.doc('chapters/chapter-1').get()).data()?.['title']).toMatchObject({
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).data()?.['title']).toMatchObject({
       eu: 'Argitaratu beharrekoa',
     });
     expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()?.['sha']).toBe(
@@ -189,8 +221,8 @@ test('multiple changed chapters share an atomic partial publication and other bo
   try {
     await commit(directory);
     expect((await runCurriculumCli('sync', directory, '--project', projectId)).code).toBe(0);
-    const other = await db.doc('chapters/b1-chapter-1').get();
-    await db.doc('chapters/orphan').set({ bookId: 'a1', marker: 'keep' });
+    const other = await db.doc('books/b1/chapters/b1-chapter-1').get();
+    await db.doc('books/a1/chapters/orphan').set({ bookId: 'a1', marker: 'keep' });
     await changeTitle(directory, 'chapter-1', 'Bat berria');
     await commit(directory);
     await changeTitle(directory, 'chapter-2', 'Bi berria');
@@ -198,19 +230,19 @@ test('multiple changed chapters share an atomic partial publication and other bo
     const result = await runCurriculumCli('sync', directory, '--project', projectId);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
-    const first = await db.doc('chapters/chapter-1').get();
-    const second = await db.doc('chapters/chapter-2').get();
+    const first = await db.doc('books/a1/chapters/chapter-1').get();
+    const second = await db.doc('books/a1/chapters/chapter-2').get();
     const book = await db.doc('books/a1').get();
     expect(first.data()?.['title']).toMatchObject({ eu: 'Bat berria' });
     expect(second.data()?.['title']).toMatchObject({ eu: 'Bi berria' });
     expect(first.updateTime?.isEqual(second.updateTime!)).toBe(true);
     expect(first.updateTime?.isEqual(book.updateTime!)).toBe(true);
-    expect((await db.doc('chapters/orphan').get()).data()).toEqual({
+    expect((await db.doc('books/a1/chapters/orphan').get()).data()).toEqual({
       bookId: 'a1',
       marker: 'keep',
     });
     expect(
-      (await db.doc('chapters/b1-chapter-1').get()).updateTime?.isEqual(other.updateTime!),
+      (await db.doc('books/b1/chapters/b1-chapter-1').get()).updateTime?.isEqual(other.updateTime!),
     ).toBe(true);
   } finally {
     await db.terminate();
@@ -238,9 +270,9 @@ test('manifest updates add and remove chapters in a complete book publication', 
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('complete book');
-    expect((await db.doc('chapters/chapter-1').get()).exists).toBe(false);
-    expect((await db.doc('chapters/chapter-2').get()).data()?.['number']).toBe(1);
-    expect((await db.doc('chapters/chapter-new').get()).data()?.['number']).toBe(2);
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).exists).toBe(false);
+    expect((await db.doc('books/a1/chapters/chapter-2').get()).data()?.['number']).toBe(1);
+    expect((await db.doc('books/a1/chapters/chapter-new').get()).data()?.['number']).toBe(2);
     expect((await db.doc('books/a1').get()).data()?.['title']).toEqual({ eu: 'Beste ordena' });
   } finally {
     await db.terminate();
@@ -320,7 +352,7 @@ for (const base of ['missing', 'malformed', 'diverged']) {
         await git(directory, 'checkout', 'main');
       }
       await db.doc('curriculumPublications/ikasbide-content').set({ sha: checkpoint });
-      await db.doc('chapters/orphan').set({ bookId: 'a1' });
+      await db.doc('books/a1/chapters/orphan').set({ bookId: 'a1' });
       await changeTitle(directory, 'chapter-1', 'Main berria');
       const latest = await commit(directory);
       expect(latest).not.toBe(initial);
@@ -328,7 +360,7 @@ for (const base of ['missing', 'malformed', 'diverged']) {
       expect(result.stderr).toBe('');
       expect(result.code).toBe(0);
       expect(result.stdout).toContain('complete book');
-      expect((await db.doc('chapters/orphan').get()).exists).toBe(false);
+      expect((await db.doc('books/a1/chapters/orphan').get()).exists).toBe(false);
       expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()?.['sha']).toBe(
         latest,
       );
@@ -353,7 +385,7 @@ test('sync validates an unchanged chapter of an affected book before publishing 
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('chapter-2');
     expect((await db.doc('books/a1').get()).data()).toEqual({ marker: 'unchanged' });
-    expect((await db.doc('chapters/chapter-1').get()).exists).toBe(false);
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).exists).toBe(false);
   } finally {
     await db.terminate();
   }
@@ -397,22 +429,22 @@ test('retry reconciles a reverted chapter that was already written by a failed m
     await writeFile(otherPath, JSON.stringify(otherChapter));
     await commit(directory);
     // A runtime ownership conflict fails the second import after the first succeeds.
-    await db.doc('chapters/b1-chapter-1').update({ bookId: 'conflicting-book' });
+    await db.doc('books/b1/chapters/b1-chapter-1').update({ bookId: 'conflicting-book' });
     const failed = await runCurriculumCli('sync', directory, '--project', projectId);
     expect(failed.code).toBe(1);
-    expect((await db.doc('chapters/chapter-1').get()).data()?.['title']).toMatchObject({
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).data()?.['title']).toMatchObject({
       eu: 'Aldi baterakoa',
     });
     expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()?.['sha']).toBe(
       initial,
     );
-    await db.doc('chapters/b1-chapter-1').update({ bookId: 'b1' });
+    await db.doc('books/b1/chapters/b1-chapter-1').update({ bookId: 'b1' });
     await writeFile(chapterPath, original);
     const repaired = await commit(directory);
     const retry = await runCurriculumCli('sync', directory, '--project', projectId);
     expect(retry.stderr).toBe('');
     expect(retry.code).toBe(0);
-    expect((await db.doc('chapters/chapter-1').get()).data()?.['title']).toEqual({
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).data()?.['title']).toEqual({
       eu: 'Aurkezpenak',
       fr: 'Les présentations',
     });
@@ -442,8 +474,8 @@ test('adding a book cannot reuse an unaffected book identity or delete its chapt
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('Duplicate book ID');
     expect((await db.doc('books/a1').get()).updateTime?.isEqual(before.updateTime!)).toBe(true);
-    expect((await db.doc('chapters/chapter-1').get()).exists).toBe(true);
-    expect((await db.doc('chapters/b1-chapter-1').get()).exists).toBe(false);
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).exists).toBe(true);
+    expect((await db.doc('books/b1/chapters/b1-chapter-1').get()).exists).toBe(false);
     expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()?.['sha']).toBe(
       initial,
     );
@@ -452,7 +484,7 @@ test('adding a book cannot reuse an unaffected book identity or delete its chapt
   }
 });
 
-test('a chapter identity collision with an unaffected book blocks every affected book', async ({}, testInfo) => {
+test('a new book can reuse an unaffected book’s chapter ID without changing that book', async ({}, testInfo) => {
   const directory = await repository(testInfo.outputPath('source'));
   const projectId = `demo-sync-${randomUUID().slice(0, 8)}`;
   const db = new Firestore({ projectId });
@@ -471,11 +503,10 @@ test('a chapter identity collision with an unaffected book blocks every affected
     await writeFile(path, JSON.stringify(book));
     await commit(directory);
     const result = await runCurriculumCli('sync', directory, '--project', projectId);
-    expect(result.code).toBe(1);
-    expect(result.stderr).toContain('Chapter "chapter-1" is claimed');
-    expect(result.stdout).not.toContain('Published book');
+    expect(result.code, result.stderr).toBe(0);
     expect((await db.doc('books/a1').get()).updateTime?.isEqual(before.updateTime!)).toBe(true);
-    expect((await db.doc('books/b1').get()).exists).toBe(false);
+    expect((await db.doc('books/b1/chapters/chapter-1').get()).data()?.['bookId']).toBe('b1');
+    expect((await db.doc('books/a1/chapters/chapter-1').get()).data()?.['bookId']).toBe('a1');
   } finally {
     await db.terminate();
   }

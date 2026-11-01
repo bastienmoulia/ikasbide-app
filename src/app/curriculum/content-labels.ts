@@ -27,6 +27,11 @@ export const chapterNotPublishedMessage: BilingualText = {
   fr: 'Ce chapitre n’est pas publié.',
 };
 
+export const bookNotPublishedMessage: BilingualText = {
+  eu: 'Liburu hau ez dago argitaratuta.',
+  fr: 'Ce livre n’est pas publié.',
+};
+
 export const externalLinkNeedsNetworkMessage: BilingualText = {
   eu: 'Interneteko konexioa behar da; ez dago gailu honetan gordeta.',
   fr: 'Nécessite une connexion Internet ; non enregistré sur cet appareil.',

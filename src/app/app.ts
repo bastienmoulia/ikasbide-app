@@ -14,6 +14,7 @@ import { DisplayModeService } from './display-mode.service';
 import { DisplayModeControl } from './display-mode-control';
 import { NetworkStatus } from './network-status';
 import { PracticeLayout } from './practice-layout';
+import { BookContext } from './curriculum/book-context';
 
 @Component({
   imports: [
@@ -37,7 +38,7 @@ import { PracticeLayout } from './practice-layout';
     </a>
     @if (!practiceLayout.active()) {
       <header>
-        <a class="brand" routerLink="/">
+        <a class="brand" routerLink="/" [state]="{ bookId: bookContext.bookId() }">
           <span class="brand-mark" aria-hidden="true">i</span>
           Ikasbide
         </a>
@@ -235,6 +236,7 @@ export class App {
   protected readonly displayMode = inject(DisplayModeService);
   protected readonly practiceLayout = inject(PracticeLayout);
   protected readonly network = inject(NetworkStatus);
+  protected readonly bookContext = inject(BookContext);
   private readonly dialog = inject(MatDialog);
   protected readonly firstName = computed(
     () => this.auth.user()?.displayName?.trim().split(/\s+/)[0] ?? '',

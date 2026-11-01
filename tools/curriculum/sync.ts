@@ -42,7 +42,6 @@ function sourcePath(path: string): { directory: string; chapterId?: string } | u
 async function identityErrors(directory: string, paths: readonly string[]): Promise<string[]> {
   const errors: string[] = [];
   const bookIds = new Set<string>();
-  const chapterOwners = new Map<string, string>();
   for (const path of paths.filter((path) => path === 'book.json' || path.endsWith('/book.json'))) {
     let book: unknown;
     try {
@@ -67,10 +66,12 @@ async function identityErrors(directory: string, paths: readonly string[]): Prom
     }
     if (bookIds.has(book.id)) errors.push(`Duplicate book ID "${book.id}" at ${path}.`);
     bookIds.add(book.id);
-    for (const id of book.chapters) {
-      const owner = chapterOwners.get(id);
-      if (owner) errors.push(`Chapter "${id}" is claimed by "${owner}" and "${book.id}".`);
-      chapterOwners.set(id, book.id);
+    const chapterIds = new Set<string>();
+    for (const chapterId of book.chapters) {
+      if (chapterIds.has(chapterId)) {
+        errors.push(`Duplicate chapter ID "${chapterId}" in book "${book.id}" at ${path}.`);
+      }
+      chapterIds.add(chapterId);
     }
   }
   return errors;

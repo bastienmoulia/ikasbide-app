@@ -156,6 +156,7 @@ export interface PublishedBook {
   chapters: ChapterSummary[];
 }
 
+/** Firestore `books/{bookId}/chapters/{chapterId}`. */
 export interface PublishedChapter extends Omit<Chapter, 'id'> {
   bookId: string;
 }

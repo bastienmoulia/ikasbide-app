@@ -6,6 +6,7 @@ import { BilingualText } from '../bilingual-text';
 import { Icon } from '../icon';
 import { PracticeLayout } from '../practice-layout';
 import { AttemptService, type Attempt, type AttemptSummary } from './attempt.service';
+import { BookContext } from './book-context';
 import { chapterColor } from './chapter-color';
 import { chapterNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
 import { CurriculumService } from './curriculum.service';
@@ -30,7 +31,7 @@ import { SequenceProgressService } from './sequence-progress.service';
   host: { '[style.--chapter-accent]': 'accent()' },
   template: `
     @if (!practiceLayout.active()) {
-      <a class="back" [routerLink]="['/chapitres', chapterId()]">
+      <a class="back" [routerLink]="['/', bookId(), chapterId()]">
         <app-icon name="previous" />
         <app-bilingual-text eu="Kapitulura itzuli" fr="Retour au chapitre" />
       </a>
@@ -83,9 +84,15 @@ import { SequenceProgressService } from './sequence-progress.service';
           <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
         </p>
       }
+      @if (attempts.historyError(); as error) {
+        <p role="alert">
+          <app-bilingual-text [eu]="error.eu" [fr]="error.fr" />
+        </p>
+      }
       @if (practiceActive() && learnerId(); as learnerId) {
         <app-practice-runner
           [sequence]="sequence"
+          [bookId]="bookId()"
           [chapterId]="chapter.id"
           [learnerId]="learnerId"
           [practiceSessionId]="practiceSession()"
@@ -108,8 +115,13 @@ import { SequenceProgressService } from './sequence-progress.service';
                 fr="Lectures et exercices dans l’ordre pédagogique, étape par étape."
               />
             </p>
-            <p class="journey-progress">
-              @if (savedPractice(); as progress) {
+            <p class="journey-progress" [attr.role]="sequenceProgress.loading() ? 'status' : null">
+              @if (sequenceProgress.loading()) {
+                <app-bilingual-text
+                  eu="Aurrerapena kargatzen…"
+                  fr="Chargement de la progression…"
+                />
+              } @else if (savedPractice(); as progress) {
                 <app-bilingual-text
                   [eu]="
                     progress.journey.visited.length +
@@ -138,26 +150,33 @@ import { SequenceProgressService } from './sequence-progress.service';
               }
             </p>
             <mat-progress-bar
-              mode="determinate"
+              [mode]="sequenceProgress.loading() ? 'indeterminate' : 'determinate'"
               [value]="overviewProgress()"
               [attr.aria-label]="'Ibilbidearen aurrerapena / Progression du parcours'"
             />
-            @if (nextPracticeStep(); as step) {
-              <p>
-                <strong>
-                  <app-bilingual-text eu="Hurrengo urratsa" fr="Prochaine étape" />
-                </strong>
-                <app-bilingual-text [eu]="step.title.eu" [fr]="step.title.fr" />
-              </p>
-            } @else {
-              <p role="status">
-                <app-bilingual-text
-                  eu="Ibilbide hau amaitu duzu."
-                  fr="Vous avez terminé ce parcours."
-                />
-              </p>
+            @if (!sequenceProgress.loading()) {
+              @if (nextPracticeStep(); as step) {
+                <p>
+                  <strong>
+                    <app-bilingual-text eu="Hurrengo urratsa" fr="Prochaine étape" />
+                  </strong>
+                  <app-bilingual-text [eu]="step.title.eu" [fr]="step.title.fr" />
+                </p>
+              } @else {
+                <p role="status">
+                  <app-bilingual-text
+                    eu="Ibilbide hau amaitu duzu."
+                    fr="Vous avez terminé ce parcours."
+                  />
+                </p>
+              }
             }
-            <button type="button" class="start-practice" (click)="startPractice()">
+            <button
+              type="button"
+              class="start-practice"
+              [disabled]="sequenceProgress.loading()"
+              (click)="startPractice()"
+            >
               <app-icon name="play" />
               @if (savedPractice() && !nextPracticeStep()) {
                 <app-bilingual-text eu="Ikusi laburpena" fr="Voir le bilan" />
@@ -181,7 +200,7 @@ import { SequenceProgressService } from './sequence-progress.service';
         }
         <nav class="pager">
           @if (position.previous; as previous) {
-            <a [routerLink]="['/chapitres', chapter.id, 'sequences', previous.id]">
+            <a [routerLink]="['/', bookId(), chapter.id, previous.id]">
               <app-icon name="previous" />
               <app-bilingual-text
                 [eu]="'Aurreko sekuentzia: ' + previous.letter"
@@ -190,7 +209,7 @@ import { SequenceProgressService } from './sequence-progress.service';
             </a>
           }
           @if (position.next; as next) {
-            <a class="next" [routerLink]="['/chapitres', chapter.id, 'sequences', next.id]">
+            <a class="next" [routerLink]="['/', bookId(), chapter.id, next.id]">
               <app-bilingual-text
                 [eu]="'Hurrengo sekuentzia: ' + next.letter"
                 [fr]="'Séquence suivante : ' + next.letter"
@@ -211,10 +230,12 @@ import { SequenceProgressService } from './sequence-progress.service';
   `,
 })
 export class SequencePage {
+  readonly bookId = input.required<string>();
   readonly chapterId = input.required<string>();
   readonly sequenceId = input.required<string>();
   private readonly curriculum = inject(CurriculumService);
   private readonly auth = inject(AuthService);
+  private readonly bookContext = inject(BookContext);
   protected readonly attempts = inject(AttemptService);
   protected readonly sequenceProgress = inject(SequenceProgressService);
   protected readonly practiceLayout = inject(PracticeLayout);
@@ -252,8 +273,8 @@ export class SequencePage {
       : null;
   });
   protected readonly chapter = resource({
-    params: () => this.chapterId(),
-    loader: ({ params }) => this.curriculum.chapter(params),
+    params: () => ({ bookId: this.bookId(), chapterId: this.chapterId() }),
+    loader: ({ params }) => this.curriculum.chapter(params.bookId, params.chapterId),
   });
   protected readonly position = computed(() => {
     const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
@@ -272,6 +293,7 @@ export class SequencePage {
   });
   /** A practice session lasts one visit to a sequence: opening, reloading or changing it starts a new one. */
   private readonly practiceSession = computed(() => {
+    this.bookId();
     this.chapterId();
     this.sequenceId();
     return crypto.randomUUID();
@@ -282,6 +304,7 @@ export class SequencePage {
   protected readonly errorMessage = loadErrorMessage;
 
   constructor() {
+    effect(() => this.bookContext.select(this.bookId()));
     effect((onCleanup) => {
       const learner = this.auth.user();
       const position = this.position();
@@ -296,7 +319,7 @@ export class SequencePage {
       );
       if (!itemIds.size) return;
       onCleanup(
-        this.attempts.watch(learner.uid, position.chapter.id, itemIds, (summary) =>
+        this.attempts.watch(learner.uid, this.bookId(), position.chapter.id, itemIds, (summary) =>
           this.attemptSummary.set(summary),
         ),
       );
@@ -309,9 +332,14 @@ export class SequencePage {
       this.savedPractice.set(null);
       this.remoteProgress.set(null);
       this.practiceStorageError.set(null);
-      this.sequenceProgress.error.set(null);
+      this.sequenceProgress.resetErrors();
       if (!learner || !position || !practiceSteps(position.sequence).length) return;
-      const key = practiceProgressKey(learner.uid, position.chapter.id, position.sequence.id);
+      const key = practiceProgressKey(
+        learner.uid,
+        this.bookId(),
+        position.chapter.id,
+        position.sequence.id,
+      );
       const steps = practiceSteps(position.sequence);
       const stepIds = new Set(steps.map(({ id }) => id));
       const itemIds = practiceItemIds(position.sequence);
@@ -321,6 +349,7 @@ export class SequencePage {
       this.practiceStorageError.set(result.error);
       const unsubscribe = this.sequenceProgress.watch(
         learner.uid,
+        this.bookId(),
         position.chapter.id,
         position.sequence.id,
         stepIds,
@@ -348,7 +377,13 @@ export class SequencePage {
 
   protected startPractice(): void {
     const position = this.position();
-    if (!position || !this.learnerId() || !this.practiceStepCount()) return;
+    if (
+      !position ||
+      !this.learnerId() ||
+      !this.practiceStepCount() ||
+      this.sequenceProgress.loading()
+    )
+      return;
     this.activeProgress.set(
       this.savedPractice() ?? createPracticeProgress([...practiceItemIds(position.sequence)]),
     );
@@ -370,12 +405,13 @@ export class SequencePage {
     this.savedPractice.set(merged);
     this.practiceStorageError.set(
       writePracticeProgress(
-        practiceProgressKey(learner.uid, position.chapter.id, position.sequence.id),
+        practiceProgressKey(learner.uid, this.bookId(), position.chapter.id, position.sequence.id),
         merged,
       ),
     );
     void this.sequenceProgress.record(
       learner.uid,
+      this.bookId(),
       position.chapter.id,
       position.sequence.id,
       merged,
@@ -390,6 +426,7 @@ export class SequencePage {
     const learner = this.auth.user();
     if (!learner) return;
     const attempt: Attempt = {
+      bookId: this.bookId(),
       chapterId,
       itemId: feedback.itemId,
       outcome: feedback.outcome,

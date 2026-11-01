@@ -7,8 +7,8 @@ import {
   startPractice,
 } from './support.ts';
 
-const greetings = '/chapitres/chapter-1/sequences/greetings';
-const family = '/chapitres/chapter-2/sequences/family-words';
+const greetings = '/a1/chapter-1/greetings';
+const family = '/a1/chapter-2/family-words';
 
 for (const answer of ['ele', 'naiz']) {
   test(`gap-fill feedback keeps "${answer}" inline within the sentence`, async ({ page }) => {
@@ -105,7 +105,7 @@ test('practice keeps only a compact toolbar and restores the shell on exit or na
     .click();
   await startPractice(page);
   await page.goBack();
-  await expect(page).toHaveURL(/\/chapitres\/chapter-1$/);
+  await expect(page).toHaveURL(/\/a1\/chapter-1$/);
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
 });
@@ -192,7 +192,7 @@ test('translation inputs autofocus and word-order questions receive neutral focu
   page,
 }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startPractice(page);
   for (const answer of ['Ni Baionakoa naiz.', 'J’habite à Bilbao.']) {
@@ -228,7 +228,7 @@ test('an authored hint opens on demand before the answer and closes on each ques
   page,
 }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startPractice(page);
   const toggle = page.getByRole('button', { name: /Laguntza.*Aide/ });

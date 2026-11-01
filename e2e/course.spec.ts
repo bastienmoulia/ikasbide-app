@@ -10,7 +10,7 @@ import {
   storedAttempts,
 } from './support.ts';
 
-const greetings = '/chapitres/chapter-1/sequences/greetings';
+const greetings = '/a1/chapter-1/greetings';
 
 test('reading steps resume across devices and never become attempts', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
@@ -101,7 +101,7 @@ test('skipping exercises completes the journey without counting success or recor
   expect(await storedAttempts(uid)).toHaveLength(0);
 });
 
-test('legacy item progress migrates without losing an answer or its pending feedback', async ({
+test('an older item-progress format under a book-scoped key keeps its pending feedback', async ({
   page,
 }) => {
   await page.clock.install();
@@ -116,7 +116,7 @@ test('legacy item progress migrates without losing an answer or its pending feed
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 1');
   await page.evaluate(() => {
-    const key = Object.keys(localStorage).find((key) => key.startsWith('ikasbide:practice:v1:'))!;
+    const key = Object.keys(localStorage).find((key) => key.startsWith('ikasbide:practice:v2:'))!;
     const progress = JSON.parse(localStorage.getItem(key)!);
     localStorage.setItem(
       key,
@@ -143,7 +143,7 @@ test('invalid local reading positions fall back to synchronized progress', async
   await signInWithGoogle(page);
   await startCourse(page);
   await page.evaluate(() => {
-    const key = Object.keys(localStorage).find((key) => key.startsWith('ikasbide:practice:v1:'))!;
+    const key = Object.keys(localStorage).find((key) => key.startsWith('ikasbide:practice:v2:'))!;
     const progress = JSON.parse(localStorage.getItem(key)!);
     progress.journey.reviewIndex = 99;
     localStorage.setItem(key, JSON.stringify(progress));
@@ -158,7 +158,7 @@ test('links and oral prompts are optional full-page steps and the final review i
   page,
 }) => {
   await page.clock.install();
-  await page.goto('/chapitres/chapter-1/sequences/origin');
+  await page.goto('/a1/chapter-1/origin');
   await signInWithGoogle(page);
   await startCourse(page);
   await page.getByRole('button', { name: /Suivant/ }).click();
@@ -213,7 +213,7 @@ test('a failed local save explains the limitation and keeps the reading navigati
   await page.evaluate(() => {
     const setItem = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
-      if (key.startsWith('ikasbide:practice:v1:')) {
+      if (key.startsWith('ikasbide:practice:v2:')) {
         throw new DOMException('Storage is unavailable', 'QuotaExceededError');
       }
       setItem.call(this, key, value);

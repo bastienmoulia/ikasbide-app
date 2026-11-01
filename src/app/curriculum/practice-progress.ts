@@ -60,10 +60,16 @@ const unavailableStorageMessage = {
   fr: 'La sauvegarde de la progression sur cet appareil est indisponible.',
 };
 
-export function practiceProgressKey(learnerId: string, chapterId: string, sequenceId: string) {
+export function practiceProgressKey(
+  learnerId: string,
+  bookId: string,
+  chapterId: string,
+  sequenceId: string,
+) {
   return [
-    'ikasbide:practice:v1',
+    'ikasbide:practice:v2',
     encodeURIComponent(learnerId),
+    encodeURIComponent(bookId),
     encodeURIComponent(chapterId),
     encodeURIComponent(sequenceId),
   ].join(':');

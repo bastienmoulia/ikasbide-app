@@ -9,7 +9,7 @@ Ensemble pédagogique composé de chapitres ordonnés et identifié par un titre
 _Avoid_: Unité, Curriculum
 
 **Chapitre** :
-Partie numérotée d'un livre, organisée autour d'un thème et composée de séquences.
+Partie numérotée d'un livre, organisée autour d'un thème et composée de séquences. Son identifiant distingue les chapitres d'un même livre.
 
 **Couleur de chapitre** :
 Couleur d'accent qui identifie un chapitre selon son numéro dans le livre, en suivant le cycle du livre : rouge, violet, bleu, vert, orange (chapitres 1 et 6 en rouge, 2 et 7 en violet, etc.).

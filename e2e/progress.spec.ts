@@ -8,8 +8,8 @@ import {
   startPractice,
 } from './support.ts';
 
-const chapterUrl = '/chapitres/chapter-1';
-const sequenceUrl = '/chapitres/chapter-1/sequences/greetings';
+const chapterUrl = '/a1/chapter-1';
+const sequenceUrl = '/a1/chapter-1/greetings';
 
 function objective(page: Page, name: RegExp): Locator {
   return page

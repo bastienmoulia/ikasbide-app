@@ -42,6 +42,7 @@ function uniqueLearner(name: string): string {
 }
 
 const attempt = () => ({
+  bookId: 'a1',
   chapterId: 'chapter-1',
   itemId: 'greetings-gap-1',
   outcome: 'correct',
@@ -97,7 +98,7 @@ test('accounts signed in without Google cannot keep attempts', async () => {
   await assertFails(setDoc(doc(anonymous, `learners/${uid}/attempts/a`), attempt()));
 });
 
-test('an attempt keeps only its item, outcome, date and session', async () => {
+test('an attempt keeps only its book, item, outcome, date and session', async () => {
   const uid = uniqueLearner('owner');
   const learner = googleLearner(uid);
   const fresh = () => doc(learner, `learners/${uid}/attempts/${crypto.randomUUID()}`);
@@ -107,7 +108,38 @@ test('an attempt keeps only its item, outcome, date and session', async () => {
   await assertFails(setDoc(fresh(), { ...attempt(), occurredAt: '2026-10-29' }));
   const { sessionId: _sessionId, ...withoutSession } = attempt();
   await assertFails(setDoc(fresh(), withoutSession));
+  const { bookId: _bookId, ...withoutBook } = attempt();
+  await assertFails(setDoc(fresh(), withoutBook));
+  await assertFails(setDoc(fresh(), { ...attempt(), bookId: '' }));
   await assertFails(setDoc(fresh(), { ...attempt(), itemId: '' }));
+});
+
+test('book identifiers up to the Firestore document-ID limit can save progress', async () => {
+  const uid = uniqueLearner('long-book');
+  const owner = googleLearner(uid);
+  const bookId = 'b'.repeat(1500);
+  const attemptPath = `learners/${uid}/attempts/long-book-attempt`;
+  const progressPath = `learners/${uid}/books/${bookId}/chapters/chapter-1/sequenceProgress/greetings`;
+
+  await assertSucceeds(setDoc(doc(owner, attemptPath), { ...attempt(), bookId }));
+  await assertSucceeds(
+    setDoc(doc(owner, progressPath), {
+      schemaVersion: 2,
+      bookId,
+      chapterId: 'chapter-1',
+      sequenceId: 'greetings',
+      visitedStepIds: [],
+      successfulItemIds: [],
+      incorrectItemIds: [],
+      skippedStepIds: [],
+    }),
+  );
+  await assertFails(
+    setDoc(doc(owner, `learners/${uid}/attempts/too-long`), {
+      ...attempt(),
+      bookId: 'b'.repeat(1501),
+    }),
+  );
 });
 
 test('recorded attempts are immutable evidence but can be safely resent', async () => {
@@ -125,9 +157,10 @@ test('recorded attempts are immutable evidence but can be safely resent', async 
 
 test('sequence progress sync is private to the owning Google account and excludes answers', async () => {
   const ownerId = uniqueLearner('progress-owner');
-  const path = `learners/${ownerId}/sequenceProgress/9:chapter-1greetings`;
+  const path = `learners/${ownerId}/books/a1/chapters/chapter-1/sequenceProgress/greetings`;
   const progress = {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    bookId: 'a1',
     chapterId: 'chapter-1',
     sequenceId: 'greetings',
     visitedStepIds: ['content:note', 'item:greetings-gap-1'],
@@ -143,10 +176,42 @@ test('sequence progress sync is private to the owning Google account and exclude
   await assertFails(getDoc(doc(other, path)));
   await assertFails(setDoc(doc(other, path), progress));
   await assertFails(
-    setDoc(doc(owner, `learners/${ownerId}/sequenceProgress/with-answer`), {
+    setDoc(doc(owner, path), {
       ...progress,
       answer: 'naiz',
     }),
   );
+  await assertFails(setDoc(doc(owner, path), { ...progress, bookId: 'other-book' }));
+  await assertFails(setDoc(doc(owner, path), { ...progress, chapterId: 'other-chapter' }));
+  await assertFails(setDoc(doc(owner, path), { ...progress, sequenceId: 'other-sequence' }));
   await assertFails(setDoc(doc(environment.unauthenticatedContext().firestore(), path), progress));
+});
+
+test('legacy learner data remains private and readable but cannot be written again', async () => {
+  const uid = uniqueLearner('legacy-owner');
+  const attemptPath = `learners/${uid}/attempts/legacy-attempt`;
+  const progressPath = `learners/${uid}/sequenceProgress/9:chapter-1greetings`;
+  const { bookId: _bookId, ...legacyAttempt } = attempt();
+  const legacyProgress = {
+    schemaVersion: 1,
+    chapterId: 'chapter-1',
+    sequenceId: 'greetings',
+    visitedStepIds: ['content:greetings-note'],
+    successfulItemIds: [],
+    incorrectItemIds: [],
+    skippedStepIds: [],
+  };
+  await environment.withSecurityRulesDisabled(async (context) => {
+    const firestore = context.firestore();
+    await setDoc(doc(firestore, attemptPath), legacyAttempt);
+    await setDoc(doc(firestore, progressPath), legacyProgress);
+  });
+
+  const owner = googleLearner(uid);
+  await assertSucceeds(getDoc(doc(owner, attemptPath)));
+  await assertSucceeds(getDoc(doc(owner, progressPath)));
+  await assertFails(setDoc(doc(owner, attemptPath), legacyAttempt));
+  await assertFails(setDoc(doc(owner, progressPath), legacyProgress));
+  await assertFails(getDoc(doc(googleLearner(uniqueLearner('other')), attemptPath)));
+  await assertFails(getDoc(doc(googleLearner(uniqueLearner('other')), progressPath)));
 });
