@@ -289,6 +289,8 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
 test('the selector is keyboard-operable and fits a narrow mobile viewport', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/');
+  // Late home rendering dismisses a tooltip opened by keyboard focus.
+  await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeVisible();
 
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
