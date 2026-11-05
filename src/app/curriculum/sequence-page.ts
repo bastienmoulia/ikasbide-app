@@ -192,7 +192,7 @@ import { PracticeBookmarkStore } from './practice-bookmark';
             />
             @if (!sequenceProgress.loading()) {
               @if (nextPracticeStep(); as step) {
-                <p>
+                <p class="next-step">
                   <strong>
                     <app-bilingual-text mode="stacked" eu="Hurrengo urratsa" fr="Prochaine étape" />
                   </strong>

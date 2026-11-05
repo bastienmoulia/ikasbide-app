@@ -17,6 +17,17 @@ const screenshotOptions = {
   style: '.firebase-emulator-warning { visibility: hidden; }',
 };
 
+test('the next-step title is visually separated from its bilingual label', async ({ page }) => {
+  await page.goto('/a1/chapter-1/greetings');
+  await signInWithGoogle(page);
+  const label = page.locator('.journey-overview strong');
+  const title = page.locator('.journey-overview strong + app-bilingual-text');
+  await expect(title).toBeVisible();
+  const labelBox = await label.boundingBox();
+  const titleBox = await title.boundingBox();
+  expect(titleBox!.y - (labelBox!.y + labelBox!.height)).toBeGreaterThanOrEqual(8);
+});
+
 test('French gap-fill help opens by keyboard without recording an answer and resets on the next item', async ({
   page,
 }) => {

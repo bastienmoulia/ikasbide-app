@@ -22,6 +22,11 @@
   font-weight: 600;
 }
 
+.next-step {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .journey-overview mat-progress-bar {
   --mdc-linear-progress-active-indicator-color: var(--chapter-accent);
   --mdc-linear-progress-track-color: var(--app-surface-muted);
