@@ -53,6 +53,6 @@ export class DisplayModeService {
     document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', effectiveMode);
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', effectiveMode === 'dark' ? '#202124' : '#faf8f5');
+      ?.setAttribute('content', effectiveMode === 'dark' ? '#202124' : '#faf7f2');
   }
 }

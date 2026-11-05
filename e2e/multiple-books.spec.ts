@@ -321,6 +321,7 @@ test('chapter objectives wait for historical attempts', async ({ page }) => {
     release = heldRead.release;
     await page.goto(`/${bookId}/${chapterId}`);
     await heldRead.requested;
+    await page.locator('.progress-details summary').click();
     const objectives = page.getByRole('region', { name: /Carte de progression/ });
     await expect(objectives.getByRole('status')).toContainText('Chargement de l’historique');
     await expect(objectives.locator('.objective-map')).toHaveCount(0);
@@ -427,6 +428,7 @@ test.describe('offline book isolation', () => {
       ]);
       await page.goto(`/${bookId}/${chapterId}`);
       await signInWithGoogle(page);
+      await page.locator('.progress-details summary').click();
       await expect(page.locator('.objective-map')).toBeVisible();
       await waitForOfflineShell(page);
 

@@ -19,6 +19,24 @@ import type { ReadingContent } from './practice-steps';
       outline: none;
     }
 
+    article {
+      padding: clamp(1rem, 5vw, 2rem);
+      border: 2px solid var(--app-border);
+      border-radius: 1.5rem;
+      background: var(--app-surface);
+      box-shadow: 4px 5px 0 var(--app-shadow);
+    }
+
+    .kind {
+      display: inline-block;
+      margin-top: 0;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.75rem;
+      background: var(--app-lavender);
+      color: var(--app-ink);
+      font-weight: 700;
+    }
+
     .reading-body {
       white-space: pre-line;
     }
@@ -141,6 +159,7 @@ import type { ReadingContent } from './practice-steps';
 })
 export class ReadingPlayer {
   readonly content = input.required<ReadingContent>();
+  readonly focusOnLoad = input(true);
   protected readonly labels = contentKindLabels;
   /** Rendered once per note; Angular sanitizes the HTML bound to innerHTML. */
   protected readonly markdown = computed(() => {
@@ -155,6 +174,7 @@ export class ReadingPlayer {
   constructor() {
     effect((onCleanup) => {
       this.content();
+      if (!this.focusOnLoad()) return;
       const timer = setTimeout(() => {
         this.element.nativeElement.focus();
         this.element.nativeElement.scrollIntoView({ block: 'start' });

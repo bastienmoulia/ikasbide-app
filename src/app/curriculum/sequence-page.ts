@@ -23,6 +23,7 @@ import {
 import { practiceItemIds, PracticeRunner } from './practice-runner';
 import { practiceSteps, withPracticeSteps } from './practice-steps';
 import { SequenceProgressService } from './sequence-progress.service';
+import { PracticeBookmarkStore } from './practice-bookmark';
 
 @Component({
   selector: 'app-sequence-page',
@@ -91,6 +92,11 @@ import { SequenceProgressService } from './sequence-progress.service';
           <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
         </p>
       }
+      @if (bookmarks.error(); as error) {
+        <p role="alert">
+          <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
+        </p>
+      }
       @if (practiceActive() && learnerId(); as learnerId) {
         <app-practice-runner
           [sequence]="sequence"
@@ -111,11 +117,33 @@ import { SequenceProgressService } from './sequence-progress.service';
             class="journey-overview"
             aria-label="Ibilbidearen laburpena / Résumé du parcours"
           >
+            <span class="mission-label">
+              <app-bilingual-text mode="stacked" eu="Zure erritmoan" fr="À votre rythme" />
+            </span>
+            <h2 class="mission-heading">
+              <app-bilingual-text
+                mode="stacked"
+                eu="Praktikatzeko prest?"
+                fr="Prêt à pratiquer ?"
+              />
+            </h2>
             <p class="muted">
               <app-bilingual-text
                 mode="stacked"
                 eu="Irakurketak eta ariketak ordena pedagogiko berean, urratsez urrats."
                 fr="Lectures et exercices dans l’ordre pédagogique, étape par étape."
+              />
+            </p>
+            <p class="mission-size">
+              <app-bilingual-text
+                mode="stacked"
+                [eu]="practiceItemCount() + ' ariketa · ' + practiceReadingCount() + ' baliabide'"
+                [fr]="
+                  practiceItemCount() +
+                  (practiceItemCount() === 1 ? ' exercice · ' : ' exercices · ') +
+                  practiceReadingCount() +
+                  (practiceReadingCount() === 1 ? ' ressource' : ' ressources')
+                "
               />
             </p>
             <p class="journey-progress" [attr.role]="sequenceProgress.loading() ? 'status' : null">
@@ -252,6 +280,7 @@ export class SequencePage {
   private readonly bookContext = inject(BookContext);
   protected readonly attempts = inject(AttemptService);
   protected readonly sequenceProgress = inject(SequenceProgressService);
+  protected readonly bookmarks = inject(PracticeBookmarkStore);
   protected readonly practiceLayout = inject(PracticeLayout);
   protected readonly learnerId = computed(() => this.auth.user()?.uid ?? null);
   protected readonly practiceActive = signal(false);
@@ -263,6 +292,15 @@ export class SequencePage {
     const position = this.position();
     return position ? practiceSteps(position.sequence).length : 0;
   });
+  protected readonly practiceItemCount = computed(() => {
+    const position = this.position();
+    return position
+      ? practiceSteps(position.sequence).filter(({ kind }) => kind === 'question').length
+      : 0;
+  });
+  protected readonly practiceReadingCount = computed(
+    () => this.practiceStepCount() - this.practiceItemCount(),
+  );
   protected readonly overviewProgress = computed(() => {
     const progress = this.savedPractice();
     return progress && this.practiceStepCount()
@@ -401,6 +439,10 @@ export class SequencePage {
     this.activeProgress.set(
       this.savedPractice() ?? createPracticeProgress([...practiceItemIds(position.sequence)]),
     );
+    this.bookmarks.remember(this.learnerId()!, this.bookId(), {
+      chapterId: position.chapter.id,
+      sequenceId: position.sequence.id,
+    });
     this.practiceActive.set(true);
   }
 

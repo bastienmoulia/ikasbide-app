@@ -39,8 +39,8 @@ import { BookContext } from './curriculum/book-context';
     @if (!practiceLayout.active()) {
       <header>
         <a class="brand" routerLink="/" [state]="{ bookId: bookContext.bookId() }">
-          <span class="brand-mark" aria-hidden="true">i</span>
-          Ikasbide
+          <span class="brand-word">ikasbide</span>
+          <span class="brand-dot" aria-hidden="true"></span>
         </a>
         @if (auth.status() === 'ready' && auth.user()) {
           <div class="account">

@@ -9,6 +9,7 @@ import { BookContext } from './book-context';
 import { chapterColor } from './chapter-color';
 import { chapterNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
 import { CurriculumService } from './curriculum.service';
+import { practiceSteps } from './practice-steps';
 import {
   objectiveProgress,
   objectiveStatusLabels,
@@ -47,59 +48,74 @@ import {
       <h1>
         <app-bilingual-text mode="stacked" [eu]="chapter.title.eu" [fr]="chapter.title.fr" />
       </h1>
-      <section aria-labelledby="objectives-heading">
-        <h2 id="objectives-heading">
-          <app-bilingual-text mode="stacked" eu="Aurrerapen-mapa" fr="Carte de progression" />
-        </h2>
-        <p class="muted">
-          <app-bilingual-text
-            mode="stacked"
-            eu="Zure erantzunetatik ateratako estimazioa, ez nota bat. Helburu bat eskuratua da hiru item ezberdin ondo erantzun dituzunean, gutxienez bi saiotan."
-            fr="Estimation tirée de vos réponses, pas une note. Un objectif est acquis quand trois items différents sont réussis, sur au moins deux sessions de pratique."
-          />
+      @if (attempts.historyError(); as error) {
+        <p role="alert">
+          <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
         </p>
-        @if (attempts.historyError(); as error) {
-          <p role="alert">
-            <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
-          </p>
-        } @else if (!chapterAttempts()) {
-          <p role="status">
+      }
+      <details class="progress-details">
+        <summary>
+          <app-bilingual-text mode="stacked" eu="Zure aurrerapena" fr="Votre progression" />
+          @if (chapterAttempts() && !attempts.historyError()) {
+            <span class="progress-indicator">
+              <app-bilingual-text
+                mode="stacked"
+                [eu]="acquiredCount() + ' helburu eskuratuta'"
+                [fr]="acquiredCount() + ' objectifs acquis'"
+              />
+            </span>
+          }
+        </summary>
+        <section aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">
+            <app-bilingual-text mode="stacked" eu="Aurrerapen-mapa" fr="Carte de progression" />
+          </h2>
+          <p class="muted">
             <app-bilingual-text
               mode="stacked"
-              eu="Saiakeren historia kargatzen…"
-              fr="Chargement de l’historique des tentatives…"
+              eu="Zure erantzunetatik ateratako estimazioa, ez nota bat. Helburu bat eskuratua da hiru item ezberdin ondo erantzun dituzunean, gutxienez bi saiotan."
+              fr="Estimation tirée de vos réponses, pas une note. Un objectif est acquis quand trois items différents sont réussis, sur au moins deux sessions de pratique."
             />
           </p>
-        } @else {
-          @let statuses = progress();
-          <ul class="objective-map">
-            @for (objective of chapter.objectives; track objective.id) {
-              @let status = statuses.get(objective.id) ?? 'to-discover';
-              <li [class]="status">
-                <span class="objective-stage" aria-hidden="true">
-                  <span></span><span></span><span></span>
-                </span>
-                <span class="stack">
-                  <strong>
-                    <app-bilingual-text
-                      mode="stacked"
-                      [eu]="objective.label.eu"
-                      [fr]="objective.label.fr"
-                    />
-                  </strong>
-                  <span class="objective-status">
-                    <app-bilingual-text
-                      mode="stacked"
-                      [eu]="statusLabels[status].eu"
-                      [fr]="statusLabels[status].fr"
-                    />
+          @if (!chapterAttempts() && !attempts.historyError()) {
+            <p role="status">
+              <app-bilingual-text
+                mode="stacked"
+                eu="Saiakeren historia kargatzen…"
+                fr="Chargement de l’historique des tentatives…"
+              />
+            </p>
+          } @else if (chapterAttempts() && !attempts.historyError()) {
+            @let statuses = progress();
+            <ul class="objective-map">
+              @for (objective of chapter.objectives; track objective.id) {
+                @let status = statuses.get(objective.id) ?? 'to-discover';
+                <li [class]="status">
+                  <span class="objective-stage" aria-hidden="true">
+                    <span></span><span></span><span></span>
                   </span>
-                </span>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+                  <span class="stack">
+                    <strong>
+                      <app-bilingual-text
+                        mode="stacked"
+                        [eu]="objective.label.eu"
+                        [fr]="objective.label.fr"
+                      />
+                    </strong>
+                    <span class="objective-status">
+                      <app-bilingual-text
+                        mode="stacked"
+                        [eu]="statusLabels[status].eu"
+                        [fr]="statusLabels[status].fr"
+                      />
+                    </span>
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      </details>
       <section aria-labelledby="sequences-heading">
         <h2 id="sequences-heading">
           <app-bilingual-text mode="stacked" eu="Sekuentziak" fr="Séquences" />
@@ -112,17 +128,26 @@ import {
           />
         </p>
         <ol class="cards">
-          @for (sequence of chapter.sequences; track sequence.id) {
+          @for (sequence of missions(); track sequence.id) {
             <li>
               <a [routerLink]="['/', bookId(), chapter.id, sequence.id]">
                 <span class="sequence-letter">{{ sequence.letter }}</span>
-                <strong>
-                  <app-bilingual-text
-                    mode="stacked"
-                    [eu]="sequence.title.eu"
-                    [fr]="sequence.title.fr"
-                  />
-                </strong>
+                <span class="stack">
+                  <strong>
+                    <app-bilingual-text
+                      mode="stacked"
+                      [eu]="sequence.title.eu"
+                      [fr]="sequence.title.fr"
+                    />
+                  </strong>
+                  <span class="muted">
+                    <app-bilingual-text
+                      mode="stacked"
+                      [eu]="sequence.stepCount + ' urrats · ' + sequence.itemCount + ' ariketa'"
+                      [fr]="sequence.stepCount + ' étapes · ' + sequence.itemCount + ' exercices'"
+                    />
+                  </span>
+                </span>
               </a>
             </li>
           }
@@ -151,6 +176,17 @@ export class ChapterPage {
     return chapter ? chapterColor(chapter.number) : null;
   });
   protected readonly chapterAttempts = signal<RecordedAttempt[] | null>(null);
+  protected readonly missions = computed(() => {
+    const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
+    return (chapter?.sequences ?? []).map((sequence) => {
+      const steps = practiceSteps(sequence);
+      return {
+        ...sequence,
+        stepCount: steps.length,
+        itemCount: steps.filter(({ kind }) => kind === 'question').length,
+      };
+    });
+  });
   protected readonly progress = computed(() => {
     const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
     return chapter
@@ -158,6 +194,9 @@ export class ChapterPage {
       : new Map<string, ObjectiveStatus>();
   });
   protected readonly statusLabels = objectiveStatusLabels;
+  protected readonly acquiredCount = computed(
+    () => [...this.progress().values()].filter((status) => status === 'acquired').length,
+  );
   protected readonly loading = loadingMessage;
   protected readonly notPublished = chapterNotPublishedMessage;
   protected readonly errorMessage = loadErrorMessage;

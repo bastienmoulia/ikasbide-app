@@ -1,11 +1,11 @@
 @use '@angular/material' as mat;
 
 html {
-  --app-background: #faf8f5;
+  --app-background: #faf7f2;
   --app-surface: #fff;
-  --app-surface-muted: #f5f0ec;
-  --app-border: #e6e1dd;
-  --app-border-strong: #8a817a;
+  --app-surface-muted: #f0ece5;
+  --app-border: #252525;
+  --app-border-strong: #252525;
   --app-border-subtle: #d6cec8;
   --app-text-muted: #655e59;
   --app-offline-background: #f4ece6;
@@ -15,8 +15,14 @@ html {
   --app-feedback-almost: #785600;
   --app-feedback-warning: #855000;
   --app-feedback-incorrect: #9c2a22;
-  --app-accent: #9c3434;
-  --app-focus: #9c3434;
+  --app-accent: #252525;
+  --app-focus: #3c526f;
+  --app-lime: #d4ef76;
+  --app-pink: #f0abc6;
+  --app-lavender: #b9c9f3;
+  --app-ink: #252525;
+  --app-shadow: #252525;
+  --app-exercise-surface: #e4eafb;
   --mat-card-outlined-container-color: var(--app-surface);
   height: 100%;
   @include mat.theme(
@@ -28,6 +34,11 @@ html {
       density: 0,
     )
   );
+  --mat-sys-primary: #252525;
+  --mat-sys-on-primary: #fff;
+  --mat-sys-on-surface: #252525;
+  --mat-sys-surface: #faf7f2;
+  --mat-sys-outline: #252525;
 }
 
 html[data-display-mode='light'] {
@@ -52,6 +63,8 @@ html[data-display-mode='dark'] {
   --app-feedback-incorrect: #ffaaa0;
   --app-accent: #ffb4a9;
   --app-focus: #ffb4a9;
+  --app-shadow: #111;
+  --app-exercise-surface: #303443;
   --mat-sys-primary: #ffb4a9;
   --mat-sys-on-primary: #690005;
   --mat-sys-surface: #202124;
@@ -69,6 +82,18 @@ body {
 
   margin: 0;
   height: 100%;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
 }
 
 * {

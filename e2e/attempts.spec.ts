@@ -90,7 +90,7 @@ test('attempt evidence stays immutable and sequence progress resumes on another 
     await expect(otherPage.getByRole('button', { name: /Reprendre le parcours/ })).toBeVisible();
 
     await startPractice(otherPage);
-    await expect(otherPage.getByText('Je suis de Bayonne.')).toBeVisible();
+    await expect(otherPage.locator('app-activity-player .prompt')).toContainText('Ni Baiona');
   } finally {
     await otherDevice.close();
   }

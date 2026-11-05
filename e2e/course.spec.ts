@@ -76,7 +76,7 @@ test('reviewing keeps the current draft and does not create new attempts', async
   await startCourse(page);
   await expect(page.locator('.question-review')).toBeVisible();
   await page.getByRole('button', { name: /Suivant/ }).click();
-  await expect(page.getByText('Je suis de Bayonne.')).toBeVisible();
+  await expect(page.locator('app-activity-player .prompt')).toContainText('Ni Baiona');
   await expect(page.getByRole('textbox')).toBeFocused();
   expect(await storedAttempts(uid)).toHaveLength(1);
 });
@@ -134,7 +134,7 @@ test('an older item-progress format under a book-scoped key keeps its pending fe
   await expect(page.locator('app-activity-player .prompt')).toContainText('Kaixo, Jon faux.');
   await page.getByRole('button', { name: /Continuer/ }).click();
   await expect(page.getByRole('textbox')).toBeFocused();
-  await expect(page.getByText('Je suis de Bayonne.')).toBeVisible();
+  await expect(page.locator('app-activity-player .prompt')).toContainText('Ni Baiona');
   expect(await storedAttempts(uid)).toHaveLength(1);
 });
 

@@ -35,6 +35,7 @@ function filledStages(objective: Locator): Promise<number> {
 
 async function openChapter(page: Page): Promise<void> {
   await page.goto(chapterUrl);
+  await page.locator('.progress-details summary').click();
 }
 
 async function expectSynced(page: Page, count: number): Promise<void> {
@@ -55,6 +56,7 @@ test('a wrong answer records practice without counting as objective mastery', as
   await expectSynced(page, 1);
   await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
+  await page.locator('.progress-details summary').click();
   await expect(greet(page)).toContainText('En cours');
   await expect(origin(page)).toContainText('À découvrir');
 });
@@ -84,6 +86,7 @@ test('a near match shows the correction and does not advance the series progress
   ).toBeVisible();
   await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
+  await page.locator('.progress-details summary').click();
   await expect(greet(page)).toContainText('En cours');
 });
 

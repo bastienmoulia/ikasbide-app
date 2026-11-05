@@ -255,7 +255,12 @@ export class ExerciseHint {
               }
               <span lang="eu">{{ currentQuestion.item.prompt.eu.slice(blank + 3) }}</span>
             </p>
-            <p class="prompt-translation" lang="fr">{{ currentQuestion.item.prompt.fr }}</p>
+            <details class="prompt-help">
+              <summary>
+                <app-bilingual-text mode="stacked" eu="Frantsesez ikusi" fr="Voir en français" />
+              </summary>
+              <p class="prompt-translation" lang="fr">{{ currentQuestion.item.prompt.fr }}</p>
+            </details>
             @if (!feedback()) {
               <button type="submit" [disabled]="!canSubmit()">
                 <app-icon name="check" />
