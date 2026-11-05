@@ -51,3 +51,32 @@
 .to-discover .objective-status {
   color: var(--app-text-muted);
 }
+.progress-details {
+  margin-bottom: 2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--app-border-subtle);
+  border-radius: 1rem;
+}
+
+.progress-details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.progress-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-inline-start: 1rem;
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+}
+
+.progress-indicator::before {
+  content: '';
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 1px solid var(--app-ink);
+  border-radius: 50%;
+  background: var(--app-lime);
+}

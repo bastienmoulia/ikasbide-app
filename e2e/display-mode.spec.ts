@@ -53,13 +53,13 @@ async function setDisplayMode(
 }
 
 async function expectAppearance(page: import('@playwright/test').Page, mode: 'light' | 'dark') {
-  const background = mode === 'dark' ? 'rgb(32, 33, 36)' : 'rgb(250, 248, 245)';
+  const background = mode === 'dark' ? 'rgb(32, 33, 36)' : 'rgb(250, 247, 242)';
   await expect(page.locator('body')).toHaveCSS('background-color', background);
   await expect(page.locator('html')).toHaveCSS('color-scheme', mode);
   await expect(page.locator('meta[name="color-scheme"]')).toHaveAttribute('content', mode);
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
     'content',
-    mode === 'dark' ? '#202124' : '#faf8f5',
+    mode === 'dark' ? '#202124' : '#faf7f2',
   );
   const card = page.locator('mat-card').first();
   if (await card.count()) {
@@ -143,10 +143,7 @@ test('the device choice remains available across sign-in and sign-out', async ({
   await signInWithGoogle(page);
 
   await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Chapitre 1/ })).toHaveCSS(
-    'background-color',
-    'rgb(43, 44, 47)',
-  );
+  await expectContrast(page.getByRole('link', { name: /Chapitre 1/ }), page.locator('body'), 4.5);
   await page.locator('header .account-trigger').click();
   await expect(displayModeControl(page).getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expectAppearance(page, 'dark');
@@ -158,6 +155,35 @@ test('the device choice remains available across sign-in and sign-out', async ({
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeVisible();
   await expect(displayModeControl(page).getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expectAppearance(page, 'dark');
+});
+
+test('keyboard focus contrasts with pastel cards and answer fields in both modes', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await signInWithGoogle(page);
+  const action = page.locator('.practice-action');
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    await action.focus();
+    await expect(action).toHaveCSS('outline-width', '3px');
+    await expectContrast(action, page.locator('.practice-entry-copy'), 3, 'outline-color');
+  }
+  await page.goto('/a1/chapter-1/greetings');
+  for (const mode of ['light', 'dark'] as const) {
+    await setDisplayMode(page, mode);
+    const start = page.getByRole('button', { name: /Commencer le parcours|Reprendre le parcours/ });
+    await start.focus();
+    await expect(start).toHaveCSS('outline-width', '3px');
+    await expectContrast(start, page.locator('.journey-overview'), 3, 'outline-color');
+    await startPractice(page);
+    const input = page.getByRole('textbox');
+    await input.focus();
+    await expect(input).toHaveCSS('outline-width', '3px');
+    await expectContrast(input, input, 3, 'outline-color');
+    await expectContrast(input, page.locator('.exercise-item'), 3, 'outline-color');
+    await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
+  }
 });
 
 test('the learner journey keeps answers and progress usable in both modes', async ({ page }) => {
@@ -185,6 +211,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   }
 
   await homeChapter.click();
+  await page.locator('.progress-details summary').click();
   const progressMap = page.getByRole('region', { name: /Carte de progression/ });
   await expect(progressMap.getByRole('listitem').first()).toContainText('À découvrir');
   const initialStatus = progressMap.getByRole('listitem').first().locator('.objective-status');
@@ -208,7 +235,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await expectContrast(feedback, player.locator('.exercise-item'), 4.5);
   await expectContrast(
     player.getByRole('button', { name: /Vérifier/ }),
-    player.locator('.exercise-item'),
+    player.getByRole('button', { name: /Vérifier/ }),
     4.5,
   );
   await page.clock.fastForward(600);
@@ -230,7 +257,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
     await startPractice(page);
     await expect(exerciseCard).toHaveCSS(
       'background-color',
-      mode === 'dark' ? 'rgb(43, 44, 47)' : 'rgb(255, 255, 255)',
+      mode === 'dark' ? 'rgb(48, 52, 67)' : 'rgb(228, 234, 251)',
     );
     await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
     await expect(page.getByRole('banner')).toBeVisible();
@@ -258,6 +285,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
 
   await page.goto('/a1/chapter-1');
+  await page.locator('.progress-details summary').click();
   const greetingObjective = progressMap
     .getByRole('listitem')
     .filter({ hasText: /Saluer et se présenter/ });

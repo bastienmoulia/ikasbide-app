@@ -31,6 +31,27 @@ Les adresses des chapitres et séquences incluent l’identifiant du livre :
 `/{bookId}/{chapterId}` et `/{bookId}/{chapterId}/{sequenceId}`. Le sommaire `/` conserve
 le livre courant dans l’onglet ; une ouverture directe dans un nouvel onglet utilise `a1`.
 
+L’interface **Défis express** met la pratique au premier plan : fond crème, cartes
+à contours foncés et accents vert, rose et lavande, avec un affichage adapté au
+téléphone et à l’ordinateur et le mode sombre conservé. L’accueil propose de
+reprendre la dernière séquence démarrée sur cet appareil, séparément par compte
+et par livre. Ce raccourci ne contient que des identifiants ; la progression
+continue d’utiliser les sauvegardes locales et la synchronisation existantes.
+Un raccourci vers une séquence qui n’est plus publiée est ignoré.
+
+Les cartes de séquence indiquent le nombre réel d’étapes et d’exercices chargés :
+aucun quota d’exercices n’est imposé. La carte de progression des objectifs reste
+accessible dans « Votre progression », repliée par défaut pour laisser la place
+aux séquences ; ses critères de maîtrise et ses données ne changent pas.
+Pendant la pratique, un mémo repliable donne accès à une ressource de la séquence
+lorsqu’elle existe, sans imposer de visite préalable. Les traductions pédagogiques restent accessibles
+à la demande. Après une réponse incorrecte ou presque correcte, « Réessayer »
+relance le même item sans obligation ; « Continuer » reste disponible. Chaque
+réponse corrigée conserve sa propre tentative, sans effacer l’historique.
+Pour les phrases à trous, « Voir en français » ouvre la traduction de l’énoncé ;
+ce volet se referme à chaque nouvel item. La phrase source d’un exercice de traduction
+reste toujours visible, puisqu’elle fait partie de la consigne à traduire.
+
 Les tickets [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) à
 [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) sont également livrés et
 déployés : les quatre formats autocorrigés et les consignes orales facultatives sont

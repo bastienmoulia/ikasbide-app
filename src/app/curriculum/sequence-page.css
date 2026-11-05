@@ -1,21 +1,30 @@
 .journey-overview {
   display: grid;
   gap: 1.25rem;
-  max-width: 42rem;
-  margin: 1.5rem auto;
-  padding: 1.25rem;
-  border: 1px solid var(--app-border);
-  border-top: 4px solid var(--chapter-accent);
-  border-radius: 0.75rem;
+  max-width: 48rem;
+  margin: 1.5rem 0;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 2px solid var(--app-border);
+  border-radius: 1.5rem;
   background: var(--app-surface);
+  box-shadow: 5px 5px 0 var(--app-shadow);
 }
 
 .journey-overview p {
   margin: 0;
 }
 
+.mission-heading {
+  margin: 0;
+}
+
 .journey-progress {
   font-weight: 600;
+}
+
+.next-step {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .journey-overview mat-progress-bar {
@@ -50,23 +59,34 @@
   gap: 0.5rem;
   width: min(100%, 28rem);
   min-height: 3.5rem;
-  margin: 0 auto 1.5rem;
+  margin: 0;
   padding: 0.75rem 1rem;
-  border: 0;
-  border-radius: 0.75rem;
-  background: var(--chapter-accent);
-  color: white;
+  border: 2px solid var(--app-ink);
+  border-radius: 1rem;
+  background: var(--app-lime);
+  color: var(--app-ink);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 
 .start-practice:focus-visible {
-  outline: 3px solid var(--chapter-accent);
+  outline: 3px solid var(--app-focus);
   outline-offset: 3px;
 }
 
 .start-practice:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.mission-label {
+  display: inline-flex;
+  justify-self: start;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--app-ink);
+  border-radius: 999px;
+  background: var(--app-lavender);
+  color: var(--app-ink);
+  font-weight: 700;
 }

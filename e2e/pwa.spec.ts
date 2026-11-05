@@ -19,8 +19,8 @@ test('Hosting serves an installable Ikasbide PWA and client-side routes', async 
     name: 'Ikasbide — compagnon de basque',
     short_name: 'Ikasbide',
     display: 'standalone',
-    theme_color: '#9c3434',
-    background_color: '#faf8f5',
+    theme_color: '#faf7f2',
+    background_color: '#faf7f2',
   });
   await expect
     .poll(async () => (await cdp.send('Page.getInstallabilityErrors')).installabilityErrors)

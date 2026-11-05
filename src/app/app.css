@@ -23,28 +23,45 @@ header {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.25rem clamp(1rem, 5vw, 4rem);
-  border-bottom: 1px solid var(--app-border);
+  border-bottom: 2px solid var(--app-border);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.2rem;
   color: inherit;
   text-decoration: none;
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.08em;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.65rem;
-  background: #9c3434;
-  color: white;
-  font-family: Georgia, serif;
+.brand-word {
+  position: relative;
+  isolation: isolate;
+}
+
+.brand-word::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  bottom: 0.12em;
+  width: 51%;
+  height: 0.2em;
+  background: var(--app-lime);
+  transform: rotate(-3deg);
+}
+
+.brand-dot {
+  align-self: flex-end;
+  width: 0.24em;
+  height: 0.24em;
+  margin-bottom: 0.3em;
+  border-radius: 50%;
+  background: var(--app-pink);
 }
 
 .muted,
@@ -54,12 +71,13 @@ footer {
 
 main {
   flex: 1;
-  width: min(100% - 2rem, 48rem);
+  width: min(100% - 2.5rem, 64rem);
   margin: 0 auto;
-  padding: clamp(2rem, 8vw, 5rem) 0;
+  padding: clamp(1.75rem, 5vw, 3.5rem) 0;
 }
 
 main.practice-mode {
+  max-width: 48rem;
   padding-block: 0.75rem;
 }
 
@@ -84,6 +102,13 @@ h1 {
 
 mat-card-content {
   padding: 1.5rem !important;
+}
+
+mat-card {
+  max-width: 42rem;
+  border: 2px solid var(--app-border);
+  border-radius: 1.5rem;
+  box-shadow: 5px 5px 0 var(--app-shadow);
 }
 
 h2 {
@@ -121,11 +146,11 @@ a[mat-stroked-button] {
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
-  width: 12rem;
+  width: auto;
   max-width: 100%;
   min-height: 3rem;
   padding-inline: 0.75rem;
-  border: 0;
+  border: 1px solid var(--app-border);
   border-radius: 999px;
   background: transparent;
   color: inherit;
@@ -138,8 +163,7 @@ a[mat-stroked-button] {
 }
 
 .account-name {
-  flex: 1 1 0;
-  width: 0;
+  flex: 1 1 auto;
   min-width: 0;
   max-width: 10rem;
   overflow: hidden;

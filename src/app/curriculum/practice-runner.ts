@@ -81,7 +81,7 @@ import { ReadingPlayer } from './reading-player';
                   steps().length +
                   ' étapes · ' +
                   state.completedItemIds.length +
-                  ' exercices réussis'
+                  (state.completedItemIds.length === 1 ? ' exercice réussi' : ' exercices réussis')
                 "
               />
             </p>
@@ -99,6 +99,20 @@ import { ReadingPlayer } from './reading-player';
               [(hintOpen)]="hintOpen"
               (attempted)="submit($event)"
             />
+          }
+          @if (memo(); as content) {
+            <details class="practice-memo" [open]="memoOpen()" (toggle)="toggleMemo($event)">
+              <summary>
+                <app-bilingual-text
+                  mode="stacked"
+                  [eu]="'Oroigarria · ' + content.title.eu"
+                  [fr]="'Mémo · ' + content.title.fr"
+                />
+              </summary>
+              @if (memoOpen()) {
+                <app-reading-player [content]="content" [focusOnLoad]="false" />
+              }
+            </details>
           }
           @for (reading of presentedReadings(); track reading.key) {
             <app-reading-player [content]="reading.content" />
@@ -154,6 +168,15 @@ import { ReadingPlayer } from './reading-player';
               </p>
             </article>
           }
+          @if (
+            !reviewing() &&
+            (state.feedback?.outcome === 'incorrect' || state.feedback?.outcome === 'almost')
+          ) {
+            <button type="button" class="exit retry" (click)="retry()">
+              <app-icon name="restart" />
+              <app-bilingual-text mode="stacked" eu="Berriz saiatu" fr="Réessayer" />
+            </button>
+          }
           <nav class="step-navigation" aria-label="Edukien nabigazioa / Navigation des contenus">
             @if (canGoBack()) {
               <button type="button" class="exit" (click)="previous()">
@@ -198,7 +221,10 @@ import { ReadingPlayer } from './reading-player';
                 state.completedItemIds.length + ' / ' + questions().length + ' ariketa gaindituta'
               "
               [fr]="
-                state.completedItemIds.length + ' / ' + questions().length + ' exercices réussis'
+                state.completedItemIds.length +
+                ' / ' +
+                questions().length +
+                (state.completedItemIds.length === 1 ? ' exercice réussi' : ' exercices réussis')
               "
             />
           </p>
@@ -316,6 +342,20 @@ export class PracticeRunner {
       (journey.reviewIndex === null ? journey.visited.length > 0 : journey.reviewIndex > 0)
     );
   });
+  protected readonly memo = computed(() => {
+    const step = this.displayedStep();
+    if (step?.kind !== 'question') return null;
+    const steps = this.steps();
+    const previous = steps.slice(
+      0,
+      steps.findIndex(({ id }) => id === step.id),
+    );
+    const isResource = (candidate: (typeof steps)[number]) =>
+      candidate.kind === 'reading' && candidate.content.type === 'resource';
+    const reading = previous.reverse().find(isResource) ?? steps.find(isResource);
+    return reading?.kind === 'reading' ? reading.content : null;
+  });
+  protected readonly memoOpen = signal(false);
   protected readonly progress = signal<PracticeProgress | null>(null);
   protected readonly storageError = signal<{ eu: string; fr: string } | null>(null);
   private readonly presentation = signal(0);
@@ -359,6 +399,7 @@ export class PracticeRunner {
       this.displayedStep();
       this.reviewing();
       this.hintOpen.set(false);
+      this.memoOpen.set(false);
     });
     effect((onCleanup) => {
       this.practiceLayout.active.set(!!this.displayedStep());
@@ -401,6 +442,24 @@ export class PracticeRunner {
       sessionId: this.practiceSessionId(),
     };
     this.save({ ...current, feedback });
+  }
+
+  protected toggleMemo(event: Event): void {
+    if (event.target instanceof HTMLDetailsElement) {
+      this.memoOpen.set(event.target.open);
+    }
+  }
+
+  protected retry(): void {
+    const current = this.progress();
+    if (
+      !current ||
+      this.reviewing() ||
+      (current.feedback?.outcome !== 'incorrect' && current.feedback?.outcome !== 'almost')
+    )
+      return;
+    this.presentation.update((value) => value + 1);
+    this.save({ ...current, feedback: null });
   }
 
   protected continue(): void {
