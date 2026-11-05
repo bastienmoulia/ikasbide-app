@@ -172,7 +172,9 @@ import { PracticeBookmarkStore } from './practice-bookmark';
                     practiceStepCount() +
                     ' étapes parcourues · ' +
                     progress.completedItemIds.length +
-                    ' exercices réussis'
+                    (progress.completedItemIds.length === 1
+                      ? ' exercice réussi'
+                      : ' exercices réussis')
                   "
                 />
               } @else {

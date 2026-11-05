@@ -55,6 +55,8 @@ test('retrying is optional, keeps the same step and preserves immutable attempt 
   await expect(page.getByRole('textbox')).toHaveValue('');
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await answerCurrentText(page, 'naiz');
+  await expect(page.locator('.practice-toolbar')).toContainText('1 exercice réussi');
+  await expect(page.locator('.practice-toolbar')).not.toContainText('1 exercices réussis');
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await expect.poll(async () => (await storedAttempts(uid)).length).toBe(2);
   const attempts = await storedAttempts(uid);

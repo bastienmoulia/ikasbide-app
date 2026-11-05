@@ -81,7 +81,7 @@ import { ReadingPlayer } from './reading-player';
                   steps().length +
                   ' étapes · ' +
                   state.completedItemIds.length +
-                  ' exercices réussis'
+                  (state.completedItemIds.length === 1 ? ' exercice réussi' : ' exercices réussis')
                 "
               />
             </p>
@@ -221,7 +221,10 @@ import { ReadingPlayer } from './reading-player';
                 state.completedItemIds.length + ' / ' + questions().length + ' ariketa gaindituta'
               "
               [fr]="
-                state.completedItemIds.length + ' / ' + questions().length + ' exercices réussis'
+                state.completedItemIds.length +
+                ' / ' +
+                questions().length +
+                (state.completedItemIds.length === 1 ? ' exercice réussi' : ' exercices réussis')
               "
             />
           </p>
