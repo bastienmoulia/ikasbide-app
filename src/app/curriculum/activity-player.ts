@@ -5,6 +5,7 @@ import {
   effect,
   ElementRef,
   inject,
+  Injector,
   input,
   model,
   output,
@@ -23,6 +24,7 @@ import type {
   BilingualText as BilingualTextValue,
 } from './curriculum.model';
 import type { PracticeFeedback } from './practice-progress';
+import { normalizeAnswer } from './answer-normalization.mjs';
 
 export type ExerciseQuestion =
   | {
@@ -304,6 +306,7 @@ export class ExerciseHint {
           </fieldset>
         }
         @case ('word-order') {
+          @let words = wordLabels();
           <app-bilingual-text
             mode="reveal"
             [eu]="currentQuestion.item.prompt.eu"
@@ -318,17 +321,13 @@ export class ExerciseHint {
           }
           @if (feedback(); as result) {
             <p class="answer" [attr.lang]="answerLang(currentQuestion, result.answer)">
-              {{ result.answer }}
+              {{ wordOrderFeedback(currentQuestion.item, result) }}
             </p>
           } @else {
             <div class="word-answer" aria-label="Erantzuna / Réponse">
               @for (wordIndex of selectedWords(); track $index) {
-                <button
-                  class="word"
-                  type="button"
-                  (click)="removeWord(wordIndex, currentQuestion.item.words)"
-                >
-                  <span lang="eu">{{ currentQuestion.item.words[wordIndex] }}</span>
+                <button class="word" type="button" (click)="removeWord(wordIndex, words)">
+                  <span lang="eu">{{ words[wordIndex] }}</span>
                 </button>
               }
               @if (!selectedWords().length) {
@@ -341,13 +340,9 @@ export class ExerciseHint {
               }
             </div>
             <div class="word-bank">
-              @for (word of currentQuestion.item.words; track $index) {
+              @for (word of words; track $index) {
                 @if (!selectedWords().includes($index)) {
-                  <button
-                    class="word"
-                    type="button"
-                    (click)="selectWord($index, currentQuestion.item.words, $event)"
-                  >
+                  <button class="word" type="button" (click)="selectWord($index, words, $event)">
                     <span lang="eu">{{ word }}</span>
                   </button>
                 }
@@ -533,6 +528,56 @@ export class ActivityPlayer {
   readonly attempted = output<ItemResponse>();
   protected readonly answer = signal('');
   protected readonly selectedWords = signal<number[]>([]);
+  protected readonly wordLabels = computed(() => {
+    const question = this.question();
+    if (question.kind !== 'word-order') return [];
+    const endings: string[] = [];
+    const internal = new Set<string>();
+    const internalSigns = new Set<string>();
+    const terminalPunctuation = /[.!?]+(?=[\p{Pe}\p{Pf}"']*$)/u;
+    for (const answer of [
+      ...question.item.acceptedAnswers,
+      ...(question.item.warningAnswers ?? []),
+    ]) {
+      const text = answer.trim();
+      const ending = text.match(terminalPunctuation);
+      endings.push(normalizeAnswer(text));
+      const beforeEnding = ending ? text.slice(0, ending.index) : text;
+      for (const token of beforeEnding.trim().split(/\s+/u)) {
+        if (/^[.!?]+$/u.test(token) && !token.includes('...')) {
+          for (const sign of token) internalSigns.add(sign);
+        }
+      }
+      const tokens = text.split(/\s+/u);
+      tokens.forEach((token, index) => {
+        if (index !== tokens.length - 1 && terminalPunctuation.test(token)) {
+          internal.add(normalizeAnswer(token));
+        }
+      });
+    }
+    return question.item.words
+      .map((word) => {
+        const label = word.trim();
+        if (
+          /^[.!?]+$/u.test(label) &&
+          !label.includes('...') &&
+          [...label].every((sign) => !internalSigns.has(sign))
+        ) {
+          return '';
+        }
+        const key = normalizeAnswer(label);
+        const lastWord = normalizeAnswer(label.split(/\s+/u).at(-1) ?? '');
+        // Preserve lexical casing and internal punctuation such as abbreviations.
+        return key &&
+          !internal.has(lastWord) &&
+          endings.some((answer) => answer === key || answer.endsWith(` ${key}`))
+          ? label.replace(terminalPunctuation, (suffix) =>
+              suffix.includes('...') ? suffix.replace(/[!?]+$/u, '') : '',
+            )
+          : label;
+      })
+      .filter(Boolean);
+  });
   readonly hintOpen = model(false);
   protected readonly canSubmit = () => this.answer().trim().length > 0;
   protected readonly choices = computed(() => {
@@ -565,6 +610,7 @@ export class ActivityPlayer {
     return order;
   });
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   @ViewChild('answerInput', { read: ElementRef })
   private answerInput?: ElementRef<HTMLInputElement>;
   @ViewChild('wordSubmitButton', { read: ElementRef })
@@ -607,7 +653,9 @@ export class ActivityPlayer {
         .join(' '),
     );
     if (event.detail === 0 && this.selectedWords().length === words.length) {
-      this.wordSubmitButton?.nativeElement.focus();
+      afterNextRender(() => this.wordSubmitButton?.nativeElement.focus(), {
+        injector: this.injector,
+      });
     }
   }
 
@@ -725,6 +773,17 @@ export class ActivityPlayer {
     return question.item.acceptedAnswers[0] ?? '';
   }
 
+  protected wordOrderFeedback(item: WordOrderItem, result: PracticeFeedback): string {
+    const normalized = normalizeAnswer(result.answer);
+    const answers =
+      result.outcome === 'correct'
+        ? item.acceptedAnswers
+        : result.outcome === 'correct-with-warning'
+          ? [...(item.warningAnswers ?? []), ...item.acceptedAnswers.map(dialectVariant)]
+          : [];
+    return answers.find((answer) => normalizeAnswer(answer) === normalized) ?? result.answer;
+  }
+
   protected answerLang(question: ExerciseQuestion, answer?: string): 'eu' | 'fr' {
     if (question.kind === 'translation') return question.item.direction === 'eu-fr' ? 'fr' : 'eu';
     if (question.kind === 'multiple-choice') {
@@ -746,12 +805,7 @@ function gradeFreeResponse(
   const normalizedAccepted = acceptedAnswers.map(normalizeAnswer);
   if (normalizedAccepted.includes(normalizedAnswer)) return 'correct';
   if (warningAnswers.map(normalizeAnswer).includes(normalizedAnswer)) return 'correct-with-warning';
-  if (
-    normalizedAccepted.some(
-      (accepted) =>
-        accepted.replace(/(?<![\p{L}\p{N}_])zara(?![\p{L}\p{N}_])/gu, 'zira') === normalizedAnswer,
-    )
-  ) {
+  if (normalizedAccepted.some((accepted) => dialectVariant(accepted) === normalizedAnswer)) {
     return 'correct-with-warning';
   }
   return normalizedAccepted.some((accepted) => isNearMatch(normalizedAnswer, accepted))
@@ -759,18 +813,10 @@ function gradeFreeResponse(
     : 'incorrect';
 }
 
-function normalizeAnswer(value: string): string {
-  return value
-    .normalize('NFC')
-    .toLowerCase()
-    .normalize('NFC')
-    .replace(/[’]/gu, "'")
-    .replace(/[‐‑]/gu, '-')
-    .replace(/\p{P}/gu, (punctuation) =>
-      punctuation === "'" || punctuation === '-' ? punctuation : ' ',
-    )
-    .replace(/\s+/gu, ' ')
-    .trim();
+function dialectVariant(answer: string): string {
+  return answer.replace(/(?<![\p{L}\p{N}_])zara(?![\p{L}\p{N}_])/giu, (word) =>
+    word === word.toUpperCase() ? 'ZIRA' : word[0] === 'Z' ? 'Zira' : 'zira',
+  );
 }
 
 function isNearMatch(answer: string, accepted: string): boolean {

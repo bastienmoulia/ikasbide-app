@@ -5,6 +5,7 @@ import type {
   Resource,
 } from '../../src/app/curriculum/curriculum.model.ts';
 import { idPattern } from './identifiers.ts';
+import { canReconstructAnswer } from '../../src/app/curriculum/answer-normalization.mts';
 
 export type ValidationResult =
   { valid: true; curriculum: CurriculumSource } | { valid: false; errors: string[] };
@@ -251,27 +252,25 @@ export function validateCurriculum(
             item(value, itemPath, ['prompt', 'words', 'acceptedAnswers'], (record) => {
               bilingual(record['prompt'], `${itemPath}.prompt`);
               const words = list(record['words'], `${itemPath}.words`, 2);
-              const expected = wordBag(
-                words.filter((word, index): word is string =>
-                  text(word, `${itemPath}.words[${index}]`),
-                ),
+              const available = words.filter((word, index): word is string =>
+                text(word, `${itemPath}.words[${index}]`),
               );
               texts(record['acceptedAnswers'], `${itemPath}.acceptedAnswers`).forEach(
                 (answer, index) => {
-                  if (wordBag(answer.split(/\s+/)) !== expected) {
+                  if (!canReconstructAnswer(answer, available)) {
                     fail(
                       `${itemPath}.acceptedAnswers[${index}]`,
-                      'must use exactly the listed words',
+                      'must be reconstructible from the listed words (including repeated occurrences)',
                     );
                   }
                 },
               );
               if (Array.isArray(record['warningAnswers'])) {
                 record['warningAnswers'].forEach((answer, index) => {
-                  if (typeof answer === 'string' && wordBag(answer.split(/\s+/)) !== expected) {
+                  if (typeof answer === 'string' && !canReconstructAnswer(answer, available)) {
                     fail(
                       `${itemPath}.warningAnswers[${index}]`,
-                      'must use exactly the listed words',
+                      'must be reconstructible from the listed words (including repeated occurrences)',
                     );
                   }
                 });
@@ -417,17 +416,4 @@ export function validateCurriculum(
           chapters,
         },
       };
-}
-
-function wordBag(words: string[]): string {
-  return words
-    .map((word) =>
-      word
-        .normalize('NFC')
-        .toLocaleLowerCase('eu')
-        .replace(/[.!?…]+$/u, ''),
-    )
-    .filter(Boolean)
-    .sort()
-    .join(' ');
 }

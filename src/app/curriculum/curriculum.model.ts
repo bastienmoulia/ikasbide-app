@@ -123,6 +123,7 @@ export interface MultipleChoiceItem extends ItemBase {
 
 export interface WordOrderItem extends ItemBase {
   prompt: BilingualText;
+  /** Lexical casing, no terminal punctuation; may include unused distractors. */
   words: string[];
   acceptedAnswers: string[];
   warningAnswers?: string[];

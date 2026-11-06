@@ -247,7 +247,7 @@ const invalidSources: [string, (source: CurriculumSources) => void, string][] = 
     'a word-order warning answer that uses other words',
     ({ chapters }) =>
       (chapters['chapter-1'].sequences[1].contents[3].items[0].warningAnswers = ['Zira']),
-    `${origin}[3].items[0].warningAnswers[0]: must use exactly the listed words`,
+    `${origin}[3].items[0].warningAnswers[0]: must be reconstructible from the listed words (including repeated occurrences)`,
   ],
   [
     'a gap-fill prompt without a gap',
@@ -261,7 +261,7 @@ const invalidSources: [string, (source: CurriculumSources) => void, string][] = 
       chapters['chapter-1'].sequences[1].contents[3].items[1].acceptedAnswers.push(
         'Bilbon bizi zara.',
       ),
-    `${origin}[3].items[1].acceptedAnswers[1]: must use exactly the listed words`,
+    `${origin}[3].items[1].acceptedAnswers[1]: must be reconstructible from the listed words (including repeated occurrences)`,
   ],
   [
     'an optional oral prompt presented as corrected items',
