@@ -196,7 +196,11 @@ import { ReadingPlayer } from './reading-player';
                 <app-icon name="next" />
               </button>
             }
-            @if (!reviewing() && state.feedback && state.feedback.outcome !== 'correct') {
+            @if (
+              !reviewing() &&
+              state.feedback &&
+              (state.feedback.outcome !== 'correct' || currentQuestion()?.kind === 'word-order')
+            ) {
               <button type="button" class="continue" (click)="continue()">
                 <app-bilingual-text mode="stacked" eu="Jarraitu" fr="Continuer" />
                 <app-icon name="next" />
@@ -422,7 +426,12 @@ export class PracticeRunner {
       onCleanup(() => clearTimeout(timer));
     });
     effect((onCleanup) => {
-      if (this.reviewing() || this.feedback()?.outcome !== 'correct') return;
+      if (
+        this.reviewing() ||
+        this.feedback()?.outcome !== 'correct' ||
+        this.currentQuestion()?.kind === 'word-order'
+      )
+        return;
       const timer = setTimeout(() => this.advance(), 600);
       onCleanup(() => clearTimeout(timer));
     });

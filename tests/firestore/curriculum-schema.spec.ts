@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { Ajv2020 } from 'ajv/dist/2020.js';
+import type { WordOrderActivity } from '../../src/app/curriculum/curriculum.model.ts';
+import { validateCurriculum } from '../../tools/curriculum/validate.ts';
 
 const sample = 'tests/fixtures/curriculum.sample';
 
@@ -180,5 +182,140 @@ for (const [name, change, isBook] of structuralErrors) {
     expect((isBook ? schemas.book : schemas.chapter)(isBook ? book : chapters['chapter-1'])).toBe(
       false,
     );
+  });
+}
+
+const wordOrderCases: {
+  name: string;
+  words: string[];
+  acceptedAnswers: string[];
+  warningAnswers?: string[];
+  error?: string;
+}[] = [
+  {
+    name: 'distractors, repeated words, alternatives and warning subsets',
+    words: ['oso', 'oso', 'ondo', 'dago', 'gaizki', 'dira', 'ez'],
+    acceptedAnswers: ['Oso oso ondo dago!', 'Oso ondo dago.'],
+    warningAnswers: ['Ondo dago.'],
+  },
+  {
+    name: 'legacy lexical capitals, commas and terminal punctuation',
+    words: ['Ane,', 'etorri.', 'hona?!'],
+    acceptedAnswers: ['Ane, etorri hona!', 'Etorri hona, Ane!'],
+  },
+  {
+    name: 'Unicode, apostrophes, hyphens and repeated whitespace',
+    words: ['Éloïse', 'l’ami', 'va-t-il', 'saluer'],
+    acceptedAnswers: ["E\u0301loïse  va‑t‑il saluer l'ami ?"],
+  },
+  {
+    name: 'too few repeated occurrences in an accepted answer',
+    words: ['oso', 'ondo', 'dago', 'gaizki'],
+    acceptedAnswers: ['Oso oso ondo dago.'],
+    error: 'acceptedAnswers[0]',
+  },
+  {
+    name: 'too few repeated occurrences in a warning answer',
+    words: ['oso', 'ondo', 'dago', 'gaizki'],
+    acceptedAnswers: ['Oso ondo dago.'],
+    warningAnswers: ['Oso oso ondo dago!'],
+    error: 'warningAnswers[0]',
+  },
+  {
+    name: 'an intact multi-word label',
+    words: ['Ane etorri', 'da'],
+    acceptedAnswers: ['Ane etorri da.'],
+  },
+  {
+    name: 'repeated intact multi-word labels',
+    words: ['oso ondo', 'oso ondo', 'dago'],
+    acceptedAnswers: ['Oso ondo oso ondo dago.'],
+    warningAnswers: ['Oso ondo dago.'],
+  },
+  {
+    name: 'insufficient occurrences of a multi-word label',
+    words: ['oso ondo', 'dago'],
+    acceptedAnswers: ['Oso ondo oso ondo dago.'],
+    error: 'acceptedAnswers[0]',
+  },
+  {
+    name: 'overlapping labels requiring backtracking',
+    words: ['Ane', 'Ane etorri', 'da'],
+    acceptedAnswers: ['Ane etorri da.'],
+    warningAnswers: ['Ane etorri da!'],
+  },
+  {
+    name: 'backtracking after an occurrence is consumed by the wrong label',
+    words: ['oso', 'oso ondo', 'ondo dago'],
+    acceptedAnswers: ['Oso ondo oso ondo dago.'],
+  },
+  {
+    name: 'unavailable repeated multi-word occurrences in a warning answer',
+    words: ['oso ondo', 'dago'],
+    acceptedAnswers: ['Oso ondo dago.'],
+    warningAnswers: ['Oso ondo oso ondo dago.'],
+    error: 'warningAnswers[0]',
+  },
+  {
+    name: 'a multi-word label that is only a character prefix',
+    words: ['Ane etor', 'ri da'],
+    acceptedAnswers: ['Ane etorri da.'],
+    error: 'acceptedAnswers[0]',
+  },
+  {
+    name: 'a word hidden inside an indivisible label',
+    words: ['Ane etorri', 'da'],
+    acceptedAnswers: ['Ane da.'],
+    error: 'acceptedAnswers[0]',
+  },
+  {
+    name: 'an unavailable word in an alternative answer',
+    words: ['Ane', 'etorri', 'da', 'bihar'],
+    acceptedAnswers: ['Ane etorri da.', 'Ane joan da.'],
+    error: 'acceptedAnswers[1]',
+  },
+  {
+    name: 'an unavailable word in a warning answer',
+    words: ['Ane', 'etorri', 'da', 'bihar'],
+    acceptedAnswers: ['Ane etorri da.'],
+    warningAnswers: ['Ane joan da.'],
+    error: 'warningAnswers[0]',
+  },
+];
+
+for (const { name, error, ...answers } of wordOrderCases) {
+  test(`word-order validation handles ${name}`, async () => {
+    const { book, chapters } = await sampleSource();
+    const activity: WordOrderActivity = {
+      id: 'synthetic-order',
+      type: 'activity',
+      kind: 'word-order',
+      title: { eu: 'Ordenatu', fr: 'Ordonner' },
+      instructions: { eu: 'Aukeratu hitzak.', fr: 'Choisissez les mots.' },
+      items: [
+        {
+          id: 'synthetic-sentence',
+          objectiveIds: ['say-origin-and-residence'],
+          prompt: { eu: 'Osatu esaldia.', fr: 'Formez la phrase.' },
+          ...answers,
+        },
+      ],
+    };
+    chapters['chapter-1'].sequences[1].contents.push(activity);
+    const schemas = await sourceSchemas();
+    expect(schemas.chapter(chapters['chapter-1']), JSON.stringify(schemas.chapter.errors)).toBe(
+      true,
+    );
+    const result = validateCurriculum(book, new Map(Object.entries(chapters)));
+    if (error) {
+      expect(result.valid).toBe(false);
+      if (result.valid) throw new Error('Unreconstructible answer was accepted.');
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toContain(
+        `${error}: must be reconstructible from the listed words (including repeated occurrences)`,
+      );
+    } else {
+      expect(result.valid, result.valid ? '' : result.errors.join('\n')).toBe(true);
+    }
   });
 }

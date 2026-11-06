@@ -170,7 +170,7 @@ test('links and oral prompts are optional full-page steps and the final review i
   await answerCurrentText(page, 'Ni Baionakoa naiz.');
   await answerCurrentText(page, 'J’habite à Bilbao.');
   for (const words of [
-    ['Zu', 'nongoa', 'zara'],
+    ['zu', 'nongoa', 'zara'],
     ['Bilbon', 'bizi', 'naiz'],
   ]) {
     for (const word of words) {
@@ -178,7 +178,7 @@ test('links and oral prompts are optional full-page steps and the final review i
     }
     await page.getByRole('button', { name: /Vérifier/ }).click();
     await expect(page.locator('app-activity-feedback')).toHaveAttribute('data-result', 'correct');
-    await page.clock.fastForward(600);
+    await page.getByRole('button', { name: /Continuer/ }).click();
     await expect(page.locator('app-activity-feedback')).toHaveCount(0);
   }
   await page.getByRole('textbox').fill('zara');

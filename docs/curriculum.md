@@ -175,8 +175,50 @@ mais la tentative n’est enregistrée et l’item n’est terminé qu’au clic
 L’item ne sera pas reposé. Avant ce clic, recharger ou reprendre la série restaure
 l’avertissement sans enregistrer la tentative. Les approximations de ces variantes ne sont
 pas acceptées : « Presque ! » reste calculé uniquement à partir d’`acceptedAnswers`.
-Pour une remise en ordre, les variantes de `warningAnswers` doivent elles aussi utiliser
-exactement les mots proposés. Sans ce champ, le comportement existant reste inchangé.
+Pour une remise en ordre, chaque réponse de `acceptedAnswers` et de `warningAnswers` doit
+pouvoir être reconstruite avec les occurrences proposées dans `words`. Des mots peuvent
+rester inutilisés : les exercices plus difficiles peuvent proposer des distracteurs
+plausibles choisis par l'auteur, sans limite de nombre imposée par le format.
+Une étiquette contenant plusieurs mots reste indivisible : seule son utilisation complète
+est autorisée. Le validateur cherche un assemblage d'étiquettes disponibles, avec retour
+arrière si plusieurs découpages se chevauchent.
+Une occurrence ne peut servir qu'une fois ; une réponse
+répétant un mot doit donc disposer d'autant d'occurrences. Le validateur emploie la même
+normalisation que la correction pour comparer les mots.
+
+Les étiquettes de `words` portent la casse **lexicale** : minuscules pour les mots ordinaires,
+majuscules conservées pour les noms propres, et virgules conservées, sans les signes
+terminaux `.`, `?`, `!`. Les phrases de `acceptedAnswers` et `warningAnswers` gardent leur
+orthographe normale. Pendant la reconstruction, le moteur conserve la casse fournie et
+les virgules. Pour les anciennes données, il retire les suffixes `.?!` des étiquettes
+attestées en fin de réponse autorisée, sauf si leur ponctuation est également attestée à
+l'intérieur d'une réponse (par exemple une abréviation `Dr.`). Les ellipses `…` et `...`
+restent visibles. Ce traitement couvre aussi les étiquettes multi-mots et les signes
+finaux séparés par un espace dans la réponse. Les étiquettes constituées uniquement d'un
+signe terminal sont masquées sans laisser de bouton vide ; les signes attestés à
+l'intérieur d'une réponse et les virgules restent disponibles.
+Un signe terminal suivi d'un guillemet, d'une parenthèse ou d'un crochet fermant est également
+masqué, sans retirer la fermeture. La fin lexicale est reconnue même si une ancienne réponse autorisée n'a pas
+de ponctuation finale ; sa restitution reste fidèle à cette réponse, sans signe ajouté.
+Il ne tente jamais de deviner si une majuscule désigne un nom propre : les anciennes
+étiquettes capitalisées uniquement en début de phrase doivent être corrigées dans la source.
+Après une bonne réponse, il affiche la variante effectivement choisie avec sa casse et sa
+ponctuation d'origine, plutôt que de la remplacer par la première réponse acceptée. Une
+variante explicite avec avertissement est également restituée, accompagnée de la réponse
+attendue habituelle. Pour la variante automatique `zara` → `zira`, la restitution reprend
+la casse et la ponctuation de l'alternative correspondante en conservant `zira`, même sans
+champ `warningAnswers`. Les consignes doivent inviter à choisir les mots utiles, sans imposer
+de tous les utiliser. La banque affiche les étiquettes dans l'ordre de `words`, sans
+mélange automatique : fournissez-les déjà désordonnées. Le format reste `schemaVersion: 2`,
+sans nouveau champ.
+
+Après une bonne reconstruction (`word-order`), la phrase restaurée reste affichée jusqu'au
+clic sur « Continuer » (également accessible au clavier). Recharger puis reprendre le
+parcours conserve cette réponse et ce retour, sans créer une nouvelle tentative :
+l'enregistrement a lieu dès la validation et réutilise le même identifiant lors d'une reprise.
+« Continuer » termine l'étape sans réenregistrer la tentative. Les autres formats conservent
+leur avance automatique après une bonne réponse ; les avertissements attendent toujours
+« Continuer » selon leur fonctionnement habituel.
 
 ## Données publiées
 

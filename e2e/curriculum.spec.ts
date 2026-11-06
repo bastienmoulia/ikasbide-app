@@ -212,11 +212,11 @@ test('translation and word-order warning variants show the canonical expected an
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await page.getByRole('button', { name: /Continuer/ }).click();
 
-  for (const word of ['Zu', 'nongoa', 'zara']) {
+  for (const word of ['zu', 'nongoa', 'zara']) {
     await page.getByRole('button', { name: word, exact: true }).click();
   }
   await page.getByRole('button', { name: /Vérifier/ }).click();
-  await page.clock.fastForward(600);
+  await page.getByRole('button', { name: /Continuer/ }).click();
   for (const word of ['bizi', 'naiz', 'Bilbon']) {
     await page.getByRole('button', { name: word, exact: true }).click();
   }
@@ -299,7 +299,7 @@ test('translation answers accept listed variants and preserve diacritic distinct
   await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
   await expect(page.getByText('J’habite à Bilbao.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Continuer/ }).click();
-  await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'zu', exact: true })).toBeVisible();
 });
 
 test('translation answers accept apostrophe and punctuation variants', async ({ page }) => {
@@ -349,7 +349,7 @@ test('a learner can build a word-order answer from the offered words', async ({ 
     await page.clock.fastForward(600);
   }
 
-  await page.getByRole('button', { name: 'Zu', exact: true }).click();
+  await page.getByRole('button', { name: 'zu', exact: true }).click();
   await page.getByRole('button', { name: 'nongoa', exact: true }).click();
   await page.getByRole('button', { name: 'zara', exact: true }).focus();
   await page.keyboard.press('Enter');
@@ -358,14 +358,16 @@ test('a learner can build a word-order answer from the offered words', async ({ 
   await expect(page.locator('app-activity-feedback')).toHaveCount(0);
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
-  await page.clock.fastForward(600);
+  const next = page.getByRole('button', { name: /Continuer/ });
+  await next.focus();
+  await page.keyboard.press('Enter');
 
   await page.getByRole('button', { name: 'Bilbon', exact: true }).click();
   await page.getByRole('button', { name: 'bizi', exact: true }).click();
   await page.getByRole('button', { name: 'naiz', exact: true }).click();
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
-  await page.clock.fastForward(600);
+  await page.getByRole('button', { name: /Continuer/ }).click();
   await page.getByRole('textbox').fill('zara');
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();

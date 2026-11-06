@@ -262,8 +262,8 @@
             "fr": "Remettez les mots dans l’ordre"
           },
           "instructions": {
-            "eu": "Osatu esaldia hitz guztiak erabiliz.",
-            "fr": "Formez la phrase en utilisant tous les mots."
+            "eu": "Osatu esaldia hitz egokiak aukeratuz. Hitz batzuk soberan egon daitezke.",
+            "fr": "Formez la phrase en choisissant les mots utiles. Certains mots peuvent être en trop."
           },
           "items": [
             {
@@ -273,7 +273,7 @@
                 "eu": "Galdetu nongoa den.",
                 "fr": "Demandez d’où vient la personne."
               },
-              "words": ["zara", "Zu", "nongoa"],
+              "words": ["zara", "zu", "nongoa"],
               "acceptedAnswers": ["Zu nongoa zara?", "Nongoa zara zu?"]
             },
             {
@@ -283,7 +283,7 @@
                 "eu": "Esan Bilbon bizi zarela.",
                 "fr": "Dites que vous habitez à Bilbao."
               },
-              "words": ["bizi", "Bilbon", "naiz"],
+              "words": ["bizi", "Bilbon", "naiz", "etxean", "dira"],
               "acceptedAnswers": ["Bilbon bizi naiz."],
               "warningAnswers": ["Bizi naiz Bilbon."]
             }

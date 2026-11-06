@@ -279,10 +279,10 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await expect(page.getByRole('status').filter({ hasText: 'Correct' })).toBeVisible();
   await page.clock.fastForward(600);
 
-  await page.getByRole('button', { name: 'Zu', exact: true }).click();
+  await page.getByRole('button', { name: 'zu', exact: true }).click();
   await page.getByRole('button', { name: 'nongoa', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Zu', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'zu', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'zu', exact: true })).toBeVisible();
 
   await page.goto('/a1/chapter-1');
   await page.locator('.progress-details summary').click();
