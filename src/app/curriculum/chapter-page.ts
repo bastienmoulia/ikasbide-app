@@ -38,12 +38,12 @@ import {
       </p>
     } @else if (chapter.value(); as chapter) {
       <p class="eyebrow">
-        <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
-        <app-bilingual-text
-          mode="stacked"
-          [eu]="chapter.number + '. kapitulua'"
-          [fr]="'Chapitre ' + chapter.number"
-        />
+        <span
+          class="chapter-marker"
+          role="img"
+          [attr.aria-label]="chapter.number + '. kapitulua / Chapitre ' + chapter.number"
+          >{{ chapter.number }}</span
+        >
       </p>
       <h1>
         <app-bilingual-text mode="stacked" [eu]="chapter.title.eu" [fr]="chapter.title.fr" />

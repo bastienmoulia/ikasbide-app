@@ -19,7 +19,17 @@
 }
 
 .journey-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
   font-weight: 600;
+}
+
+.success-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .next-step {
@@ -78,15 +88,4 @@
 .start-practice:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-.mission-label {
-  display: inline-flex;
-  justify-self: start;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--app-ink);
-  border-radius: 999px;
-  background: var(--app-lavender);
-  color: var(--app-ink);
-  font-weight: 700;
 }

@@ -16,9 +16,6 @@ import { PracticeBookmarkStore } from './practice-bookmark';
   styleUrls: ['./curriculum.css', './curriculum-home.css'],
   template: `
     <div class="home-intro">
-      <p class="eyebrow">
-        <app-bilingual-text mode="stacked" eu="Erronka laburrak" fr="Défis express" />
-      </p>
       <h1>
         <app-bilingual-text mode="stacked" eu="Zure ibilbidea" fr="Votre parcours" />
       </h1>
@@ -44,9 +41,6 @@ import { PracticeBookmarkStore } from './practice-bookmark';
       @if (book(); as book) {
         <section class="practice-entry" aria-labelledby="practice-entry-heading">
           <div class="practice-entry-copy">
-            <p class="entry-label">
-              <app-bilingual-text mode="stacked" eu="Pausoz pauso" fr="Un pas après l’autre" />
-            </p>
             <h2 id="practice-entry-heading">
               <app-bilingual-text
                 mode="stacked"
@@ -122,13 +116,13 @@ import { PracticeBookmarkStore } from './practice-bookmark';
             @for (chapter of book.chapters; track chapter.id) {
               <li [style.--chapter-accent]="color(chapter.number)">
                 <a [routerLink]="['/', book.id, chapter.id]">
-                  <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
+                  <span
+                    class="chapter-marker"
+                    role="img"
+                    [attr.aria-label]="chapter.number + '. kapitulua / Chapitre ' + chapter.number"
+                    >{{ chapter.number }}</span
+                  >
                   <span class="stack">
-                    <app-bilingual-text
-                      mode="stacked"
-                      [eu]="chapter.number + '. kapitulua'"
-                      [fr]="'Chapitre ' + chapter.number"
-                    />
                     <strong>
                       <app-bilingual-text
                         mode="stacked"
