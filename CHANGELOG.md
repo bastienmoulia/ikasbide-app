@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.2.0...v0.3.0) (2026-11-05)
+
+
+### Features
+
+* replace the learner interface with Défis express ([fbb0123](https://github.com/bastienmoulia/ikasbide-app/commit/fbb012343188b327f6fa0d620470f4e0e42140d2))
+
 ## [0.2.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.1.0...v0.2.0) (2026-11-01)
 
 
