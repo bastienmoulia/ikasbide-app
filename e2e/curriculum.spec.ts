@@ -39,7 +39,11 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
   await expect(bookTitle).toHaveAccessibleName('Lehen urratsak');
   await expect(bookTitle.locator('[lang="fr"]')).toHaveCount(0);
   const chapters = book.getByRole('listitem');
-  await expect(chapters).toHaveText([/Chapitre 1.*Les présentations/, /Chapitre 2.*La famille/]);
+  await expect(chapters).toHaveText([/1.*Les présentations/, /2.*La famille/]);
+  await expect(chapters.nth(0).getByRole('link')).toHaveAccessibleName(
+    /1\. kapitulua \/ Chapitre 1.*Les présentations/,
+  );
+  await expect(chapters.nth(0)).not.toContainText('Chapitre');
   // Colour follows the book's cycle but the chapter number always accompanies it.
   const chapter1Marker = chapters.nth(0).locator('.chapter-marker');
   await expect(chapter1Marker).toHaveText('1');
@@ -55,6 +59,8 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
     'Aurkezpenak Les présentations',
   );
   expect(await accent(page.locator('.chapter-marker'))).toBe(red);
+  await expect(page.locator('.chapter-marker')).toHaveAccessibleName('1. kapitulua / Chapitre 1');
+  await expect(page.locator('.eyebrow')).toHaveText('1');
   await expect(page.locator('.progress-details')).not.toHaveAttribute('open', '');
   await page.locator('.progress-details summary').click();
   await expect(
