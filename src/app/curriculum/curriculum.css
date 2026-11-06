@@ -7,7 +7,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  min-height: 2.75rem;
+  margin-bottom: 1rem;
   color: inherit;
 }
 
@@ -38,6 +39,7 @@
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
+  border: 2px solid var(--app-ink);
   border-radius: 50%;
   background: var(--chapter-accent);
   color: white;
@@ -53,12 +55,12 @@ h1 {
   font-size: clamp(2rem, 6vw, 3.75rem);
   max-width: 52rem;
   line-height: 1.12;
-  margin: 0.75rem 0 2rem;
+  margin: 0.75rem 0 1.5rem;
 }
 
 h2 {
   font-size: 1.3rem;
-  margin: 2rem 0 1rem;
+  margin: 1.5rem 0 0.75rem;
 }
 
 .cards {
@@ -74,7 +76,7 @@ h2 {
   align-items: center;
   gap: 1rem;
   min-height: 3rem;
-  padding: 1.25rem 0;
+  padding: 0.875rem 0.25rem;
   height: 100%;
   border: 0;
   border-bottom: 1px solid var(--app-border-subtle);
@@ -85,11 +87,8 @@ h2 {
   overflow-wrap: anywhere;
 }
 
-.cards a::after {
-  content: '↗';
+.cards .list-arrow {
   margin-left: auto;
-  flex: none;
-  font-size: 1.5rem;
 }
 
 .cards li:nth-child(3n + 1) {
@@ -112,7 +111,7 @@ h2 {
   border: 2px solid var(--app-ink);
   background: var(--card-accent);
   color: var(--app-ink);
-  transform: rotate(-5deg);
+  box-shadow: 2px 2px 0 var(--app-shadow);
 }
 
 .cards .stack,

@@ -23,6 +23,9 @@ html {
   --app-ink: #252525;
   --app-shadow: #252525;
   --app-exercise-surface: #e4eafb;
+  --app-panel-radius: 1.5rem;
+  --app-panel-padding: clamp(0.875rem, 3vw, 1.5rem);
+  --app-panel-shadow: 4px 5px 0 var(--app-shadow);
   --mat-card-outlined-container-color: var(--app-surface);
   height: 100%;
   @include mat.theme(

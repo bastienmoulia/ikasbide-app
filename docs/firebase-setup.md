@@ -133,6 +133,14 @@ validée dans le `localStorage`, ce qui permet de les relire hors ligne avec la 
 Google déjà ouverte. Les tentatives faites hors ligne attendent dans la file d’écriture
 de ce même cache, puis sont synchronisées au retour du réseau.
 
+Les sources de l’identité sont `public/icon.svg` (application installée) et
+`public/favicon.svg` (version simplifiée pour les petits formats et l’en-tête).
+Après une modification, exécuter `npm run icons:generate` avec Chromium Playwright
+installé (`npx playwright install chromium`). Cette commande régénère les huit
+tailles PNG référencées par le manifeste, l’icône Apple de 180 px et le favicon PNG
+de 32 px. Garder le symbole dans la zone centrale sûre des icônes masquables ;
+leur fond lavande reste opaque, y compris en mode sombre.
+
 ## Vérification sans projet de production
 
 ```bash

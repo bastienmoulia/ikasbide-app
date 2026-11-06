@@ -20,11 +20,19 @@ import type { ReadingContent } from './practice-steps';
     }
 
     article {
-      padding: clamp(1rem, 5vw, 2rem);
+      padding: var(--app-panel-padding);
       border: 2px solid var(--app-border);
-      border-radius: 1.5rem;
+      border-radius: var(--app-panel-radius);
       background: var(--app-surface);
-      box-shadow: 4px 5px 0 var(--app-shadow);
+      box-shadow: var(--app-panel-shadow);
+    }
+
+    :host(.memo-reading) article {
+      padding: 0.25rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
     .kind {

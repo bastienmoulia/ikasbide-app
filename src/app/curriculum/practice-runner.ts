@@ -110,7 +110,11 @@ import { ReadingPlayer } from './reading-player';
                 />
               </summary>
               @if (memoOpen()) {
-                <app-reading-player [content]="content" [focusOnLoad]="false" />
+                <app-reading-player
+                  class="memo-reading"
+                  [content]="content"
+                  [focusOnLoad]="false"
+                />
               }
             </details>
           }

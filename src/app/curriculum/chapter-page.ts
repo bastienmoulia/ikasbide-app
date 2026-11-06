@@ -148,6 +148,7 @@ import {
                     />
                   </span>
                 </span>
+                <app-icon class="list-arrow" name="arrow-up-right" />
               </a>
             </li>
           }

@@ -13,7 +13,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { BilingualText } from '../bilingual-text';
-import { Icon } from '../icon';
+import { Icon, type IconName } from '../icon';
 import type { AttemptOutcome } from './attempt.service';
 import type {
   GapFillItem,
@@ -75,7 +75,7 @@ export interface ItemResponse {
 
 @Component({
   selector: 'app-activity-feedback',
-  imports: [BilingualText],
+  imports: [BilingualText, Icon],
   host: {
     role: 'status',
     '[attr.data-result]': 'result()',
@@ -93,17 +93,17 @@ export interface ItemResponse {
     }
   `,
   template: `
-    <span class="feedback-icon" aria-hidden="true">{{ symbols[result()] }}</span>
+    <app-icon class="feedback-icon" [name]="symbols[result()]" />
     <app-bilingual-text mode="stacked" [eu]="labels[result()].eu" [fr]="labels[result()].fr" />
   `,
 })
 class ActivityFeedback {
   readonly result = input.required<AttemptOutcome>();
-  protected readonly symbols = {
-    correct: '✓',
-    'correct-with-warning': '⚠',
-    almost: '≈',
-    incorrect: '✕',
+  protected readonly symbols: Record<AttemptOutcome, IconName> = {
+    correct: 'check',
+    'correct-with-warning': 'warning',
+    almost: 'almost',
+    incorrect: 'close',
   };
   protected readonly labels = {
     correct: { eu: 'Zuzena.', fr: 'Correct.' },
@@ -379,7 +379,7 @@ export class ExerciseHint {
               @for (link of answeredLinks(result.answer, pairs.length); track $index) {
                 @let right = link === $index;
                 <li [class.answer-error]="!right">
-                  <span class="matching-mark" aria-hidden="true">{{ right ? '✓' : '✕' }}</span>
+                  <app-icon class="matching-mark" [name]="right ? 'check' : 'close'" />
                   <span lang="eu">{{ pairs[$index].eu }}</span>
                   <span class="matching-arrow" aria-hidden="true">↔</span>
                   <span lang="fr">
