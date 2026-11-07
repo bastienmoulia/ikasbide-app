@@ -3,7 +3,13 @@ import { Component, input } from '@angular/core';
 const paths = {
   previous: 'm15 18-6-6 6-6',
   next: 'm9 6 6 6-6 6',
+  'arrow-up-right': 'M7 17 17 7M7 7h10v10',
+  chevron: 'm6 9 6 6 6-6',
+  'sign-out': 'M9 8V4H3v16h6v-4m-2-4h14m-5-5 5 5-5 5',
   check: 'm5 12 4 4L19 6',
+  close: 'm6 6 12 12M6 18 18 6',
+  warning: 'm12 3 10 18H2Zm0 6v5m0 3v.1',
+  almost: 'M3 9c6-6 12 6 18 0M3 15c6-6 12 6 18 0',
   restart: 'M3 10a9 9 0 1 1 1 7M3 4v6h6',
   play: 'm8 5 11 7-11 7Z',
   hint: 'M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z',

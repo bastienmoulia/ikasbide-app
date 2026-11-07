@@ -1,4 +1,8 @@
 :host {
   display: inline-flex;
   flex: none;
+  --mat-button-toggle-selected-state-background-color: var(--app-lavender);
+  --mat-button-toggle-selected-state-text-color: var(--app-ink);
+  --mat-button-toggle-divider-color: var(--app-border-strong);
+  --mat-button-toggle-shape: 1rem;
 }

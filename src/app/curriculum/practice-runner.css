@@ -6,10 +6,10 @@
 .completion {
   display: grid;
   justify-items: stretch;
-  gap: 1.25rem;
+  gap: 1rem;
   max-width: 48rem;
   margin: 0 auto;
-  padding-block: 0.5rem 2rem;
+  padding-block: 0 1rem;
 }
 
 .practice-toolbar,
@@ -37,22 +37,21 @@ app-activity-player[hidden] {
 }
 
 .practice-memo {
-  border: 1px solid var(--app-border-subtle);
-  border-radius: 1rem;
-  background: var(--app-surface);
+  border-block: 1px solid var(--app-border-subtle);
 }
 
 .practice-memo summary {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.25rem;
   cursor: pointer;
   font-weight: 600;
 }
 
 .question-review {
-  padding: 1.25rem;
+  padding: var(--app-panel-padding);
   border: 2px solid var(--app-border);
-  border-radius: 1.25rem;
-  background: var(--app-surface);
+  border-radius: var(--app-panel-radius);
+  background: var(--app-exercise-surface);
+  box-shadow: var(--app-panel-shadow);
   overflow-wrap: anywhere;
 }
 
@@ -136,9 +135,9 @@ app-activity-player[hidden] {
   text-align: center;
   padding-block: 3rem;
   border: 2px solid var(--app-border);
-  border-radius: 1.5rem;
+  border-radius: var(--app-panel-radius);
   background: var(--app-surface);
-  box-shadow: 5px 5px 0 var(--app-shadow);
+  box-shadow: var(--app-panel-shadow);
   padding-inline: 1rem;
 }
 

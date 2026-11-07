@@ -1,6 +1,6 @@
 .objective-map {
   display: grid;
-  gap: 0.75rem;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -10,10 +10,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: 0.75rem;
-  background: var(--app-surface);
+  padding: 0.875rem 0.25rem;
+  border-bottom: 1px solid var(--app-border-subtle);
 }
 
 /* Three-stage track: filled stages and the status text, not colour, tell objectives apart. */
@@ -45,29 +43,34 @@
 }
 
 .acquired {
-  border-left: 6px solid var(--chapter-accent);
+  border-inline-start: 4px solid var(--chapter-accent);
+  padding-inline-start: 0.75rem;
 }
 
 .to-discover .objective-status {
   color: var(--app-text-muted);
 }
 .progress-details {
-  margin-bottom: 2rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--app-border-subtle);
-  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+  border-block: 1px solid var(--app-border-subtle);
 }
 
 .progress-details summary {
+  padding-block: 0.875rem;
+  min-height: 2.75rem;
   cursor: pointer;
   font-weight: 600;
+}
+
+.progress-details section {
+  padding-bottom: 0.875rem;
 }
 
 .progress-indicator {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-inline-start: 1rem;
+  margin-inline-start: 0.5rem;
   font-size: 0.85rem;
   color: var(--app-text-muted);
 }

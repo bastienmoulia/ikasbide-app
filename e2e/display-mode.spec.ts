@@ -65,7 +65,7 @@ async function expectAppearance(page: import('@playwright/test').Page, mode: 'li
   if (await card.count()) {
     await expect(card).toHaveCSS(
       'background-color',
-      mode === 'dark' ? 'rgb(43, 44, 47)' : 'rgb(255, 255, 255)',
+      mode === 'dark' ? 'rgb(48, 52, 67)' : 'rgb(228, 234, 251)',
     );
   }
 }
@@ -218,7 +218,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
     await expect(progressMap).toBeVisible();
-    await expectContrast(initialStatus, progressMap.getByRole('listitem').first(), 4.5);
+    await expectContrast(initialStatus, page.locator('body'), 4.5);
   }
 
   await page.goto('/a1/chapter-1/greetings');
@@ -293,7 +293,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
     await expect(greetingObjective).toContainText('En cours');
-    await expectContrast(greetingObjective.locator('.objective-status'), greetingObjective, 4.5);
+    await expectContrast(greetingObjective.locator('.objective-status'), page.locator('body'), 4.5);
   }
 
   for (let chapterNumber = 1; chapterNumber <= 5; chapterNumber += 1) {

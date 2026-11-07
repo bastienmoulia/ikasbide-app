@@ -4,6 +4,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
+import { Icon } from '../icon';
 import { BookContext } from './book-context';
 import { chapterColor } from './chapter-color';
 import { bookNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
@@ -12,7 +13,7 @@ import { PracticeBookmarkStore } from './practice-bookmark';
 
 @Component({
   selector: 'app-curriculum-home',
-  imports: [BilingualText, MatCardModule, MatProgressBarModule, RouterLink],
+  imports: [BilingualText, Icon, MatCardModule, MatProgressBarModule, RouterLink],
   styleUrls: ['./curriculum.css', './curriculum-home.css'],
   template: `
     <div class="home-intro">
@@ -71,7 +72,7 @@ import { PracticeBookmarkStore } from './practice-bookmark';
                 [routerLink]="['/', book.id, last.chapterId, last.sequence.id]"
               >
                 <app-bilingual-text mode="stacked" eu="Jarraitu" fr="Reprendre ma séquence" />
-                <span aria-hidden="true">↗</span>
+                <app-icon name="arrow-up-right" />
               </a>
             } @else if (book.chapters[0]; as firstChapter) {
               <p>
@@ -87,7 +88,7 @@ import { PracticeBookmarkStore } from './practice-bookmark';
                   eu="Hasi praktikatzen"
                   fr="Passer à la pratique"
                 />
-                <span aria-hidden="true">↗</span>
+                <app-icon name="arrow-up-right" />
               </a>
             }
           </div>
@@ -137,6 +138,7 @@ import { PracticeBookmarkStore } from './practice-bookmark';
                       />
                     </strong>
                   </span>
+                  <app-icon class="list-arrow" name="arrow-up-right" />
                 </a>
               </li>
             }

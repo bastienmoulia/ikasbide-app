@@ -1,12 +1,12 @@
 :host {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.25rem;
   --chapter-accent: var(--app-accent);
 }
 
 .home-intro h1 {
-  margin-bottom: 1rem;
-  font-size: clamp(2.75rem, 7vw, 4.5rem);
+  margin-bottom: 0.75rem;
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
 }
 
 .home-lead {
@@ -17,38 +17,19 @@
 .practice-entry {
   --app-focus: var(--app-ink);
   position: relative;
-  isolation: isolate;
-  margin: 0.75rem 0.75rem 1.5rem;
+  margin: 0;
   padding: 0;
-  border-radius: 1.5rem;
+  border-radius: var(--app-panel-radius);
   color: var(--app-ink);
-}
-
-.practice-entry::before,
-.practice-entry::after {
-  content: '';
-  position: absolute;
-  z-index: -2;
-  inset: -2px;
-  border: 2px solid var(--app-ink);
-  border-radius: inherit;
-  background: var(--app-lime);
-  transform: rotate(-4deg);
-}
-
-.practice-entry::after {
-  z-index: -1;
-  background: var(--app-lavender);
-  transform: rotate(3deg);
 }
 
 .practice-entry-copy {
   position: relative;
-  padding: clamp(1.25rem, 3vw, 2rem);
+  padding: var(--app-panel-padding);
   border: 2px solid var(--app-ink);
   border-radius: inherit;
   background: var(--app-pink);
-  box-shadow: 4px 5px 0 var(--app-shadow);
+  box-shadow: var(--app-panel-shadow);
 }
 
 .practice-entry h2 {
@@ -88,7 +69,7 @@
 @media (min-width: 48rem) {
   :host {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 3rem;
+    column-gap: 2rem;
     align-items: center;
   }
 

@@ -101,7 +101,10 @@ test('a learner gets item-level feedback for gap-fill answers', async ({ page })
   await page.getByRole('textbox').fill('faux');
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Incorrect' })).toBeVisible();
-  await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('✕');
+  await expect(page.locator('app-activity-feedback app-icon path')).toHaveAttribute(
+    'd',
+    'm6 6 12 12M6 18 18 6',
+  );
   await expectFeedbackIconBesideText(page);
   await expect(page.getByText('faux', { exact: true })).toBeVisible();
   await expect(page.getByText('naiz', { exact: true })).toBeVisible();
@@ -134,7 +137,10 @@ test('a learner starts a sequence practice with one item and advances after a co
   await page.getByRole('textbox').fill('naiz');
   await page.getByRole('button', { name: /Egiaztatu|Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: /Zuzena|Correct/ })).toBeVisible();
-  await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('✓');
+  await expect(page.locator('app-activity-feedback app-icon path')).toHaveAttribute(
+    'd',
+    'm5 12 4 4L19 6',
+  );
   await expectFeedbackIconBesideText(page);
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await page.clock.fastForward(600);
@@ -161,7 +167,10 @@ test('a warning waits for Continue, survives reload and resolves without retryin
   await page.getByRole('button', { name: /Vérifier/ }).click();
   const warning = page.locator('app-activity-feedback[data-result="correct-with-warning"]');
   await expect(warning).toContainText('Réponse acceptée, mais une autre était attendue.');
-  await expect(warning.locator('[aria-hidden="true"]')).toHaveText('⚠');
+  await expect(warning.locator('app-icon path')).toHaveAttribute(
+    'd',
+    'm12 3 10 18H2Zm0 6v5m0 3v.1',
+  );
   await expect(page.locator('.correction')).toContainText('Kaixo');
   await expectFeedbackIconBesideText(page);
   await expectBilingualPresentation(page);

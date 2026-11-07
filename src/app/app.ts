@@ -15,6 +15,7 @@ import { DisplayModeControl } from './display-mode-control';
 import { NetworkStatus } from './network-status';
 import { PracticeLayout } from './practice-layout';
 import { BookContext } from './curriculum/book-context';
+import { Icon } from './icon';
 
 @Component({
   imports: [
@@ -29,6 +30,7 @@ import { BookContext } from './curriculum/book-context';
     RouterOutlet,
     BilingualText,
     OverlayModule,
+    Icon,
   ],
   selector: 'app-root',
   styleUrl: './app.css',
@@ -39,6 +41,7 @@ import { BookContext } from './curriculum/book-context';
     @if (!practiceLayout.active()) {
       <header>
         <a class="brand" routerLink="/" [state]="{ bookId: bookContext.bookId() }">
+          <img class="brand-icon" src="favicon.svg" width="40" height="40" alt="" />
           <span class="brand-word">ikasbide</span>
           <span class="brand-dot" aria-hidden="true"></span>
         </a>
@@ -61,9 +64,7 @@ import { BookContext } from './curriculum/book-context';
                   <app-bilingual-text mode="stacked" eu="Kontua" fr="Compte" />
                 }
               </span>
-              <svg class="account-chevron" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m7 10 5 5 5-5z" />
-              </svg>
+              <app-icon class="account-chevron" name="chevron" />
             </button>
           </div>
           <ng-template
@@ -98,11 +99,7 @@ import { BookContext } from './curriculum/book-context';
                 [disabled]="auth.pending()"
                 (click)="signOut()"
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zm-5 4h8a2 2 0 0 0 2-2v-3h-2v3H5V5h8v3h2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"
-                  />
-                </svg>
+                <app-icon name="sign-out" />
                 <app-bilingual-text mode="stacked" eu="Amaitu saioa" fr="Se déconnecter" />
               </button>
             </section>
@@ -198,6 +195,7 @@ import { BookContext } from './curriculum/book-context';
               />
             </p>
             <button
+              class="sign-in-action"
               mat-flat-button
               type="button"
               [disabled]="auth.pending()"
