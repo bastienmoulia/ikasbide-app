@@ -4,55 +4,13 @@
   --chapter-accent: var(--app-accent);
 }
 
-.home-intro h1 {
-  margin-bottom: 0.75rem;
-  font-size: clamp(2.25rem, 6vw, 3.75rem);
-}
-
-.home-lead {
-  font-size: 1.25rem;
-  color: var(--app-text-muted);
-}
-
-.practice-entry {
-  --app-focus: var(--app-ink);
-  position: relative;
-  margin: 0;
-  padding: 0;
-  border-radius: var(--app-panel-radius);
-  color: var(--app-ink);
-}
-
-.practice-entry-copy {
-  position: relative;
-  padding: var(--app-panel-padding);
-  border: 2px solid var(--app-ink);
-  border-radius: inherit;
-  background: var(--app-pink);
-  box-shadow: var(--app-panel-shadow);
-}
-
-.practice-entry h2 {
-  margin: 0.75rem 0;
-  font-size: clamp(1.6rem, 4vw, 2rem);
-}
-
-.entry-label {
-  margin: 0;
-  font-weight: 700;
-}
-
-.last-sequence {
-  overflow-wrap: anywhere;
-}
-
 .practice-action {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
+  justify-self: start;
   gap: 1.5rem;
   min-height: 3.5rem;
-  margin-top: 0.75rem;
   padding: 0.75rem 1rem;
   border: 2px solid var(--app-ink);
   border-radius: 1rem;
@@ -60,30 +18,4 @@
   color: #fff;
   text-decoration: none;
   font-weight: 700;
-}
-
-.browse-intro {
-  margin: 0;
-}
-
-@media (min-width: 48rem) {
-  :host {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 2rem;
-    align-items: center;
-  }
-
-  :host > * {
-    grid-column: 1 / -1;
-  }
-
-  .home-intro {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .practice-entry {
-    grid-column: 2;
-    grid-row: 1;
-  }
 }

@@ -21,7 +21,7 @@ async function expectVersionInAbout(page: Page, version: string): Promise<void> 
 test('a learner reads previously consulted curriculum offline', async ({ page, context }) => {
   await page.goto('/');
   await signInWithGoogle(page);
-  await expect(page.getByRole('link', { name: /Chapitre 2/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /La famille/ })).toBeVisible();
   await waitForOfflineShell(page);
 
   await page.locator('header .account-trigger').click();
@@ -75,10 +75,10 @@ test('a learner reads previously consulted curriculum offline', async ({ page, c
     'Aurkezpenak Les présentations',
   );
   await page.getByRole('link', { name: /Retour au parcours/ }).click();
-  await expect(page.getByRole('link', { name: /Chapitre 1/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Les présentations/ })).toBeVisible();
 
   // Chapter 2 was never opened on this device: it must not look empty or unpublished.
-  await page.getByRole('link', { name: /Chapitre 2/ }).click();
+  await page.getByRole('link', { name: /La famille/ }).click();
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('pas encore été consulté sur cet appareil');
   await expect(alert).not.toContainText('n’est pas publié');

@@ -38,14 +38,8 @@ for (const width of [320, 390, 1280]) {
       );
       await capture('welcome');
       await signInWithGoogle(page);
-      const action = page.locator('.practice-entry-copy');
+      const action = page.locator('.practice-action');
       await expect(action).toBeVisible();
-      await expect(page.locator('.practice-entry')).toHaveCSS('margin', '0px');
-      expect(
-        await page.locator('.practice-entry').evaluate((element) => {
-          return getComputedStyle(element, '::before').content;
-        }),
-      ).toBe('none');
       const chapterLink = page.locator('.cards a').first();
       await expect(chapterLink).toHaveCSS('border-top-width', '0px');
       await expect(chapterLink.locator('app-icon')).toHaveAttribute('aria-hidden', 'true');

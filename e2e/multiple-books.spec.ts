@@ -268,7 +268,7 @@ for (const source of ['legacy', 'scoped'] as const) {
       await page.goto(`/${bookId}/${chapterId}/greetings`);
       await expect(page.locator('.journey-progress')).toContainText('1 exercice réussi');
       await page.goto('/');
-      await expect(page.getByRole('heading', { name: /Zure ibilbidea/ })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Liburua Livre' })).toBeVisible();
       const target = source === 'legacy' ? legacyPath : scopedPath;
       const previous = source === 'legacy' ? initial : scoped;
       await db.doc(target).set({

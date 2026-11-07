@@ -37,14 +37,6 @@ import {
         <app-bilingual-text mode="stacked" [eu]="message.eu" [fr]="message.fr" />
       </p>
     } @else if (chapter.value(); as chapter) {
-      <p class="eyebrow">
-        <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
-        <app-bilingual-text
-          mode="stacked"
-          [eu]="chapter.number + '. kapitulua'"
-          [fr]="'Chapitre ' + chapter.number"
-        />
-      </p>
       <h1>
         <app-bilingual-text mode="stacked" [eu]="chapter.title.eu" [fr]="chapter.title.fr" />
       </h1>
