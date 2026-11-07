@@ -99,15 +99,14 @@ test('home resumes the last started sequence after reload without resetting prog
   await page.reload();
   await expect(resume).toBeVisible();
   await expectBilingualPresentation(page);
-  const [intro, action] = await Promise.all([
-    page.locator('.home-intro').boundingBox(),
-    page.locator('.practice-entry').boundingBox(),
+  const [action, book] = await Promise.all([
+    resume.boundingBox(),
+    page.getByRole('heading', { name: 'Lehen urratsak' }).boundingBox(),
   ]);
-  if (page.viewportSize()!.width >= 768) {
-    expect(action!.x).toBeGreaterThan(intro!.x + intro!.width);
-  } else {
-    expect(action!.y).toBeGreaterThan(intro!.y + intro!.height);
-  }
+  expect(action!.y + action!.height).toBeLessThanOrEqual(book!.y);
+  await expect(page.locator('app-curriculum-home')).not.toContainText(
+    /Erronka laburrak|Pausoz pauso|Euskara, zure erritmoan|Jarraitu gomendatutako/,
+  );
   await page.screenshot({ path: testInfo.outputPath('home.png'), ...screenshotOptions });
   await resume.click();
   await startPractice(page);
@@ -186,7 +185,7 @@ test('unavailable bookmark storage reports an error while practice remains usabl
   await expect(page.getByRole('alert')).toContainText(
     'La dernière séquence n’a pas pu être retrouvée',
   );
-  await page.getByRole('link', { name: /Chapitre 1/ }).click();
+  await page.getByRole('link', { name: /Les présentations/ }).click();
   const summary = page.locator('.progress-details summary');
   await summary.focus();
   await page.keyboard.press('Enter');

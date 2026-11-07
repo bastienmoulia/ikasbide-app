@@ -142,8 +142,12 @@ test('the device choice remains available across sign-in and sign-out', async ({
     .click();
   await signInWithGoogle(page);
 
-  await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
-  await expectContrast(page.getByRole('link', { name: /Chapitre 1/ }), page.locator('body'), 4.5);
+  await expect(page.getByRole('heading', { name: 'Lehen urratsak' })).toBeVisible();
+  await expectContrast(
+    page.getByRole('link', { name: /Les présentations/ }),
+    page.locator('body'),
+    4.5,
+  );
   await page.locator('header .account-trigger').click();
   await expect(displayModeControl(page).getByRole('radio', { name: /Iluna Sombre/ })).toBeChecked();
   await expectAppearance(page, 'dark');
@@ -167,7 +171,7 @@ test('keyboard focus contrasts with pastel cards and answer fields in both modes
     await setDisplayMode(page, mode);
     await action.focus();
     await expect(action).toHaveCSS('outline-width', '3px');
-    await expectContrast(action, page.locator('.practice-entry-copy'), 3, 'outline-color');
+    await expectContrast(action, page.locator('body'), 3, 'outline-color');
   }
   await page.goto('/a1/chapter-1/greetings');
   for (const mode of ['light', 'dark'] as const) {
@@ -192,7 +196,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
   await page.goto('/');
   await signInWithGoogle(page);
 
-  const homeChapter = page.getByRole('link', { name: /Chapitre 1/ });
+  const homeChapter = page.getByRole('link', { name: /Les présentations/ });
   for (const mode of ['light', 'dark'] as const) {
     await setDisplayMode(page, mode);
     await expect(homeChapter).toBeVisible();
@@ -210,6 +214,7 @@ test('the learner journey keeps answers and progress usable in both modes', asyn
     );
   }
 
+  await page.keyboard.press('Escape');
   await homeChapter.click();
   await page.locator('.progress-details summary').click();
   const progressMap = page.getByRole('region', { name: /Carte de progression/ });

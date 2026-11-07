@@ -57,5 +57,5 @@ test('a cancelled Google popup offers a retry without authenticating', async ({ 
     'Saioa hasteko prozesua bertan behera utzi da. Berriz saia zaitezke.',
   );
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeEnabled();
-  await expect(page.getByRole('heading', { name: 'Votre parcours' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Lehen urratsak' })).toHaveCount(0);
 });

@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   answerCurrentChoice,
   answerCurrentText,
@@ -10,13 +10,6 @@ import {
   startPractice,
   storedAttempts,
 } from './support.ts';
-
-const red = 'rgb(179, 38, 30)';
-const purple = 'rgb(107, 63, 160)';
-
-function accent(marker: Locator): Promise<string> {
-  return marker.evaluate((element) => getComputedStyle(element).backgroundColor);
-}
 
 async function expectFeedbackIconBesideText(page: Page): Promise<void> {
   const layout = await page.locator('app-activity-feedback').evaluate((element) => {
@@ -35,18 +28,12 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
   await signInWithGoogle(page);
 
   const book = page.getByRole('region', { name: /Lehen urratsak/ });
-  const bookTitle = book.getByRole('heading', { level: 2 });
+  const bookTitle = book.getByRole('heading', { level: 1 });
   await expect(bookTitle).toHaveAccessibleName('Lehen urratsak');
   await expect(bookTitle.locator('[lang="fr"]')).toHaveCount(0);
   const chapters = book.getByRole('listitem');
-  await expect(chapters).toHaveText([/Chapitre 1.*Les présentations/, /Chapitre 2.*La famille/]);
-  // Colour follows the book's cycle but the chapter number always accompanies it.
-  const chapter1Marker = chapters.nth(0).locator('.chapter-marker');
-  await expect(chapter1Marker).toHaveText('1');
-  expect(await accent(chapter1Marker)).toBe(red);
-  const chapter2Marker = chapters.nth(1).locator('.chapter-marker');
-  await expect(chapter2Marker).toHaveText('2');
-  expect(await accent(chapter2Marker)).toBe(purple);
+  await expect(chapters).toHaveText(['AurkezpenakLes présentations', 'FamiliaLa famille']);
+  await expect(book.locator('.chapter-marker')).toHaveCount(0);
   await expectBilingualPresentation(page);
 
   await chapters.nth(0).getByRole('link').click();
@@ -54,7 +41,8 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
     'Aurkezpenak Les présentations',
   );
-  expect(await accent(page.locator('.chapter-marker'))).toBe(red);
+  await expect(page.locator('app-chapter-page .chapter-marker')).toHaveCount(0);
+  await expect(page.locator('app-chapter-page')).not.toContainText('1. kapitulua');
   await expect(page.locator('.progress-details')).not.toHaveAttribute('open', '');
   await page.locator('.progress-details summary').click();
   await expect(
@@ -90,7 +78,7 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
   await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('Kaixo! Bonjour !');
   await page.getByRole('link', { name: /Retour au chapitre/ }).click();
   await page.getByRole('link', { name: /Retour au parcours/ }).click();
-  await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Lehen urratsak' })).toBeVisible();
 });
 
 test('a learner gets item-level feedback for gap-fill answers', async ({ page }) => {
@@ -389,7 +377,7 @@ test('a learner can build a word-order answer from the offered words', async ({ 
 test('unknown curriculum addresses show an explicit not-found state', async ({ page }) => {
   await page.goto('/');
   await signInWithGoogle(page);
-  await expect(page.getByRole('link', { name: /Chapitre 1/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Les présentations/ })).toBeVisible();
   await page.goto('/a1/chapter-99');
   await expect(page.getByRole('alert')).toContainText('Ce chapitre n’est pas publié.');
   await page.goto('/a1/chapter-1/missing');

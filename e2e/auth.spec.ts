@@ -38,7 +38,7 @@ test('a visitor sees a clear Google sign-in entry point', async ({ page }) => {
 test('a learner signs in with Google, keeps the session and signs out', async ({ page }) => {
   await page.goto('/');
   await signInWithGoogle(page);
-  await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Lehen urratsak' })).toBeVisible();
   await expect(page.locator('header .account-name')).toHaveText('Apprenant');
   await expect(page.getByText('Apprenant fictif', { exact: true })).toHaveCount(0);
   await expect(page.locator('main .account')).toHaveCount(0);
@@ -67,14 +67,14 @@ test('a learner signs in with Google, keeps the session and signs out', async ({
   await page.keyboard.press('Escape');
   await expect(menuForEscape).toBeHidden();
   await expect(page.locator('header .account-trigger')).toBeFocused();
-  await expect(page.getByRole('link', { name: /Chapitre 1/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Les présentations/ })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Votre parcours' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Lehen urratsak' })).toBeVisible();
   await expect(page.locator('header .account-name')).toHaveText('Apprenant');
   const reopenedMenu = await openAccountMenu(page);
   await reopenedMenu.getByRole('button', { name: /Amaitu saioa/ }).click();
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Votre parcours' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Lehen urratsak' })).toHaveCount(0);
   await expect(page.locator('header .account')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('button', { name: 'Se connecter avec Google' })).toBeVisible();
@@ -98,6 +98,7 @@ for (const { displayName, expectedName } of [
     await expect(name).toHaveText(expectedName);
     await expect(account).not.toContainText(email);
     await expect(trigger).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Lehen urratsak' })).toBeVisible();
     await expectBilingualPresentation(page);
     if (expectedName.length === 100) {
       await expect(trigger).toHaveAccessibleName(expectedName);
