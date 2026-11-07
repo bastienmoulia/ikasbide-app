@@ -6,6 +6,7 @@ import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
 import { Icon } from '../icon';
 import { BookContext } from './book-context';
+import { chapterColor } from './chapter-color';
 import { bookNotPublishedMessage, loadErrorMessage, loadingMessage } from './content-labels';
 import { CurriculumService } from './curriculum.service';
 import { PracticeBookmarkStore } from './practice-bookmark';
@@ -66,8 +67,9 @@ import { PracticeBookmarkStore } from './practice-bookmark';
           </h1>
           <ol class="cards">
             @for (chapter of book.chapters; track chapter.id) {
-              <li>
+              <li [style.--chapter-accent]="color(chapter.number)">
                 <a [routerLink]="['/', book.id, chapter.id]">
+                  <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
                   <strong>
                     <app-bilingual-text
                       mode="stacked"
@@ -139,6 +141,7 @@ export class CurriculumHome {
     },
   });
   protected readonly loading = loadingMessage;
+  protected readonly color = chapterColor;
   protected readonly bookNotPublished = bookNotPublishedMessage;
   protected readonly errorMessage = loadErrorMessage;
 }

@@ -32,8 +32,13 @@ test('a learner browses a book, chapters and sequences in book order', async ({ 
   await expect(bookTitle).toHaveAccessibleName('Lehen urratsak');
   await expect(bookTitle.locator('[lang="fr"]')).toHaveCount(0);
   const chapters = book.getByRole('listitem');
-  await expect(chapters).toHaveText(['AurkezpenakLes présentations', 'FamiliaLa famille']);
-  await expect(book.locator('.chapter-marker')).toHaveCount(0);
+  await expect(chapters).toHaveText(['1AurkezpenakLes présentations', '2FamiliaLa famille']);
+  const chapter1Marker = chapters.nth(0).locator('.chapter-marker');
+  await expect(chapter1Marker).toHaveText('1');
+  await expect(chapter1Marker).toHaveCSS('background-color', 'rgb(179, 38, 30)');
+  const chapter2Marker = chapters.nth(1).locator('.chapter-marker');
+  await expect(chapter2Marker).toHaveText('2');
+  await expect(chapter2Marker).toHaveCSS('background-color', 'rgb(107, 63, 160)');
   await expectBilingualPresentation(page);
 
   await chapters.nth(0).getByRole('link').click();
