@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.3.0...v0.4.0) (2026-11-07)
+
+
+### Features
+
+* simplify curriculum home ([#58](https://github.com/bastienmoulia/ikasbide-app/issues/58)) ([9230ba2](https://github.com/bastienmoulia/ikasbide-app/commit/9230ba2e97c26e367368a7404f6050a3a0ba46ed))
+
 ## [0.3.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.2.0...v0.3.0) (2026-11-05)
 
 
