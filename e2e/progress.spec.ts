@@ -75,7 +75,12 @@ test('a near match shows the correction and does not advance the series progress
   await page.getByRole('textbox').fill('Kiaxo');
   await page.getByRole('button', { name: /Vérifier/ }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Presque' })).toBeVisible();
-  await expect(page.locator('app-activity-feedback [aria-hidden="true"]')).toHaveText('≈');
+  const nearMatchIcon = page.locator('app-activity-feedback app-icon');
+  await expect(nearMatchIcon).toHaveAttribute('aria-hidden', 'true');
+  await expect(nearMatchIcon.locator('path')).toHaveAttribute(
+    'd',
+    'M3 9c6-6 12 6 18 0M3 15c6-6 12 6 18 0',
+  );
   await expect(page.locator('.correction')).toContainText('Kaixo');
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '5');
   await expectSynced(page, 4);
