@@ -284,14 +284,7 @@ export class ExerciseHint {
               (toggled)="toggleHint()"
             />
           }
-          <fieldset class="choices">
-            <legend>
-              <app-bilingual-text
-                mode="stacked"
-                eu="Aukeratu erantzuna"
-                fr="Choisissez une réponse"
-              />
-            </legend>
+          <fieldset class="choices" aria-label="Erantzun-aukerak / Choix de réponse">
             @for (choice of choices(); track choice.id) {
               <button
                 type="button"
