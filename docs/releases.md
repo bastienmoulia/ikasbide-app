@@ -23,6 +23,50 @@ et de `CHANGELOG.md`. Sa fusion est l’approbation de publication ; elle crée 
 `vX.Y.Z` et la release GitHub correspondante. Aucun commit existant ni tag n’est
 réécrit.
 
+## Mise à jour de l’application installée
+
+En production, le service worker est enregistré dès le démarrage. L’application
+cherche une nouvelle version au lancement, au retour au premier plan et toutes
+les 30 minutes tant qu’elle est visible. Ces vérifications concernent les PWA
+installées (iOS et Android) comme les onglets du navigateur ; elles ne tournent
+pas en arrière-plan.
+Le point d’entrée `visible-worker.js` conserve le worker Angular standard et
+refuse ses requêtes de manifeste lorsqu’aucun client de l’application n’est visible,
+y compris les vérifications qu’Angular planifie lui-même.
+
+Une version entièrement téléchargée est appliquée par un rechargement silencieux,
+sans réinstallation. Le rechargement conserve l’URL, la connexion et les données
+locales ; il attend la sortie de la série d’entraînement, y compris son bilan,
+et la confirmation des écritures de progression et de tentatives. Les écritures
+restaurées du cache Firestore ou en attente dans un autre onglet du même compte
+sont également attendues. Une écriture non confirmée ou échouée bloque la mise à
+jour automatique, sans délai qui forcerait le rechargement.
+Les identités et champs attendus des sauvegardes non confirmées sont conservés
+localement, sans texte de réponse et sans seconde file d’écriture. Avant le
+rechargement, leurs documents sont vérifiés auprès du serveur : vider la file
+Firestore ne suffit pas, car un rejet la vide aussi. Les confirmations restent
+donc vérifiables après une fermeture ou dans un autre onglet.
+Une session déconnectée attend la connexion au compte concerné si des sauvegardes
+restent non confirmées. Le dernier contrôle et le rechargement sont coordonnés
+avec l’enregistrement de ces confirmations dans les autres onglets via Web Locks ;
+aucun verrou n’est conservé pendant l’attente de synchronisation hors ligne.
+Un ancien navigateur sans Web Locks conserve l’application utilisable et affiche
+une erreur plutôt que de procéder à un rechargement automatique non sécurisé.
+
+Les mises à jour réussies n’affichent aucune notification. Un échec d’installation
+affiche un message bilingue non bloquant avec une action pour réessayer ; une
+vérification ordinaire sans réseau attend une prochaine occasion. La version
+visible dans « À propos » reste celle du bundle chargé, pas celle du dernier
+déploiement disponible.
+
+Les tests `e2e/pwa-update.spec.ts` servent deux builds indépendants sur une
+origine isolée avec le vrai service worker Angular et vérifient le code exécuté
+via la version affichée dans « À propos ». Ils vérifient la transition,
+les limites de temps, le premier plan, les sauvegardes hors ligne et une
+installation incomplète suivie d’un nouvel essai. Le projet Playwright `ios-pwa`
+les exécute sous WebKit avec un profil iPhone ; cela ne remplace pas une
+vérification sur un iPhone physique.
+
 ## Configuration GitHub requise
 
 Dans **Settings → Secrets and variables → Actions**, créer le secret de dépôt

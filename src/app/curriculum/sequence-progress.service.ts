@@ -1,10 +1,11 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import type { DocumentReference, DocumentSnapshot } from 'firebase/firestore';
 import { loadFirestore } from '../firestore';
 import type { BilingualText } from './curriculum.model';
 import { legacyChapterOwner } from './legacy-chapter-owner';
 import type { PracticeProgress, SyncedPracticeProgress } from './practice-progress';
 import { toSyncedPracticeProgress } from './practice-progress';
+import { LearnerSaves } from '../learner-saves';
 
 const syncUnavailableMessage: BilingualText = {
   eu: 'Ezin izan da ibilbidearen aurrerapena sinkronizatu. Konexioa berrezartzean berriro saiatuko gara.',
@@ -18,6 +19,7 @@ const invalidSyncMessage: BilingualText = {
 
 @Injectable({ providedIn: 'root' })
 export class SequenceProgressService {
+  private readonly saves = inject(LearnerSaves);
   private readonly watchError = signal<BilingualText | null>(null);
   private readonly writeError = signal<BilingualText | null>(null);
   private readonly loadingState = signal(true);
@@ -187,7 +189,25 @@ export class SequenceProgressService {
     sequenceId: string,
     progress: PracticeProgress,
   ): Promise<void> {
+    const synchronized = toSyncedPracticeProgress(progress);
+    const save = this.saves.begin(
+      JSON.stringify(['progress', learnerId, bookId, chapterId, sequenceId]),
+      {
+        path: [
+          'learners',
+          learnerId,
+          'books',
+          bookId,
+          'chapters',
+          chapterId,
+          'sequenceProgress',
+          sequenceId,
+        ],
+        fields: { schemaVersion: 2, bookId, chapterId, sequenceId, ...synchronized },
+      },
+    );
     try {
+      await save.persist();
       const { db, sdk } = await loadFirestore();
       const reference = sdk.doc(
         db,
@@ -200,7 +220,6 @@ export class SequenceProgressService {
         'sequenceProgress',
         sequenceId,
       );
-      const synchronized = toSyncedPracticeProgress(progress);
       await sdk.setDoc(
         reference,
         {
@@ -216,7 +235,9 @@ export class SequenceProgressService {
         { merge: true },
       );
       this.writeError.set(null);
+      save.confirmed();
     } catch (error) {
+      save.failed();
       console.error('Sequence progress could not be saved.', error);
       this.writeError.set(syncUnavailableMessage);
     }
