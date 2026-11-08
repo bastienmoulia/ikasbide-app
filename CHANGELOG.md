@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.3.0...v0.4.0) (2026-11-08)
+
+
+### Features
+
+* simplify curriculum home ([#58](https://github.com/bastienmoulia/ikasbide-app/issues/58)) ([9230ba2](https://github.com/bastienmoulia/ikasbide-app/commit/9230ba2e97c26e367368a7404f6050a3a0ba46ed))
+
+
+### Bug Fixes
+
+* **pwa:** apply ready updates without interrupting learner saves ([#61](https://github.com/bastienmoulia/ikasbide-app/issues/61)) ([98be85c](https://github.com/bastienmoulia/ikasbide-app/commit/98be85c15961e9b82cd34a0a7bb4fc1fc6fe025b))
+* restore colored chapter numbers ([#60](https://github.com/bastienmoulia/ikasbide-app/issues/60)) ([2177ef7](https://github.com/bastienmoulia/ikasbide-app/commit/2177ef7eb729e7df57bf593d1f18200e52291893))
+
 ## [0.3.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.2.0...v0.3.0) (2026-11-05)
 
 
