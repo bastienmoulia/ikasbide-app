@@ -1,8 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { loadFirestore } from '../firestore';
 import type { ItemAttempt } from './activity-player';
 import type { BilingualText } from './curriculum.model';
 import { legacyChapterOwner } from './legacy-chapter-owner';
+import { LearnerSaves } from '../learner-saves';
 
 export type AttemptOutcome = 'correct' | 'correct-with-warning' | 'almost' | 'incorrect';
 
@@ -44,31 +45,37 @@ const attemptHistoryUnavailableMessage: BilingualText = {
  */
 @Injectable({ providedIn: 'root' })
 export class AttemptService {
+  private readonly saves = inject(LearnerSaves);
   readonly error = signal<BilingualText | null>(null);
   readonly historyError = signal<BilingualText | null>(null);
 
   async record(learnerId: string, attempt: Attempt): Promise<void> {
+    const attemptId = attempt.attemptId ?? crypto.randomUUID();
+    const occurredAt = attempt.occurredAt ?? Date.now();
+    const fields = {
+      bookId: attempt.bookId,
+      chapterId: attempt.chapterId,
+      itemId: attempt.itemId,
+      outcome: attempt.outcome,
+      sessionId: attempt.sessionId,
+      occurredAt,
+    };
+    const save = this.saves.begin(`attempt/${learnerId}/${attemptId}`, {
+      path: ['learners', learnerId, 'attempts', attemptId],
+      fields,
+    });
     try {
+      await save.persist();
       const { db, sdk } = await loadFirestore();
-      const ref = sdk.doc(
-        db,
-        'learners',
-        learnerId,
-        'attempts',
-        attempt.attemptId ?? crypto.randomUUID(),
-      );
+      const ref = sdk.doc(db, 'learners', learnerId, 'attempts', attemptId);
       // Resolves only once the server confirms; the write is already queued locally.
       await sdk.setDoc(ref, {
-        bookId: attempt.bookId,
-        chapterId: attempt.chapterId,
-        itemId: attempt.itemId,
-        outcome: attempt.outcome,
-        sessionId: attempt.sessionId,
-        occurredAt: attempt.occurredAt
-          ? sdk.Timestamp.fromMillis(attempt.occurredAt)
-          : sdk.Timestamp.now(),
+        ...fields,
+        occurredAt: sdk.Timestamp.fromMillis(occurredAt),
       });
+      save.confirmed();
     } catch (error) {
+      save.failed();
       console.error('Attempt could not be saved.', error);
       this.error.set(attemptNotSavedMessage);
     }

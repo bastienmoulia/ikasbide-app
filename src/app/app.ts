@@ -16,6 +16,7 @@ import { NetworkStatus } from './network-status';
 import { PracticeLayout } from './practice-layout';
 import { BookContext } from './curriculum/book-context';
 import { Icon } from './icon';
+import { AppUpdates } from './app-updates.service';
 
 @Component({
   imports: [
@@ -127,6 +128,21 @@ import { Icon } from './icon';
             fr="Vous êtes hors ligne. Seul le contenu déjà consulté sur cet appareil est disponible."
           />
         </p>
+      }
+      @if (updates.error(); as error) {
+        <section class="update-error" role="alert">
+          <p>
+            <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
+          </p>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="updates.checking() || !network.online()"
+            (click)="updates.retry()"
+          >
+            <app-bilingual-text mode="stacked" eu="Berriz saiatu" fr="Réessayer" />
+          </button>
+        </section>
       }
       @if (auth.error(); as error) {
         <p role="alert">
@@ -246,6 +262,7 @@ import { Icon } from './icon';
   `,
 })
 export class App {
+  protected readonly updates = inject(AppUpdates);
   protected accountMenuOpen = false;
   protected readonly accountMenuPositions: ConnectedPosition[] = [
     { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 8 },

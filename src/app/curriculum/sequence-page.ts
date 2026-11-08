@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, resource, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  resource,
+  signal,
+} from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -358,6 +367,7 @@ export class SequencePage {
   protected readonly errorMessage = loadErrorMessage;
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.practiceLayout.sessionActive.set(false));
     effect(() => this.bookContext.select(this.bookId()));
     effect((onCleanup) => {
       const learner = this.auth.user();
@@ -382,6 +392,7 @@ export class SequencePage {
       const learner = this.auth.user();
       const position = this.position();
       this.practiceActive.set(false);
+      this.practiceLayout.sessionActive.set(false);
       this.activeProgress.set(null);
       this.savedPractice.set(null);
       this.remoteProgress.set(null);
@@ -446,6 +457,7 @@ export class SequencePage {
       sequenceId: position.sequence.id,
     });
     this.practiceActive.set(true);
+    this.practiceLayout.sessionActive.set(true);
   }
 
   protected savePractice(progress: PracticeProgress): void {
@@ -478,6 +490,7 @@ export class SequencePage {
 
   protected exitPractice(): void {
     this.practiceActive.set(false);
+    this.practiceLayout.sessionActive.set(false);
   }
 
   protected recordAttempt(chapterId: string, feedback: PracticeFeedback): void {

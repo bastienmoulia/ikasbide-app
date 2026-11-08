@@ -16,6 +16,12 @@ export default defineConfig({
     { name: 'desktop', testDir: './e2e', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', testDir: './e2e', use: { ...devices['Pixel 7'] } },
     {
+      name: 'ios-pwa',
+      testDir: './e2e',
+      testMatch: 'pwa-update.spec.ts',
+      use: { ...devices['iPhone 13'] },
+    },
+    {
       name: 'webkit',
       testDir: './e2e',
       testMatch: 'display-mode.spec.ts',
