@@ -66,8 +66,10 @@ test('retrying is optional, keeps the same step and preserves immutable attempt 
   await expect(page.getByRole('textbox')).toHaveValue('');
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await answerCurrentText(page, 'naiz');
-  await expect(page.locator('.practice-toolbar')).toContainText('1 exercice réussi');
-  await expect(page.locator('.practice-toolbar')).not.toContainText('1 exercices réussis');
+  await expect(page.locator('.practice-toolbar .success-count')).toHaveText('1');
+  await expect(page.locator('.practice-toolbar .success-count')).toHaveAccessibleName(
+    '1 ariketa gaindituta / 1 exercice réussi',
+  );
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
   await expect.poll(async () => (await storedAttempts(uid)).length).toBe(2);
   const attempts = await storedAttempts(uid);
@@ -289,7 +291,10 @@ test('all exercises count, corrected retries do not penalize the result and a me
     await expect(page.getByRole('progressbar')).toHaveAttribute('value', '17');
     await page.getByRole('button', { name: /Hurrengoa Suivant/ }).click();
     await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
-    await expect(page.locator('.completion')).toContainText('17 / 17 exercices réussis');
+    await expect(page.locator('.completion .success-count')).toHaveText('17 / 17');
+    await expect(page.locator('.completion .success-count')).toHaveAccessibleName(
+      '17 / 17 ariketa gaindituta / 17 / 17 exercices réussis',
+    );
     await expect(page.locator('.completion')).toContainText('0 exercices à revoir');
     await expect(page.getByRole('progressbar')).toHaveAttribute('value', '18');
   } finally {

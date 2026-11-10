@@ -30,7 +30,9 @@ test('reading steps resume across devices and never become attempts', async ({ p
   await page.getByRole('button', { name: /Suivant/ }).click();
   await expect(page.getByRole('heading', { name: /Modèle de dialogue/ })).toBeVisible();
   await expect(page.locator('dt')).toHaveText(['Miren', 'Jon']);
-  await expect(page.locator('.practice-toolbar')).toContainText('1 / 8 étapes');
+  await expect(page.locator('.practice-toolbar').getByRole('img', { name: /urrats/ })).toHaveText(
+    '1 / 8',
+  );
 
   await page.getByRole('button', { name: /Arrêter pour le moment/ }).click();
   await expect(page.getByRole('banner')).toBeVisible();
@@ -44,7 +46,9 @@ test('reading steps resume across devices and never become attempts', async ({ p
   await expect(page.getByRole('heading', { name: /Modèle de dialogue/ })).toBeVisible();
   await page.getByRole('button', { name: /Suivant/ }).click();
   await expect(page.getByRole('textbox')).toBeFocused();
-  await expect(page.locator('.practice-toolbar')).toContainText('2 / 8 étapes');
+  await expect(page.locator('.practice-toolbar').getByRole('img', { name: /urrats/ })).toHaveText(
+    '2 / 8',
+  );
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 0');
   expect(await storedAttempts(uid)).toHaveLength(0);
@@ -95,7 +99,10 @@ test('skipping exercises completes the journey without counting success or recor
   }
 
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeVisible();
-  await expect(page.locator('.completion')).toContainText('0 / 6 exercices réussis');
+  await expect(page.locator('.completion .success-count')).toHaveText('0 / 6');
+  await expect(page.locator('.completion .success-count')).toHaveAccessibleName(
+    '0 / 6 ariketa gaindituta / 0 / 6 exercices réussis',
+  );
   await expect(page.locator('.completion')).toContainText('6 étapes ignorées');
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '8');
   expect(await storedAttempts(uid)).toHaveLength(0);
@@ -189,7 +196,10 @@ test('links and oral prompts are optional full-page steps and the final review i
   await expect(page.getByRole('button', { name: /Vérifier/ })).toHaveCount(0);
   await page.getByRole('button', { name: /Suivant/ }).click();
   await expect(page.getByRole('heading', { name: /Bravo/ })).toBeFocused();
-  await expect(page.locator('.completion')).toContainText('5 / 5 exercices réussis');
+  await expect(page.locator('.completion .success-count')).toHaveText('5 / 5');
+  await expect(page.locator('.completion .success-count')).toHaveAccessibleName(
+    '5 / 5 ariketa gaindituta / 5 / 5 exercices réussis',
+  );
   await expect(page.locator('.completion')).toContainText('3 / 3 lectures parcourues, sans score.');
   await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 5');
   await page.getByRole('button', { name: /Relire le parcours/ }).click();

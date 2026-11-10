@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { BilingualText } from '../bilingual-text';
@@ -36,7 +37,14 @@ import { PracticeBookmarkStore } from './practice-bookmark';
 
 @Component({
   selector: 'app-sequence-page',
-  imports: [BilingualText, Icon, MatProgressBarModule, PracticeRunner, RouterLink],
+  imports: [
+    BilingualText,
+    Icon,
+    MatProgressBarModule,
+    MatTooltipModule,
+    PracticeRunner,
+    RouterLink,
+  ],
   styleUrls: ['./curriculum.css', './sequence-page.css'],
   host: { '[style.--chapter-accent]': 'accent()' },
   template: `
@@ -65,11 +73,16 @@ import { PracticeBookmarkStore } from './practice-bookmark';
       @let sequence = position.sequence;
       <div [hidden]="practiceLayout.active()">
         <p class="eyebrow">
-          <span class="chapter-marker" aria-hidden="true">{{ chapter.number }}</span>
+          <span
+            class="chapter-marker"
+            role="img"
+            [attr.aria-label]="chapter.number + '. kapitulua / Chapitre ' + chapter.number"
+            >{{ chapter.number }}</span
+          >
           <app-bilingual-text
             mode="stacked"
-            [eu]="chapter.number + '. kapitulua · ' + sequence.letter + ' sekuentzia'"
-            [fr]="'Chapitre ' + chapter.number + ' · Séquence ' + sequence.letter"
+            [eu]="sequence.letter + ' sekuentzia'"
+            [fr]="'Séquence ' + sequence.letter"
           />
         </p>
         <h1>
@@ -126,9 +139,6 @@ import { PracticeBookmarkStore } from './practice-bookmark';
             class="journey-overview"
             aria-label="Ibilbidearen laburpena / Résumé du parcours"
           >
-            <span class="mission-label">
-              <app-bilingual-text mode="stacked" eu="Zure erritmoan" fr="À votre rythme" />
-            </span>
             <h2 class="mission-heading">
               <app-bilingual-text
                 mode="stacked"
@@ -163,29 +173,35 @@ import { PracticeBookmarkStore } from './practice-bookmark';
                   fr="Chargement de la progression…"
                 />
               } @else if (savedPractice(); as progress) {
-                <app-bilingual-text
-                  mode="stacked"
-                  [eu]="
+                <span
+                  role="img"
+                  [attr.aria-label]="
                     progress.journey.visited.length +
                     progress.skippedStepIds.length +
                     ' / ' +
                     practiceStepCount() +
-                    ' urrats eginda · ' +
-                    progress.completedItemIds.length +
-                    ' ariketa gaindituta'
+                    ' urrats / étapes'
                   "
-                  [fr]="
-                    progress.journey.visited.length +
-                    progress.skippedStepIds.length +
-                    ' / ' +
-                    practiceStepCount() +
-                    ' étapes parcourues · ' +
+                >
+                  {{ progress.journey.visited.length + progress.skippedStepIds.length }} /
+                  {{ practiceStepCount() }}
+                </span>
+                <span
+                  class="success-count"
+                  role="img"
+                  [attr.aria-label]="
+                    progress.completedItemIds.length +
+                    ' ariketa gaindituta / ' +
                     progress.completedItemIds.length +
                     (progress.completedItemIds.length === 1
                       ? ' exercice réussi'
                       : ' exercices réussis')
                   "
-                />
+                  matTooltip="Ariketa gaindituak / Exercices réussis"
+                >
+                  <app-icon name="check" />
+                  {{ progress.completedItemIds.length }}
+                </span>
               } @else {
                 <app-bilingual-text
                   mode="stacked"
