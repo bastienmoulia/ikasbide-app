@@ -5,7 +5,10 @@ import type {
   Resource,
 } from '../../src/app/curriculum/curriculum.model.ts';
 import { idPattern } from './identifiers.ts';
-import { canReconstructAnswer } from '../../src/app/curriculum/answer-normalization.mts';
+import {
+  canReconstructAnswer,
+  normalizeVocabularyAnswer,
+} from '../../src/app/curriculum/answer-normalization.mts';
 
 export type ValidationResult =
   { valid: true; curriculum: CurriculumSource } | { valid: false; errors: string[] };
@@ -230,9 +233,7 @@ export function validateCurriculum(
                 const target = (record['word'] as JsonObject | undefined)?.['eu'];
                 const field = choice ? 'choices' : 'acceptedAnswers';
                 const values = texts(record[field], `${itemPath}.${field}`);
-                const normalized = values.map((value) =>
-                  value.normalize('NFC').trim().replace(/\s+/gu, ' ').toLowerCase(),
-                );
+                const normalized = values.map(normalizeVocabularyAnswer);
                 if (new Set(normalized).size !== normalized.length) {
                   fail(`${itemPath}.${field}`, 'must contain distinct words');
                 }

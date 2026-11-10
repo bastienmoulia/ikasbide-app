@@ -20,6 +20,8 @@ Si une image manque, les autres questions restent accessibles. Le nombre de ques
 disponibles et indisponibles est affiché ; les questions non jouées restent dans la file,
 sans tentative, sans erreur et sans complétion artificielle. « Réessayer » recharge les
 images manquantes. La reprise conserve les questions déjà faites, même incorrectes.
+Une correction déjà enregistrée reste consultable avec son bouton « Continuer »,
+même si son image a disparu du cache entre-temps.
 Sans aucune image disponible, un état explicite « Parcours incomplet » est affiché.
 
 La version d’une séquence illustrée commencée est conservée localement, par compte,

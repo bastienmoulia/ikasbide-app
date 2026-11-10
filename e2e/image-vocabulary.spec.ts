@@ -134,6 +134,41 @@ test('a failed or hash-mismatched image never becomes a question or a completed 
 
 test.describe('offline image practice', () => {
   test.use({ serviceWorkers: 'allow' });
+  test('saved correction remains accessible when its image is evicted before an offline reload', async ({
+    page,
+    context,
+  }) => {
+    await openImages(page);
+    await waitForOfflineShell(page);
+    await page.getByRole('button', { name: 'katu', exact: true }).click();
+    await expect(page.locator('.correction')).toContainText('chien');
+    const evicted = await page.evaluate(async (sha) => {
+      let removed = 0;
+      for (const name of await caches.keys()) {
+        const cache = await caches.open(name);
+        for (const request of await cache.keys()) {
+          if (request.url.includes(sha) && (await cache.delete(request))) removed++;
+        }
+      }
+      return removed;
+    }, imageReference(dogImage).sha256);
+    expect(evicted).toBeGreaterThan(0);
+    await context.unroute('https://images.example.test/**');
+    await context.setOffline(true);
+    await page.reload();
+    await startCourse(page);
+    await expect(page.locator('.correction')).toContainText('txakur');
+    await expect(page.locator('.correction')).toContainText('chien');
+    await expect(page.locator('app-activity-feedback')).toHaveAttribute('data-result', 'incorrect');
+    await page.getByRole('button', { name: /Continuer/ }).click();
+    await expect(page.locator('.progress-label')).toContainText('1 / 3');
+    await page.getByRole('button', { name: 'katu', exact: true }).click();
+    await page.getByRole('button', { name: /Continuer/ }).click();
+    await expect(page.locator('.partial-practice')).toBeVisible();
+    await expect(page.locator('.image-availability')).toContainText('1 sans image');
+    await expect(page.locator('.completion')).toHaveCount(0);
+  });
+
   test('cached illustrations work after an offline reload without new downloads', async ({
     page,
     context,

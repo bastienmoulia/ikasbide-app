@@ -452,12 +452,15 @@ export class PracticeRunner {
     () => this.steps().find(({ id }) => id === this.progress()?.journey?.queue[0]) ?? null,
   );
   protected readonly displayedStep = computed(() => {
-    const journey = this.progress()?.journey;
+    const state = this.progress();
+    const journey = state?.journey;
     if (!journey) return null;
     const id =
       journey.reviewIndex === null ? journey.queue[0] : journey.visited[journey.reviewIndex];
     const step = this.steps().find((step) => step.id === id);
-    return step && this.stepAvailable(step) ? step : null;
+    return step && (journey.reviewIndex !== null || state?.feedback || this.stepAvailable(step))
+      ? step
+      : null;
   });
   protected readonly canGoBack = computed(() => {
     const journey = this.progress()?.journey;

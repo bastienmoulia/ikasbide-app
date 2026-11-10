@@ -1,3 +1,7 @@
+export function normalizeVocabularyAnswer(value: string): string {
+  return value.normalize('NFC').trim().replace(/\s+/gu, ' ').toLowerCase();
+}
+
 export function normalizeAnswer(value: string): string {
   return value
     .normalize('NFC')

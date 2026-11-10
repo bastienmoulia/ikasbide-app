@@ -26,7 +26,7 @@ import type {
   BilingualText as BilingualTextValue,
 } from './curriculum.model';
 import type { PracticeFeedback } from './practice-progress';
-import { normalizeAnswer } from './answer-normalization.mjs';
+import { normalizeAnswer, normalizeVocabularyAnswer } from './answer-normalization.mjs';
 
 export type ExerciseQuestion =
   | {
@@ -231,12 +231,14 @@ export class ExerciseHint {
       </p>
       @switch (currentQuestion.kind) {
         @case ('image-choice') {
-          <img
-            class="vocabulary-image"
-            [src]="imageUrl()"
-            alt="Identifikatzeko irudia / Image à identifier"
-            (error)="imageFailed.emit()"
-          />
+          @if (imageUrl(); as url) {
+            <img
+              class="vocabulary-image"
+              [src]="url"
+              alt="Identifikatzeko irudia / Image à identifier"
+              (error)="imageFailed.emit()"
+            />
+          }
           <fieldset class="choices image-choices" aria-label="Erantzun-aukerak / Choix de réponse">
             @for (choice of imageChoices(); track choice) {
               <button
@@ -252,12 +254,14 @@ export class ExerciseHint {
           </fieldset>
         }
         @case ('image-write') {
-          <img
-            class="vocabulary-image"
-            [src]="imageUrl()"
-            alt="Identifikatzeko irudia / Image à identifier"
-            (error)="imageFailed.emit()"
-          />
+          @if (imageUrl(); as url) {
+            <img
+              class="vocabulary-image"
+              [src]="url"
+              alt="Identifikatzeko irudia / Image à identifier"
+              (error)="imageFailed.emit()"
+            />
+          }
           @if (feedback(); as result) {
             <p class="answer" lang="eu">{{ result.answer }}</p>
           } @else {
@@ -851,7 +855,8 @@ export class ActivityPlayer {
           : 'incorrect'
         : this.question().kind === 'image-write'
           ? item.acceptedAnswers.some(
-              (accepted) => normalizeVocabulary(answer) === normalizeVocabulary(accepted),
+              (accepted) =>
+                normalizeVocabularyAnswer(answer) === normalizeVocabularyAnswer(accepted),
             )
             ? 'correct'
             : 'incorrect'
@@ -903,10 +908,6 @@ export class ActivityPlayer {
     }
     return 'eu';
   }
-}
-
-function normalizeVocabulary(value: string): string {
-  return value.normalize('NFC').trim().replace(/\s+/gu, ' ').toLowerCase();
 }
 
 function gradeFreeResponse(
