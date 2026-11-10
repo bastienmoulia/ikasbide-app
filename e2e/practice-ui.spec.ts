@@ -10,6 +10,51 @@ import {
 const greetings = '/a1/chapter-1/greetings';
 const family = '/a1/chapter-2/family-words';
 
+test('compact counters preserve distinct journey and success counts with bilingual accessible names', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.clock.install();
+  await page.goto(greetings);
+  await signInWithGoogle(page);
+  await expect(page.locator('.mission-size')).toContainText('6 exercices · 2 ressources');
+  await expect(page.locator('.mission-label')).toHaveCount(0);
+  await expect(page.locator('.journey-overview')).toContainText(
+    'Lectures et exercices dans l’ordre pédagogique, étape par étape.',
+  );
+  await startPractice(page);
+  const toolbar = page.locator('.practice-toolbar');
+  const steps = toolbar.getByRole('img', { name: /urrats/ });
+  const successes = toolbar.locator('.success-count');
+  await expect(steps).toHaveText('2 / 8');
+  await expect(steps).toHaveAccessibleName('2 / 8 urrats / étapes');
+  await expect(successes).toHaveText('0');
+  await expect(successes).toHaveAccessibleName('0 ariketa gaindituta / 0 exercices réussis');
+  await expect(successes.locator('app-icon')).toHaveAttribute('name', 'check');
+  await expect(page.getByRole('progressbar')).toHaveAccessibleName(
+    'Ibilbidearen aurrerapena / Progression du parcours',
+  );
+  await answerCurrentText(page, 'naiz');
+  await expect(steps).toHaveText('3 / 8');
+  await expect(successes).toHaveText('1');
+  await expect(successes).toHaveAccessibleName('1 ariketa gaindituta / 1 exercice réussi');
+  await expect(toolbar.locator('.progress-label')).toHaveText('3 / 8 1');
+  await expectBilingualPresentation(page);
+  await toolbar.getByRole('button', { name: /Arrêter pour le moment/ }).click();
+  const overview = page.locator('.journey-progress');
+  await expect(overview.getByRole('img', { name: /urrats/ })).toHaveText('3 / 8');
+  await expect(overview.locator('.success-count')).toHaveText('1');
+  await expect(overview.locator('.success-count')).toHaveAccessibleName(
+    '1 ariketa gaindituta / 1 exercice réussi',
+  );
+  await page.reload();
+  await expect(overview.getByRole('img', { name: /urrats/ })).toHaveAccessibleName(
+    '3 / 8 urrats / étapes',
+  );
+  await expect(page.getByRole('button', { name: /Reprendre le parcours/ })).toBeVisible();
+  await expectBilingualPresentation(page);
+});
+
 for (const answer of ['ele', 'naiz']) {
   test(`gap-fill feedback keeps "${answer}" inline within the sentence`, async ({ page }) => {
     await page.clock.install();

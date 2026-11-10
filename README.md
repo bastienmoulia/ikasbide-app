@@ -43,6 +43,13 @@ Les cartes de séquence indiquent le nombre réel d’étapes et d’exercices c
 aucun quota d’exercices n’est imposé. La carte de progression des objectifs reste
 accessible dans « Votre progression », repliée par défaut pour laisser la place
 aux séquences ; ses critères de maîtrise et ses données ne changent pas.
+Les compteurs de progression affichent `X / Y` sans répéter leurs unités ;
+une coche distingue les exercices réussis des étapes parcourues. Leurs noms
+accessibles restent bilingues et une infobulle précise le sens de la coche.
+Les volumes des cartes gardent leurs unités (« étapes », « exercices ») :
+ce ne sont pas des progressions. Les numéros de chapitre ne sont affichés qu’une
+fois, avec leur contexte conservé pour les lecteurs d’écran. Les accroches
+décoratives redondantes sont retirées, pas les consignes ni les explications utiles.
 Pendant la pratique, un mémo repliable donne accès à une ressource de la séquence
 lorsqu’elle existe, sans imposer de visite préalable. Les traductions pédagogiques restent accessibles
 à la demande. Après une réponse incorrecte ou presque correcte, « Réessayer »

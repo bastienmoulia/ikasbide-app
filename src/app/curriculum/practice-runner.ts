@@ -63,27 +63,33 @@ import { ReadingPlayer } from './reading-player';
               <app-icon name="previous" />
             </button>
             <p class="progress-label">
-              <app-bilingual-text
-                mode="stacked"
-                [eu]="
+              <span
+                role="img"
+                [attr.aria-label]="
                   state.journey.visited.length +
                   state.skippedStepIds.length +
                   ' / ' +
                   steps().length +
-                  ' urrats · ' +
-                  state.completedItemIds.length +
-                  ' ariketa gaindituta'
+                  ' urrats / étapes'
                 "
-                [fr]="
-                  state.journey.visited.length +
-                  state.skippedStepIds.length +
-                  ' / ' +
-                  steps().length +
-                  ' étapes · ' +
+              >
+                {{ state.journey.visited.length + state.skippedStepIds.length }} /
+                {{ steps().length }}
+              </span>
+              <span
+                class="success-count"
+                role="img"
+                [attr.aria-label]="
+                  state.completedItemIds.length +
+                  ' ariketa gaindituta / ' +
                   state.completedItemIds.length +
                   (state.completedItemIds.length === 1 ? ' exercice réussi' : ' exercices réussis')
                 "
-              />
+                matTooltip="Ariketa gaindituak / Exercices réussis"
+              >
+                <app-icon name="check" />
+                {{ state.completedItemIds.length }}
+              </span>
             </p>
           </div>
           <progress
@@ -223,31 +229,30 @@ import { ReadingPlayer } from './reading-player';
             <app-bilingual-text mode="stacked" eu="Oso ondo!" fr="Bravo !" />
           </h2>
           <p class="progress-label">
-            <app-bilingual-text
-              mode="stacked"
-              [eu]="
-                state.completedItemIds.length + ' / ' + questions().length + ' ariketa gaindituta'
-              "
-              [fr]="
+            <span
+              class="success-count"
+              role="img"
+              [attr.aria-label]="
+                state.completedItemIds.length +
+                ' / ' +
+                questions().length +
+                ' ariketa gaindituta / ' +
                 state.completedItemIds.length +
                 ' / ' +
                 questions().length +
                 (state.completedItemIds.length === 1 ? ' exercice réussi' : ' exercices réussis')
               "
-            />
+              matTooltip="Ariketa gaindituak / Exercices réussis"
+            >
+              <app-icon name="check" />
+              {{ state.completedItemIds.length }} / {{ questions().length }}
+            </span>
           </p>
           <progress
             [value]="state.journey.visited.length + state.skippedStepIds.length"
             [max]="steps().length"
             aria-label="Ibilbidearen aurrerapena / Progression du parcours"
           ></progress>
-          <p>
-            <app-bilingual-text
-              mode="stacked"
-              eu="Ibilbidea amaitu duzu."
-              fr="Vous avez terminé le parcours."
-            />
-          </p>
           <p>
             <app-bilingual-text
               mode="stacked"

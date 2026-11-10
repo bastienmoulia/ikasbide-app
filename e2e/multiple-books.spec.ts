@@ -116,7 +116,9 @@ test('books with matching chapter IDs keep navigation and synchronized progress 
     ]);
 
     await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 1');
-    await expect(page.locator('.journey-progress')).toContainText('1 exercice réussi');
+    await expect(page.locator('.journey-progress .success-count')).toHaveAccessibleName(
+      '1 ariketa gaindituta / 1 exercice réussi',
+    );
 
     await navigateWithoutReload(page, `/${secondBook}/${chapterId}/greetings`);
     await expect(page).toHaveURL(new RegExp(`/${secondBook}/${chapterId}/greetings$`));
@@ -141,7 +143,9 @@ test('books with matching chapter IDs keep navigation and synchronized progress 
     await navigateWithoutReload(page, `/${firstBook}/${chapterId}/greetings`);
     await expect(page).toHaveURL(new RegExp(`/${firstBook}/${chapterId}/greetings$`));
     await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 1');
-    await expect(page.locator('.journey-progress')).toContainText('1 exercice réussi');
+    await expect(page.locator('.journey-progress .success-count')).toHaveAccessibleName(
+      '1 ariketa gaindituta / 1 exercice réussi',
+    );
 
     await page.goto(`/${secondBook}/${chapterId}`);
     await page.getByRole('link', { name: /Retour au parcours/ }).click();
@@ -229,7 +233,9 @@ test('practice waits for historical progress before starting', async ({ page }) 
     await expect(overview.getByRole('status')).toContainText('Chargement de la progression');
 
     heldRead.release();
-    await expect(overview).toContainText('1 exercice réussi');
+    await expect(overview.locator('.success-count')).toHaveAccessibleName(
+      '1 ariketa gaindituta / 1 exercice réussi',
+    );
     await startPractice(page);
     await expect(page.locator('app-activity-player')).toContainText('Je suis de Bayonne.');
   } finally {
@@ -266,7 +272,9 @@ for (const source of ['legacy', 'scoped'] as const) {
       };
       await Promise.all([db.doc(legacyPath).set(initial), db.doc(scopedPath).set(scoped)]);
       await page.goto(`/${bookId}/${chapterId}/greetings`);
-      await expect(page.locator('.journey-progress')).toContainText('1 exercice réussi');
+      await expect(page.locator('.journey-progress .success-count')).toHaveAccessibleName(
+        '1 ariketa gaindituta / 1 exercice réussi',
+      );
       await page.goto('/');
       await expect(page.getByRole('heading', { name: 'Liburua Livre' })).toBeVisible();
       const target = source === 'legacy' ? legacyPath : scopedPath;
@@ -286,7 +294,9 @@ for (const source of ['legacy', 'scoped'] as const) {
       await expect(overview.getByRole('status')).toContainText('Chargement de la progression');
 
       heldRead.release();
-      await expect(overview).toContainText('2 exercices réussis');
+      await expect(overview.locator('.success-count')).toHaveAccessibleName(
+        '2 ariketa gaindituta / 2 exercices réussis',
+      );
       await startPractice(page);
       await expect(page.locator('app-activity-player')).toContainText('Bonjour ! (le matin)');
     } finally {
@@ -370,7 +380,9 @@ test('invalid legacy progress stays visible as an error while new progress is wr
 
     await oldProgress.set(legacyProgress(chapterId));
     await expect(page.getByRole('alert')).toHaveCount(0);
-    await expect(page.locator('.journey-progress')).toContainText('1 exercice réussi');
+    await expect(page.locator('.journey-progress .success-count')).toHaveAccessibleName(
+      '1 ariketa gaindituta / 1 exercice réussi',
+    );
   } finally {
     await db.terminate();
   }
@@ -517,7 +529,9 @@ test.describe('offline book isolation', () => {
           .set(legacyProgress(chapterId)),
       ]);
       await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 1');
-      await expect(page.locator('.journey-progress')).toContainText('1 exercice réussi');
+      await expect(page.locator('.journey-progress .success-count')).toHaveAccessibleName(
+        '1 ariketa gaindituta / 1 exercice réussi',
+      );
       await page.goto(`/${secondBook}/${chapterId}/greetings`);
       await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 0');
       await waitForOfflineShell(page);
@@ -528,7 +542,9 @@ test.describe('offline book isolation', () => {
       await expect(page.locator('.journey-progress')).toContainText('8 étapes à découvrir');
       await page.goto(`/${firstBook}/${chapterId}/greetings`);
       await expect(attemptSummary(page)).toContainText('Tentatives synchronisées : 1');
-      await expect(page.locator('.journey-progress')).toContainText('1 exercice réussi');
+      await expect(page.locator('.journey-progress .success-count')).toHaveAccessibleName(
+        '1 ariketa gaindituta / 1 exercice réussi',
+      );
     } finally {
       await context.setOffline(false);
       await db.terminate();
