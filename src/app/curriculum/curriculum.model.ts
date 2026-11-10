@@ -84,6 +84,8 @@ export type Activity =
   | MultipleChoiceActivity
   | WordOrderActivity
   | MatchingActivity
+  | ImageChoiceActivity
+  | ImageWriteActivity
   | OralPromptActivity;
 
 export type ActivityKind = Activity['kind'];
@@ -157,6 +159,35 @@ export interface WordOrderActivity extends ActivityBase {
 export interface MatchingActivity extends ActivityBase {
   kind: 'matching';
   items: MatchingItem[];
+}
+
+export interface VocabularyImage {
+  url: string;
+  sha256: string;
+}
+
+interface IllustratedItem extends ItemBase {
+  hint?: never;
+  image: VocabularyImage;
+  word: BilingualText;
+}
+
+export interface ImageChoiceItem extends IllustratedItem {
+  choices: string[];
+}
+
+export interface ImageWriteItem extends IllustratedItem {
+  acceptedAnswers: string[];
+}
+
+export interface ImageChoiceActivity extends ActivityBase {
+  kind: 'image-choice';
+  items: ImageChoiceItem[];
+}
+
+export interface ImageWriteActivity extends ActivityBase {
+  kind: 'image-write';
+  items: ImageWriteItem[];
 }
 
 /** Optional oral or group task: shown as instructions only, never auto-corrected. */

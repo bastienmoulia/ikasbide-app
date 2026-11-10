@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /illustrations/{fileName} {
+      allow get: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && fileName.matches('[a-f0-9]{64}\\.png');
+      allow list, write: if false;
+    }
+  }
+}

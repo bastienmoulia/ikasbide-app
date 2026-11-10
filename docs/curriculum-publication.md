@@ -10,6 +10,12 @@ Le code ne crée aucune infrastructure GCP. Les étapes ci-dessous sont des pré
 à réaliser par un administrateur, d’abord dans **un projet GCP de test**, puis en
 production. Aucun credential de production n’est nécessaire aux tests automatisés.
 
+Pour les activités illustrées, le même `sync` envoie également les fichiers validés
+vers Cloud Storage avant Firestore. Le bucket, ses règles, son CORS et les deux
+permissions IAM supplémentaires doivent être préparés comme indiqué dans
+[Vocabulaire illustré](illustrated-vocabulary.md#publication-et-prérequis-firebase).
+Les droits Firestore seuls restent suffisants pour un curriculum sans illustrations.
+
 ## Identité dédiée sans clé persistante
 
 Créer un compte de service dédié, un pool et un provider Workload Identity Federation.

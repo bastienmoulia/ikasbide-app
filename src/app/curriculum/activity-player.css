@@ -72,6 +72,31 @@ form {
   font-weight: 600;
 }
 
+.vocabulary-image {
+  display: block;
+  width: min(100%, 22rem);
+  height: clamp(10rem, 30vh, 18rem);
+  object-fit: contain;
+  justify-self: center;
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.image-choices {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.image-choices .choice {
+  justify-content: center;
+  text-align: center;
+}
+
+@media (min-width: 60rem) {
+  .image-choices {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .choice {
   display: flex;
   align-items: center;

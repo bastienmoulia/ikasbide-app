@@ -6,6 +6,7 @@ import {
   inject,
   input,
   output,
+  resource,
   signal,
   ViewChild,
 } from '@angular/core';
@@ -35,6 +36,8 @@ import {
   withPracticeSteps,
 } from './practice-steps';
 import { ReadingPlayer } from './reading-player';
+import { prepareVocabularyImages } from './vocabulary-images';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-practice-runner',
@@ -49,7 +52,50 @@ import { ReadingPlayer } from './reading-player';
   ],
   styleUrls: ['./practice-runner.css'],
   template: `
-    @if (progress(); as state) {
+    @if (images.isLoading()) {
+      <p role="status">
+        <app-bilingual-text mode="stacked" eu="Irudiak prestatzen…" fr="Préparation des images…" />
+      </p>
+    } @else if (images.error()) {
+      <p role="alert">
+        <app-bilingual-text
+          mode="stacked"
+          eu="Ezin izan dira irudiak prestatu."
+          fr="Impossible de préparer les images."
+        />
+      </p>
+      <button type="button" (click)="images.reload()">
+        <app-bilingual-text mode="stacked" eu="Berriz saiatu" fr="Réessayer" />
+      </button>
+    } @else if (progress(); as state) {
+      @if (images.value()?.cacheUnavailable) {
+        <p role="alert">
+          <app-bilingual-text
+            mode="stacked"
+            eu="Irudiak ezin dira gailu honetan gorde; konexioa beharko duzu."
+            fr="Les images ne peuvent pas être conservées sur cet appareil ; une connexion sera nécessaire."
+          />
+        </p>
+      }
+      @if (unavailableCount()) {
+        <p class="image-availability" role="status">
+          <app-bilingual-text
+            mode="stacked"
+            [eu]="
+              availableCount() +
+              ' galdera erabilgarri · ' +
+              unavailableCount() +
+              ' irudirik gabe. Ibilbidea osatu gabe geratuko da.'
+            "
+            [fr]="
+              availableCount() +
+              ' questions disponibles · ' +
+              unavailableCount() +
+              ' sans image. Le parcours restera incomplet.'
+            "
+          />
+        </p>
+      }
       @if (displayedStep(); as step) {
         <section class="practice" aria-label="Ikasketa ibilbidea / Parcours de la séquence">
           <div class="practice-toolbar">
@@ -95,6 +141,8 @@ import { ReadingPlayer } from './reading-player';
             <app-activity-player
               [question]="presentation.question"
               [feedback]="state.feedback"
+              [imageUrl]="imageUrl(presentation.question)"
+              (imageFailed)="markImageUnavailable(presentation.question)"
               [hidden]="reviewing()"
               [(hintOpen)]="hintOpen"
               (attempted)="submit($event)"
@@ -147,6 +195,14 @@ import { ReadingPlayer } from './reading-player';
                     <li><app-bilingual-text mode="stacked" [eu]="pair.eu" [fr]="pair.fr" /></li>
                   }
                 </ul>
+              } @else if (
+                step.question.kind === 'image-choice' || step.question.kind === 'image-write'
+              ) {
+                <app-bilingual-text
+                  mode="stacked"
+                  [eu]="step.question.item.word.eu"
+                  [fr]="step.question.item.word.fr"
+                />
               } @else {
                 <p>
                   <app-bilingual-text
@@ -174,6 +230,7 @@ import { ReadingPlayer } from './reading-player';
           }
           @if (
             !reviewing() &&
+            !isIllustrated(currentQuestion()) &&
             (state.feedback?.outcome === 'incorrect' || state.feedback?.outcome === 'almost')
           ) {
             <button type="button" class="exit retry" (click)="retry()">
@@ -194,7 +251,12 @@ import { ReadingPlayer } from './reading-player';
                 <app-icon name="next" />
               </button>
             }
-            @if (!reviewing() && step.kind === 'question' && !state.feedback) {
+            @if (
+              !reviewing() &&
+              step.kind === 'question' &&
+              !state.feedback &&
+              !isIllustrated(step.question)
+            ) {
               <button type="button" class="continue" (click)="skip()">
                 <app-bilingual-text mode="stacked" eu="Saltatu" fr="Passer cette étape" />
                 <app-icon name="next" />
@@ -203,7 +265,9 @@ import { ReadingPlayer } from './reading-player';
             @if (
               !reviewing() &&
               state.feedback &&
-              (state.feedback.outcome !== 'correct' || currentQuestion()?.kind === 'word-order')
+              (state.feedback.outcome !== 'correct' ||
+                currentQuestion()?.kind === 'word-order' ||
+                isIllustrated(currentQuestion()))
             ) {
               <button type="button" class="continue" (click)="continue()">
                 <app-bilingual-text mode="stacked" eu="Jarraitu" fr="Continuer" />
@@ -216,6 +280,25 @@ import { ReadingPlayer } from './reading-player';
               <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
             </p>
           }
+        </section>
+      } @else if (state.journey.queue.length) {
+        <section class="partial-practice">
+          <h2>
+            <app-bilingual-text mode="stacked" eu="Ibilbidea osatu gabe" fr="Parcours incomplet" />
+          </h2>
+          <p role="status">
+            <app-bilingual-text
+              mode="stacked"
+              eu="Irudi batzuk falta dira. Zure erantzunak gordeta daude; konektatu falta diren galderekin jarraitzeko."
+              fr="Certaines images sont indisponibles. Vos réponses sont conservées ; reconnectez-vous pour reprendre les questions manquantes."
+            />
+          </p>
+          <button type="button" (click)="images.reload()">
+            <app-bilingual-text mode="stacked" eu="Berriz saiatu" fr="Réessayer" />
+          </button>
+          <button type="button" (click)="exit.emit()">
+            <app-bilingual-text mode="stacked" eu="Utzi oraingoz" fr="Arrêter pour le moment" />
+          </button>
         </section>
       } @else {
         <section class="completion" aria-labelledby="completion-heading">
@@ -313,6 +396,7 @@ import { ReadingPlayer } from './reading-player';
   `,
 })
 export class PracticeRunner {
+  private readonly auth = inject(AuthService);
   readonly sequence = input.required<Sequence>();
   readonly bookId = input.required<string>();
   readonly chapterId = input.required<string>();
@@ -326,6 +410,37 @@ export class PracticeRunner {
   readonly progressChanged = output<PracticeProgress>();
   protected readonly questions = computed(() => flattenQuestions(this.sequence()));
   protected readonly steps = computed(() => practiceSteps(this.sequence()));
+  protected readonly images = resource({
+    params: () =>
+      this.steps().flatMap((step) =>
+        step.kind === 'question' && 'image' in step.question.item ? [step.question.item.image] : [],
+      ),
+    loader: async ({ params, abortSignal }) => {
+      const prepared = await prepareVocabularyImages(params, abortSignal, async () => {
+        const user = this.auth.user();
+        if (!user) throw new Error('Sign-in is required to download illustrations.');
+        return user.getIdToken();
+      });
+      abortSignal.addEventListener('abort', () => prepared.release(), { once: true });
+      return prepared;
+    },
+  });
+  private readonly failedImages = signal<ReadonlySet<string>>(new Set());
+  protected readonly unavailableCount = computed(
+    () =>
+      this.steps().filter(
+        (step) => this.progress()?.journey.queue.includes(step.id) && !this.stepAvailable(step),
+      ).length,
+  );
+  protected readonly availableCount = computed(
+    () =>
+      this.steps().filter(
+        (step) =>
+          step.kind === 'question' &&
+          this.progress()?.journey.queue.includes(step.id) &&
+          this.stepAvailable(step),
+      ).length,
+  );
   protected readonly readingCount = computed(
     () => this.steps().filter((step) => step.kind === 'reading').length,
   );
@@ -341,7 +456,8 @@ export class PracticeRunner {
     if (!journey) return null;
     const id =
       journey.reviewIndex === null ? journey.queue[0] : journey.visited[journey.reviewIndex];
-    return this.steps().find((step) => step.id === id) ?? null;
+    const step = this.steps().find((step) => step.id === id);
+    return step && this.stepAvailable(step) ? step : null;
   });
   protected readonly canGoBack = computed(() => {
     const journey = this.progress()?.journey;
@@ -393,11 +509,37 @@ export class PracticeRunner {
   private activityElement?: ElementRef<HTMLElement>;
 
   constructor() {
+    effect((onCleanup) => {
+      const prepared = this.images.value();
+      this.failedImages.set(new Set());
+      if (prepared) onCleanup(() => prepared.release());
+    });
     effect(() => {
       const progress = withPracticeSteps(this.initialProgress(), this.steps());
       this.progress.set(progress);
       this.storageError.set(this.initialStorageError());
       if (progress !== this.initialProgress()) this.save(progress);
+    });
+    effect(() => {
+      if (this.images.isLoading() || !this.images.hasValue()) return;
+      const current = this.progress();
+      if (!current || current.feedback) return;
+      const available = new Set(
+        this.steps()
+          .filter((step) => this.stepAvailable(step))
+          .map(({ id }) => id),
+      );
+      const queue = [
+        ...current.journey.queue.filter((id) => available.has(id)),
+        ...current.journey.queue.filter((id) => !available.has(id)),
+      ];
+      if (queue.some((id, index) => id !== current.journey.queue[index])) {
+        this.save({
+          ...current,
+          queue: queue.filter((id) => id.startsWith('item:')).map((id) => id.slice(5)),
+          journey: { ...current.journey, queue },
+        });
+      }
     });
     effect(() => {
       const feedback = this.feedback();
@@ -433,12 +575,36 @@ export class PracticeRunner {
       if (
         this.reviewing() ||
         this.feedback()?.outcome !== 'correct' ||
-        this.currentQuestion()?.kind === 'word-order'
+        this.currentQuestion()?.kind === 'word-order' ||
+        this.isIllustrated(this.currentQuestion())
       )
         return;
       const timer = setTimeout(() => this.advance(), 600);
       onCleanup(() => clearTimeout(timer));
     });
+  }
+
+  protected isIllustrated(question: ExerciseQuestion | null): boolean {
+    return question?.kind === 'image-choice' || question?.kind === 'image-write';
+  }
+
+  protected imageUrl(question: ExerciseQuestion): string | null {
+    return 'image' in question.item
+      ? (this.images.value()?.urls.get(question.item.image.sha256) ?? null)
+      : null;
+  }
+
+  private stepAvailable(step: ReturnType<typeof practiceSteps>[number]): boolean {
+    if (step.kind !== 'question' || !('image' in step.question.item)) return true;
+    const sha = step.question.item.image.sha256;
+    return !this.failedImages().has(sha) && !!this.images.value()?.urls.has(sha);
+  }
+
+  protected markImageUnavailable(question: ExerciseQuestion): void {
+    if (!('image' in question.item)) return;
+    const sha = question.item.image.sha256;
+    console.error('Prepared vocabulary image could not be displayed.', sha);
+    this.failedImages.update((failed) => new Set([...failed, sha]));
   }
 
   protected submit(response: ItemResponse): void {

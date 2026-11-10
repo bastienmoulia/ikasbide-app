@@ -8,6 +8,7 @@ import { publishCurriculum } from './publish.ts';
 import { readCurriculumDirectory } from './source.ts';
 import { validateCurriculum } from './validate.ts';
 import { idPattern } from './identifiers.ts';
+import { publishIllustrationAssets } from './publish-images.ts';
 
 const execute = promisify(execFile);
 const shaPattern = /^[a-f0-9]{40}$/;
@@ -174,6 +175,12 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
     console.log(`No curriculum changes at ${head}; nothing was published.`);
     return;
   }
+  await publishIllustrationAssets(
+    directory,
+    publications.map(({ curriculum }) => curriculum),
+    undefined,
+    committedPaths,
+  );
   for (const { curriculum, chapterIds } of publications) {
     console.log(
       `Publishing book ${curriculum.id}: ${chapterIds ? chapterIds.join(', ') : 'complete book'}.`,
