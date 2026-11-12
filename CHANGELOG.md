@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.4.0...v0.5.0) (2026-11-12)
+
+
+### Features
+
+* ajouter les activités de vocabulaire illustré et leur publication ([#63](https://github.com/bastienmoulia/ikasbide-app/issues/63)) ([5e7647c](https://github.com/bastienmoulia/ikasbide-app/commit/5e7647cb3e7280abdb8cd4ee0f0d4d6728c5e6df))
+
 ## [0.4.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.3.0...v0.4.0) (2026-11-08)
 
 
