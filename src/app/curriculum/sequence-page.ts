@@ -34,6 +34,7 @@ import { practiceItemIds, PracticeRunner } from './practice-runner';
 import { practiceSteps, withPracticeSteps } from './practice-steps';
 import { SequenceProgressService } from './sequence-progress.service';
 import { PracticeBookmarkStore } from './practice-bookmark';
+import { pinPracticeSequence, pinnedPracticeSequence } from './practice-content';
 
 @Component({
   selector: 'app-sequence-page',
@@ -118,6 +119,9 @@ import { PracticeBookmarkStore } from './practice-bookmark';
         <p role="alert">
           <app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" />
         </p>
+      }
+      @if (contentStorageError(); as error) {
+        <p role="alert"><app-bilingual-text mode="stacked" [eu]="error.eu" [fr]="error.fr" /></p>
       }
       @if (practiceActive() && learnerId(); as learnerId) {
         <app-practice-runner
@@ -315,6 +319,7 @@ export class SequencePage {
   protected readonly savedPractice = signal<PracticeProgress | null>(null);
   private readonly remoteProgress = signal<SyncedPracticeProgress | null>(null);
   protected readonly practiceStorageError = signal<{ eu: string; fr: string } | null>(null);
+  protected readonly contentStorageError = signal<{ eu: string; fr: string } | null>(null);
   protected readonly practiceStepCount = computed(() => {
     const position = this.position();
     return position ? practiceSteps(position.sequence).length : 0;
@@ -352,8 +357,34 @@ export class SequencePage {
       : null;
   });
   protected readonly chapter = resource({
-    params: () => ({ bookId: this.bookId(), chapterId: this.chapterId() }),
-    loader: ({ params }) => this.curriculum.chapter(params.bookId, params.chapterId),
+    params: () => ({
+      bookId: this.bookId(),
+      chapterId: this.chapterId(),
+      learnerId: this.learnerId(),
+    }),
+    loader: async ({ params }) => {
+      const chapter = await this.curriculum.chapter(params.bookId, params.chapterId);
+      this.contentStorageError.set(null);
+      if (!chapter || !params.learnerId) return chapter;
+      try {
+        return {
+          ...chapter,
+          sequences: chapter.sequences.map((sequence) =>
+            pinnedPracticeSequence(
+              practiceProgressKey(params.learnerId!, params.bookId, params.chapterId, sequence.id),
+              sequence,
+            ),
+          ),
+        };
+      } catch (error) {
+        console.error('Saved practice content could not be restored.', error);
+        this.contentStorageError.set({
+          eu: 'Gordetako edukia ezin izan da berreskuratu. Argitaratutako bertsioa erabiliko da.',
+          fr: 'Le contenu sauvegardé n’a pas pu être restauré. La version publiée sera utilisée.',
+        });
+        return chapter;
+      }
+    },
   });
   protected readonly position = computed(() => {
     const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
@@ -465,6 +496,23 @@ export class SequencePage {
       this.sequenceProgress.loading()
     )
       return;
+    try {
+      pinPracticeSequence(
+        practiceProgressKey(
+          this.learnerId()!,
+          this.bookId(),
+          position.chapter.id,
+          position.sequence.id,
+        ),
+        position.sequence,
+      );
+    } catch (error) {
+      console.error('Practice content could not be pinned.', error);
+      this.contentStorageError.set({
+        eu: 'Edukia ezin da gorde. Ezin da bertsio bereko ibilbidearen berreskuratzea bermatu.',
+        fr: 'Le contenu ne peut pas être sauvegardé. La reprise sur la même version n’est pas garantie.',
+      });
+    }
     this.activeProgress.set(
       this.savedPractice() ?? createPracticeProgress([...practiceItemIds(position.sequence)]),
     );

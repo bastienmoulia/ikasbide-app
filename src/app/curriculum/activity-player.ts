@@ -21,12 +21,26 @@ import type {
   MultipleChoiceItem,
   TranslationItem,
   WordOrderItem,
+  ImageChoiceItem,
+  ImageWriteItem,
   BilingualText as BilingualTextValue,
 } from './curriculum.model';
 import type { PracticeFeedback } from './practice-progress';
-import { normalizeAnswer } from './answer-normalization.mjs';
+import { normalizeAnswer, normalizeVocabularyAnswer } from './answer-normalization.mjs';
 
 export type ExerciseQuestion =
+  | {
+      kind: 'image-choice';
+      title: BilingualTextValue;
+      instructions: BilingualTextValue;
+      item: ImageChoiceItem;
+    }
+  | {
+      kind: 'image-write';
+      title: BilingualTextValue;
+      instructions: BilingualTextValue;
+      item: ImageWriteItem;
+    }
   | {
       kind: 'gap-fill';
       title: BilingualTextValue;
@@ -216,6 +230,63 @@ export class ExerciseHint {
         />
       </p>
       @switch (currentQuestion.kind) {
+        @case ('image-choice') {
+          @if (imageUrl(); as url) {
+            <img
+              class="vocabulary-image"
+              [src]="url"
+              alt="Identifikatzeko irudia / Image à identifier"
+              (error)="imageFailed.emit()"
+            />
+          }
+          <fieldset class="choices image-choices" aria-label="Erantzun-aukerak / Choix de réponse">
+            @for (choice of imageChoices(); track choice) {
+              <button
+                type="button"
+                class="choice"
+                [disabled]="!!feedback()"
+                [attr.aria-pressed]="feedback()?.answer === choice"
+                (click)="gradeImageChoice(currentQuestion.item, choice)"
+              >
+                <span lang="eu">{{ choice }}</span>
+              </button>
+            }
+          </fieldset>
+        }
+        @case ('image-write') {
+          @if (imageUrl(); as url) {
+            <img
+              class="vocabulary-image"
+              [src]="url"
+              alt="Identifikatzeko irudia / Image à identifier"
+              (error)="imageFailed.emit()"
+            />
+          }
+          @if (feedback(); as result) {
+            <p class="answer" lang="eu">{{ result.answer }}</p>
+          } @else {
+            <form autocomplete="off" (submit)="grade(currentQuestion.item, $event)">
+              <label class="answer">
+                <app-bilingual-text mode="stacked" eu="Erantzuna" fr="Réponse" />
+                <input
+                  #answerInput
+                  type="text"
+                  name="exercise-answer"
+                  lang="eu"
+                  [value]="answer()"
+                  (input)="updateAnswer($event)"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  [spellcheck]="false"
+                />
+              </label>
+              <button type="submit" [disabled]="!canSubmit()">
+                <app-icon name="check" />
+                <app-bilingual-text mode="stacked" eu="Egiaztatu" fr="Vérifier" />
+              </button>
+            </form>
+          }
+        }
         @case ('gap-fill') {
           @let blank = currentQuestion.item.prompt.eu.indexOf('___');
           @if (currentQuestion.item.hint?.length) {
@@ -501,7 +572,18 @@ export class ExerciseHint {
       }
       @if (feedback(); as result) {
         <app-activity-feedback [result]="result.outcome" />
-        @if (result.outcome !== 'correct' && currentQuestion.kind !== 'matching') {
+        @if (currentQuestion.kind === 'image-choice' || currentQuestion.kind === 'image-write') {
+          <p class="correction">
+            <strong
+              ><app-bilingual-text mode="stacked" eu="Erantzun zuzena" fr="Réponse attendue"
+            /></strong>
+            <app-bilingual-text
+              mode="stacked"
+              [eu]="currentQuestion.item.word.eu"
+              [fr]="currentQuestion.item.word.fr"
+            />
+          </p>
+        } @else if (result.outcome !== 'correct' && currentQuestion.kind !== 'matching') {
           <p class="correction">
             <strong
               ><app-bilingual-text mode="stacked" eu="Erantzun zuzena" fr="Réponse attendue"
@@ -519,6 +601,8 @@ export class ActivityPlayer {
   readonly question = input.required<ExerciseQuestion>();
   readonly feedback = input<PracticeFeedback | null>(null);
   readonly attempted = output<ItemResponse>();
+  readonly imageUrl = input<string | null>(null);
+  readonly imageFailed = output<void>();
   protected readonly answer = signal('');
   protected readonly selectedWords = signal<number[]>([]);
   protected readonly wordLabels = computed(() => {
@@ -578,6 +662,16 @@ export class ActivityPlayer {
     if (question.kind !== 'multiple-choice') return [];
     const choices = [...question.item.choices];
     for (let index = choices.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(Math.random() * (index + 1));
+      [choices[index], choices[other]] = [choices[other], choices[index]];
+    }
+    return choices;
+  });
+  protected readonly imageChoices = computed(() => {
+    const question = this.question();
+    if (question.kind !== 'image-choice') return [];
+    const choices = [...question.item.choices];
+    for (let index = choices.length - 1; index > 0; index--) {
       const other = Math.floor(Math.random() * (index + 1));
       [choices[index], choices[other]] = [choices[other], choices[index]];
     }
@@ -671,6 +765,17 @@ export class ActivityPlayer {
     this.grade(item);
   }
 
+  protected gradeImageChoice(item: ImageChoiceItem, answer: string): void {
+    if (this.feedback()) return;
+    this.attempted.emit({
+      itemId: item.id,
+      answer,
+      outcome: answer === item.word.eu ? 'correct' : 'incorrect',
+      attemptId: crypto.randomUUID(),
+      occurredAt: Date.now(),
+    });
+  }
+
   protected isSelected(side: 'eu' | 'fr', index: number): boolean {
     const selection = this.selection();
     return selection?.side === side && selection.index === index;
@@ -736,7 +841,10 @@ export class ActivityPlayer {
     });
   }
 
-  protected grade(item: Exclude<ExerciseQuestion['item'], MatchingItem>, event?: Event): void {
+  protected grade(
+    item: Exclude<ExerciseQuestion['item'], MatchingItem | ImageChoiceItem>,
+    event?: Event,
+  ): void {
     event?.preventDefault();
     if (this.feedback() || !this.canSubmit()) return;
     const answer = this.answer();
@@ -745,7 +853,18 @@ export class ActivityPlayer {
         ? item.correctChoiceIds.includes(answer)
           ? 'correct'
           : 'incorrect'
-        : gradeFreeResponse(answer, item.acceptedAnswers, item.warningAnswers);
+        : this.question().kind === 'image-write'
+          ? item.acceptedAnswers.some(
+              (accepted) =>
+                normalizeVocabularyAnswer(answer) === normalizeVocabularyAnswer(accepted),
+            )
+            ? 'correct'
+            : 'incorrect'
+          : gradeFreeResponse(
+              answer,
+              item.acceptedAnswers,
+              'warningAnswers' in item ? item.warningAnswers : [],
+            );
     this.attempted.emit({
       itemId: item.id,
       outcome,
@@ -756,6 +875,8 @@ export class ActivityPlayer {
   }
 
   protected correctAnswer(question: ExerciseQuestion): string {
+    if (question.kind === 'image-choice' || question.kind === 'image-write')
+      return question.item.word.eu;
     if (question.kind === 'multiple-choice') {
       return question.item.choices
         .filter(({ id }) => question.item.correctChoiceIds.includes(id))

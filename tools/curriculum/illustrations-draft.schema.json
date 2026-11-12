@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "illustrations-draft.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sequenceId", "objectiveIds", "words"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "sequenceId": { "$ref": "#/$defs/id" },
+    "objectiveIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "words": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["senseId", "distractors"],
+        "properties": {
+          "senseId": { "$ref": "#/$defs/id" },
+          "word": { "$ref": "#/$defs/word" },
+          "acceptedAnswers": { "$ref": "#/$defs/answers" },
+          "imageFile": { "$ref": "#/$defs/text" },
+          "regenerate": { "const": true },
+          "distractors": {
+            "type": "array",
+            "minItems": 5,
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/text" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "text": { "type": "string", "pattern": "\\S" },
+    "word": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eu", "fr"],
+      "properties": { "eu": { "$ref": "#/$defs/text" }, "fr": { "$ref": "#/$defs/text" } }
+    },
+    "answers": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/text" }
+    },
+    "library": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["word", "acceptedAnswers", "sha256"],
+        "properties": {
+          "word": { "$ref": "#/$defs/word" },
+          "acceptedAnswers": { "$ref": "#/$defs/answers" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    }
+  }
+}

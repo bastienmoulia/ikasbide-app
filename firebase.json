@@ -2,6 +2,9 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "hosting": {
     "public": "dist/ikasbide/browser",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
@@ -48,6 +51,10 @@
     "hosting": {
       "host": "127.0.0.1",
       "port": 5100
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9199
     },
     "ui": {
       "enabled": false

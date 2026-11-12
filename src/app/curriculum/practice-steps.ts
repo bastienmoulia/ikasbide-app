@@ -64,6 +64,24 @@ export function practiceSteps(sequence: Sequence): PracticeStep[] {
             item,
           }),
         );
+      case 'image-choice':
+        return content.items.map((item) =>
+          step({
+            kind: 'image-choice',
+            title: content.title,
+            instructions: content.instructions,
+            item,
+          }),
+        );
+      case 'image-write':
+        return content.items.map((item) =>
+          step({
+            kind: 'image-write',
+            title: content.title,
+            instructions: content.instructions,
+            item,
+          }),
+        );
     }
   });
 }

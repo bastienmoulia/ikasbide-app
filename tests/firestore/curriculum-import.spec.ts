@@ -271,7 +271,7 @@ const invalidSources: [string, (source: CurriculumSources) => void, string][] = 
   [
     'an unknown activity format',
     ({ chapters }) => (chapters['chapter-1'].sequences[0].contents[3].kind = 'pairing'),
-    `${greetings}[3].kind: must be one of gap-fill, translation, multiple-choice, word-order, matching, oral-prompt`,
+    `${greetings}[3].kind: must be one of gap-fill, translation, multiple-choice, word-order, matching, image-choice, image-write, oral-prompt`,
   ],
   [
     'a matching item with a single pair',

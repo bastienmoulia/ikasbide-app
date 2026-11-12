@@ -63,6 +63,8 @@ le français en dessous.
 | `multiple-choice` | Activity | `items[] { prompt, choices[] { id, lang, text }, correctChoiceIds[] }`      |
 | `word-order`      | Activity | `items[] { prompt, words[], acceptedAnswers[] }`                            |
 | `matching`        | Activity | `items[] { pairs[] { eu, fr } }` : de 2 à 8 paires à relier                 |
+| `image-choice`    | Activity | `items[] { image { url, sha256 }, word { eu, fr }, choices[6] }`            |
+| `image-write`     | Activity | `items[] { image { url, sha256 }, word { eu, fr }, acceptedAnswers[] }`     |
 | `oral-prompt`     | Activity | `instructions` seulement : facultative, non corrigée, sans `items`          |
 
 Les ressources ont `type: "resource"`, `id`, `kind` et `title` ; les activités ont
@@ -93,6 +95,26 @@ Chaque item affiche les expressions basques à gauche et leurs traductions fran�
 mélangées à droite. L’apprenant touche une expression de chaque côté pour les relier ;
 toucher un élément déjà relié défait le lien. L’item n’est correct que si toutes les
 paires sont justes ; la correction indique chaque lien erroné et la bonne traduction.
+
+### Vocabulaire illustré
+
+Les variantes `image-choice` et `image-write` partagent une illustration et un mot cible.
+Le QCM contient exactement six mots basques distincts, dont `word.eu` une seule fois.
+La saisie exige une réponse de `acceptedAnswers`, avec le mot cible en première position.
+Seuls la casse, Unicode NFC et les espaces superflus sont normalisés : la ponctuation,
+les accents et `n`/`ñ` restent significatifs, sans variante dialectale automatique.
+Ces items n’acceptent ni `hint` ni `warningAnswers`.
+
+L’image est référencée par une URL HTTPS et son SHA-256, vérifié avant affichage.
+La préparation mainteneur produit des PNG de 1 Mio maximum et 2048 × 2048 pixels maximum.
+Les six choix sont mélangés à l’affichage : deux colonnes de trois sur mobile, trois
+colonnes de deux à partir de 60 rem. La correction affiche le mot basque et sa traduction,
+puis attend « Continuer », sans réessai ni saut manuel de l’item.
+
+La publication passe par `curriculum:sync`, qui vérifie les fichiers versionnés dans
+`illustrations/` et les envoie vers Firebase Storage **avant** les documents Firestore.
+L’import direct refuse ces activités pour éviter de publier des références sans images.
+Voir [préparation, validation humaine et cache](illustrated-vocabulary.md).
 
 ### Aide facultative (`hint`)
 

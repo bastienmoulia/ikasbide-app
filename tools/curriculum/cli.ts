@@ -68,6 +68,19 @@ async function main(): Promise<void> {
     return;
   }
   if (!values.project) throw new UsageError(usage);
+  if (
+    curriculum.chapters.some((chapter) =>
+      chapter.sequences.some((sequence) =>
+        sequence.contents.some(
+          (content) => content.kind === 'image-choice' || content.kind === 'image-write',
+        ),
+      ),
+    )
+  ) {
+    throw new UsageError(
+      'Illustrated content must be published with curriculum:sync from the committed content repository so images are verified and uploaded before Firestore.',
+    );
+  }
   const db = await firestore(values.project);
   try {
     const summary = await publishCurriculum(db, curriculum, chapterIds);

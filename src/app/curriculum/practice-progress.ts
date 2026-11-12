@@ -151,7 +151,12 @@ export function mergeSyncedPracticeProgress(
     skipped.delete('item:' + id);
   }
   for (const id of visited) skipped.delete(id);
-  const queue = stepIds.filter((id) => !visited.has(id) && !skipped.has(id));
+  const pending = new Set(stepIds.filter((id) => !visited.has(id) && !skipped.has(id)));
+  const localQueue = progress.journey.queue.filter((id) => pending.has(id));
+  const queue = [
+    ...localQueue,
+    ...stepIds.filter((id) => pending.has(id) && !localQueue.includes(id)),
+  ];
   const feedback =
     progress.feedback && queue[0] === 'item:' + progress.feedback.itemId ? progress.feedback : null;
   const visitedStepIds = stepIds.filter((id) => visited.has(id));

@@ -10,6 +10,8 @@ export const contentKindLabels: Record<SequenceContent['kind'], BilingualText> =
   'multiple-choice': { eu: 'Aukera anitzeko galdera', fr: 'QCM' },
   'word-order': { eu: 'Hitzen ordena', fr: 'Remise en ordre' },
   matching: { eu: 'Lotu', fr: 'Associer' },
+  'image-choice': { eu: 'Irudia eta hitza', fr: 'Image et mot' },
+  'image-write': { eu: 'Irudiaren hitza idatzi', fr: 'Écrire le mot illustré' },
   'oral-prompt': { eu: 'Ahozko jarduera, aukerakoa', fr: 'Activité orale facultative' },
 };
 
