@@ -122,7 +122,22 @@ test('a full board replenishes without placing a new word in the removed slot', 
     await page.clock.install();
     await page.goto(`/${bookId}/${chapterId}/vocabulary-rush`);
     await signInWithGoogle(page);
-    await page.getByRole('button', { name: /Commencer/ }).click();
+    const start = page.getByRole('button', { name: /Commencer/ });
+    // Make the first refill reuse the French label just removed.
+    await start.evaluate((button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          let state = 9;
+          Math.random = () => {
+            state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+            return state / 2 ** 32;
+          };
+        },
+        { capture: true, once: true },
+      );
+    });
+    await start.click();
     await page.clock.fastForward(3_000);
     const board = page.locator('.rush-board');
     const french = board.getByRole('group', { name: 'Frantsesa / Français' });
@@ -148,15 +163,17 @@ test('a full board replenishes without placing a new word in the removed slot', 
     const afterFr = await slotContents(french);
     const added = pairs.find(({ eu }) => afterEu.includes(eu) && !beforeEu.includes(eu));
     if (!added) throw new Error('The board was not replenished with a new pair.');
+    expect(added.fr).toBe(first.fr);
     expect(afterEu.indexOf(added.eu)).not.toBe(beforeEu.indexOf(first.eu));
     expect(afterFr.indexOf(added.fr)).not.toBe(beforeFr.indexOf(first.fr));
-    for (const [before, after] of [
-      [beforeEu, afterEu],
-      [beforeFr, afterFr],
+    for (const { before, after, removed } of [
+      { before: beforeEu, after: afterEu, removed: first.eu },
+      { before: beforeFr, after: afterFr, removed: first.fr },
     ]) {
       expect(
         before.filter(
-          (word, index) => word !== null && after.includes(word) && after[index] !== word,
+          (word, index) =>
+            word !== null && word !== removed && after.includes(word) && after[index] !== word,
         ),
       ).toHaveLength(1);
     }
