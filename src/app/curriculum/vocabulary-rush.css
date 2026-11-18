@@ -1,0 +1,132 @@
+.best-score {
+  display: inline-flex;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--app-border-subtle);
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+.rush-game {
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid var(--app-border-subtle);
+  border-radius: 1.25rem;
+  background: var(--app-surface);
+}
+
+.game-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.game-stats p {
+  display: grid;
+  justify-items: start;
+  gap: 0.25rem;
+  margin: 0;
+  color: var(--app-text-muted);
+}
+
+.game-stats strong {
+  color: var(--app-ink);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer.urgent strong {
+  color: var(--app-danger, #b3261e);
+}
+
+.game-message {
+  min-height: 3rem;
+  margin-block: 0.75rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.rush-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.5rem, 3vw, 1.5rem);
+  margin-top: 1rem;
+}
+
+.rush-column {
+  display: grid;
+  grid-template-rows: auto repeat(6, minmax(3rem, auto));
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.rush-column h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.word-slot {
+  display: flex;
+  min-width: 0;
+}
+
+.word-option {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.5rem;
+  border: 1px solid var(--app-border-subtle);
+  border-radius: 0.75rem;
+  background: var(--app-surface-raised, var(--app-surface));
+  color: var(--app-ink);
+  cursor: pointer;
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+
+.word-option:hover:not(:disabled) {
+  border-color: var(--chapter-accent);
+}
+
+.word-option.selected {
+  border: 2px solid var(--chapter-accent);
+  background: color-mix(in srgb, var(--chapter-accent) 12%, var(--app-surface));
+}
+
+.word-option.wrong {
+  border-color: var(--app-danger, #b3261e);
+  background: color-mix(in srgb, var(--app-danger, #b3261e) 12%, var(--app-surface));
+}
+
+.word-option:disabled {
+  cursor: default;
+}
+
+.locked .word-option:not(:disabled) {
+  cursor: default;
+}
+
+.start-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  margin: 1rem auto 0;
+  padding: 0.5rem 1rem;
+}
+
+@media (max-width: 480px) {
+  .rush-game {
+    padding: 0.75rem;
+  }
+
+  .rush-board {
+    gap: 0.5rem;
+  }
+
+  .word-option {
+    padding-inline: 0.25rem;
+    font-size: 0.9rem;
+  }
+}

@@ -205,6 +205,8 @@ Les règles Firestore (`firestore.rules`) n’autorisent que la lecture du curri
 les comptes Google connectés. L’application peut créer les tentatives immuables d’un compte
 dans `learners/{uid}/attempts` et synchroniser sa progression par livre dans
 `learners/{uid}/books/{bookId}/chapters/{chapterId}/sequenceProgress/{sequenceId}` ;
-ces données sont lisibles uniquement par leur propriétaire.
+le défi d’association conserve les scores atteints par chapitre dans
+`learners/{uid}/books/{bookId}/chapters/{chapterId}/vocabularyRush/{score}` pour en
+déduire le record. Ces données sont lisibles uniquement par leur propriétaire.
 L’authentification de l’interface ne remplace pas ces règles : toujours les déployer
 avec `npm run deploy`.

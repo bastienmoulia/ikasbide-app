@@ -101,5 +101,32 @@ service cloud.firestore {
       allow read: if isOwner();
       allow create, update: if isOwner() && isSequenceProgress(request.resource.data);
     }
+
+    match /learners/{learnerId}/books/{bookId}/chapters/{chapterId}/vocabularyRush/{recordId} {
+      function isOwner() {
+        return isGoogleLearner() && request.auth.uid == learnerId;
+      }
+
+      function isVocabularyRushRecord(data) {
+        return data.keys().hasOnly(['schemaVersion', 'bookId', 'chapterId', 'bestScore'])
+          && data.schemaVersion == 1
+          && isBookIdentifier(data.bookId)
+          && data.chapterId is string
+          && data.chapterId.size() > 0
+          && data.chapterId.size() <= 128
+          && data.bookId == bookId
+          && data.chapterId == chapterId
+          && data.bestScore is int
+          && data.bestScore > 0
+          && recordId == string(data.bestScore);
+      }
+
+      allow read: if isOwner();
+      allow create: if isOwner() && isVocabularyRushRecord(request.resource.data);
+      // Replaying the same score from another device is idempotent.
+      allow update: if isOwner()
+        && isVocabularyRushRecord(request.resource.data)
+        && request.resource.data == resource.data;
+    }
   }
 }

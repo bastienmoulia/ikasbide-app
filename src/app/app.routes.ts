@@ -6,6 +6,10 @@ export const routes: Routes = [
     loadComponent: () => import('./curriculum/curriculum-home').then((m) => m.CurriculumHome),
   },
   {
+    path: ':bookId/:chapterId/vocabulary-rush',
+    loadComponent: () => import('./curriculum/vocabulary-rush').then((m) => m.VocabularyRush),
+  },
+  {
     path: ':bookId/:chapterId/:sequenceId',
     loadComponent: () => import('./curriculum/sequence-page').then((m) => m.SequencePage),
   },
