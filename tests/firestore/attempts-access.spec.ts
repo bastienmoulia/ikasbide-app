@@ -187,6 +187,33 @@ test('sequence progress sync is private to the owning Google account and exclude
   await assertFails(setDoc(doc(environment.unauthenticatedContext().firestore(), path), progress));
 });
 
+test('vocabulary rush scores are private, immutable and safely resendable', async () => {
+  const uid = uniqueLearner('vocabulary-rush-owner');
+  const scores = `learners/${uid}/books/a1/chapters/chapter-1/vocabularyRush`;
+  const path = `${scores}/5`;
+  const owner = googleLearner(uid);
+  const reference = doc(owner, path);
+  const record = {
+    schemaVersion: 1,
+    bookId: 'a1',
+    chapterId: 'chapter-1',
+    bestScore: 5,
+  };
+
+  await assertSucceeds(setDoc(reference, record));
+  await assertSucceeds(getDoc(reference));
+  await assertSucceeds(setDoc(reference, record));
+  await assertSucceeds(setDoc(doc(owner, `${scores}/8`), { ...record, bestScore: 8 }));
+  await assertSucceeds(getDocs(collection(owner, scores)));
+  await assertFails(updateDoc(reference, { bestScore: 3 }));
+  await assertFails(setDoc(doc(owner, `${scores}/6`), record));
+  await assertFails(setDoc(reference, { ...record, score: 9 }));
+  await assertFails(setDoc(reference, { ...record, chapterId: 'other-chapter' }));
+  await assertFails(getDoc(doc(googleLearner(uniqueLearner('other')), path)));
+  await assertFails(getDocs(collection(googleLearner(uniqueLearner('other')), scores)));
+  await assertFails(setDoc(doc(environment.unauthenticatedContext().firestore(), path), record));
+});
+
 test('legacy learner data remains private and readable but cannot be written again', async () => {
   const uid = uniqueLearner('legacy-owner');
   const attemptPath = `learners/${uid}/attempts/legacy-attempt`;

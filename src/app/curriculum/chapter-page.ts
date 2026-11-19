@@ -154,6 +154,41 @@ import {
           }
         </ol>
       </section>
+      @if (hasMatchingPairs()) {
+        <section aria-labelledby="vocabulary-rush-heading">
+          <h2 id="vocabulary-rush-heading">
+            <app-bilingual-text
+              mode="stacked"
+              eu="Hitzak azkar lotu"
+              fr="Associer les mots rapidement"
+            />
+          </h2>
+          <ul class="cards">
+            <li>
+              <a [routerLink]="['/', bookId(), chapter.id, 'vocabulary-rush']">
+                <span class="sequence-letter" aria-hidden="true">↔</span>
+                <span class="stack">
+                  <strong>
+                    <app-bilingual-text
+                      mode="stacked"
+                      eu="Hitzak lotzeko erronka"
+                      fr="Défi d’association"
+                    />
+                  </strong>
+                  <span class="muted">
+                    <app-bilingual-text
+                      mode="stacked"
+                      eu="Euskara eta frantsesa · 60 segundo"
+                      fr="Basque et français · 60 secondes"
+                    />
+                  </span>
+                </span>
+                <app-icon class="list-arrow" name="arrow-up-right" />
+              </a>
+            </li>
+          </ul>
+        </section>
+      }
     } @else {
       <p role="alert">
         <app-bilingual-text mode="stacked" [eu]="notPublished.eu" [fr]="notPublished.fr" />
@@ -187,6 +222,19 @@ export class ChapterPage {
         itemCount: steps.filter(({ kind }) => kind === 'question').length,
       };
     });
+  });
+  protected readonly hasMatchingPairs = computed(() => {
+    const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
+    return (
+      chapter?.sequences.some((sequence) =>
+        sequence.contents.some(
+          (content) =>
+            content.type === 'activity' &&
+            content.kind === 'matching' &&
+            content.items.some((item) => item.pairs.length > 0),
+        ),
+      ) ?? false
+    );
   });
   protected readonly progress = computed(() => {
     const chapter = this.chapter.hasValue() ? this.chapter.value() : null;
