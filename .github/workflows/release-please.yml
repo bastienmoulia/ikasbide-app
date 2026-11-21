@@ -13,10 +13,75 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      pr: ${{ steps.release.outputs.pr }}
     steps:
       - uses: actions/checkout@v5
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  auto-merge:
+    needs: release-please
+    if: needs.release-please.outputs.pr != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read
+    # A newer push updates the release pull request; only its latest head is merged.
+    concurrency:
+      group: release-please-auto-merge
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Resolve release pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ fromJSON(needs.release-please.outputs.pr).number }}
+        shell: bash
+        run: |
+          pr="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --json state,baseRefName,headRefName,headRefOid,title,labels)"
+          state="$(jq -r .state <<<"$pr")"
+          base="$(jq -r .baseRefName <<<"$pr")"
+          branch="$(jq -r .headRefName <<<"$pr")"
+          pending="$(jq -r '[.labels[].name] | index("autorelease: pending") != null' <<<"$pr")"
+          if [[ "$state" != "OPEN" || "$base" != "main" || "$pending" != "true" ||
+            "$branch" != release-please--* ]]; then
+            echo "Refusing to merge pull request #$PR_NUMBER: not an open Release Please pull request." >&2
+            exit 1
+          fi
+          {
+            echo "number=$PR_NUMBER"
+            echo "branch=$branch"
+            echo "sha=$(jq -r .headRefOid <<<"$pr")"
+            echo "title=$(jq -r .title <<<"$pr")"
+          } >> "$GITHUB_OUTPUT"
+      - name: Require CI for the exact release pull request commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ steps.pr.outputs.sha }}
+          CI_BRANCH: ${{ steps.pr.outputs.branch }}
+          CI_EVENT: pull_request
+          CI_TIMEOUT_MINUTES: '30'
+        run: node scripts/check-release-ci.mjs
+      - name: Merge release pull request
+        env:
+          # A personal token is required so the merge triggers the release and deployment.
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_SHA: ${{ steps.pr.outputs.sha }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+        run: >-
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --squash
+          --match-head-commit "$PR_SHA" --subject "$PR_TITLE (#$PR_NUMBER)"

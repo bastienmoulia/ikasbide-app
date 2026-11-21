@@ -19,9 +19,13 @@ et une modification incompatible signalée par `!` ou `BREAKING CHANGE:` incrém
 la version mineure. Ces versions restent pré-1.0 ; elles ne promettent pas une API
 stable. Après la première release, Release Please crée ou met à jour une pull request
 de release avec les changements de `package.json`, `package-lock.json`, du manifeste
-et de `CHANGELOG.md`. Sa fusion est l’approbation de publication ; elle crée le tag
-`vX.Y.Z` et la release GitHub correspondante. Aucun commit existant ni tag n’est
-réécrit.
+et de `CHANGELOG.md`. Le workflow `Release Please` fusionne automatiquement (squash)
+cette pull request dès que le `CI` de pull request réussit pour son commit de tête
+exact ; aucune validation manuelle n’est nécessaire. Si la pull request est mise à
+jour entre-temps, seule sa dernière version est fusionnée. La fusion crée le tag
+`vX.Y.Z` et la release GitHub correspondante, puis déclenche le déploiement de la
+nouvelle version. Un `CI` en échec bloque la fusion : corriger `main` relance le
+processus. Aucun commit existant ni tag n’est réécrit.
 
 ## Mise à jour de l’application installée
 
@@ -73,7 +77,8 @@ Dans **Settings → Secrets and variables → Actions**, créer le secret de dé
 `RELEASE_PLEASE_TOKEN`. Il doit appartenir à un compte ou à une GitHub App qui peut
 écrire le contenu et les pull requests du dépôt. Un fine-grained token doit disposer
 de **Contents: read and write** et **Pull requests: read and write**. Release Please
-l’utilise pour créer les pull requests et releases ; contrairement au `GITHUB_TOKEN`
+l’utilise pour créer les pull requests et releases, et le workflow l’utilise pour
+fusionner la pull request de release ; contrairement au `GITHUB_TOKEN`
 standard, ce token permet aux vérifications de pull request et au workflow de
 publication de se déclencher sur les événements générés par Release Please.
 Ne jamais enregistrer le token dans le dépôt.
