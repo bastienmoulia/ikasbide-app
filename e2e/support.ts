@@ -159,3 +159,6 @@ export async function answerCurrentChoice(page: Page, choice: string): Promise<v
 export function attemptSummary(page: Page): Locator {
   return page.getByRole('status').filter({ hasText: 'Tentatives synchronisées' });
 }
+
+/** Content version seeded by the global setup. */
+export const sampleContentVersion = '0.0.1';

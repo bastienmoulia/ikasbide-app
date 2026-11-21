@@ -382,6 +382,16 @@ les livres présents sont publiés complètement, avec un message explicite dans
 Sans changement de source, aucun document, même le checkpoint, n’est écrit. Cette
 absence de mise à jour du checkpoint n’omet pas les changements suivants.
 
+Chaque synchronisation qui publie au moins un livre, même partiellement, incrémente
+le correctif de la **version du contenu** (`0.0.1`, `0.0.2`, …) après la réussite de
+toutes les publications. Firestore fait autorité : la version est enregistrée avec le
+SHA dans le checkpoint et recopiée dans `curriculumVersions/ikasbide-content`
+(`version`, `publishedAt`), lisible par les apprenants et affichée dans « À propos » à
+côté de la version de l’application. Un échec, une révision sans changement de source
+ou un import manuel (`curriculum:import`) ne l’incrémente pas. Avec
+`--result-file <chemin>`, `sync` écrit `{ "published", "version", "sha" }` : le workflow
+du dépôt de contenu s’en sert pour recopier la version dans son `package.json`.
+
 **Les appels doivent être sérialisés par l’appelant.** Le workflow dans le dépôt privé
 utilise un groupe de concurrence sans annulation de l’exécution active et récupère la
 dernière source de `main` au démarrage du job, pas le SHA de l’événement ancien.

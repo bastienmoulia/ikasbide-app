@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { expectBilingualPresentation, signInWithGoogle } from './support.ts';
+import { expectBilingualPresentation, sampleContentVersion, signInWithGoogle } from './support.ts';
 
 async function openAccountMenu(page: import('@playwright/test').Page) {
   const trigger = page.locator('header .account-trigger');
@@ -56,6 +56,7 @@ test('a learner signs in with Google, keeps the session and signs out', async ({
   await expect(aboutDialog).toBeVisible();
   await expect(aboutDialog.getByText('Ikasbide', { exact: true })).toBeVisible();
   await expect(aboutDialog.getByText(packageJson.version, { exact: true })).toBeVisible();
+  await expect(aboutDialog.getByTestId('content-version')).toHaveText(sampleContentVersion);
   const githubLink = aboutDialog.getByRole('link', { name: 'GitHub' });
   await expect(githubLink).toHaveAttribute('href', 'https://github.com/bastienmoulia/ikasbide-app');
   await expect(githubLink).toHaveAttribute('target', '_blank');

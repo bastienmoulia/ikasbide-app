@@ -33,6 +33,7 @@ test('signed-out visitors cannot read published curriculum', async () => {
   await assertFails(getDoc(doc(visitor, 'books/a1')));
   await assertFails(getDoc(doc(visitor, 'books/a1/chapters/chapter-1')));
   await assertFails(getDoc(doc(visitor, 'chapters/chapter-1')));
+  await assertFails(getDoc(doc(visitor, 'curriculumVersions/ikasbide-content')));
   await assertFails(getDocs(collection(visitor, 'books')));
   await assertFails(getDocs(collection(visitor, 'units')));
 });
@@ -44,6 +45,11 @@ test('any Google-authenticated learner can read published curriculum', async () 
     await assertSucceeds(getDoc(doc(learner, 'books/a1')));
     await assertSucceeds(getDoc(doc(learner, 'books/a1/chapters/chapter-1')));
     await assertSucceeds(getDoc(doc(learner, 'chapters/chapter-1')));
+    await assertSucceeds(getDoc(doc(learner, 'curriculumVersions/ikasbide-content')));
+    await assertFails(getDoc(doc(learner, 'curriculumPublications/ikasbide-content')));
+    await assertFails(
+      setDoc(doc(learner, 'curriculumVersions/ikasbide-content'), { version: '9.9.9' }),
+    );
     await assertFails(getDocs(collection(learner, 'units')));
   }
 });
