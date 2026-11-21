@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.5.0...v0.6.0) (2026-11-21)
+
+
+### Features
+
+* version content publications and show it in About ([#68](https://github.com/bastienmoulia/ikasbide-app/issues/68)) ([02bb97e](https://github.com/bastienmoulia/ikasbide-app/commit/02bb97e4b1086c68487e494102a8a1332ef015d2))
+
 ## [0.5.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.4.0...v0.5.0) (2026-11-21)
 
 
