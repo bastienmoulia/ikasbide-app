@@ -112,6 +112,37 @@ test('does not accept PR checks, another branch, another SHA, or an older passin
   );
 });
 
+test('can require pull request CI for the exact release pull request commit', async () => {
+  const branch = 'release-please--branches--main--components--ikasbide';
+  const run = (overrides) => ({
+    name: 'CI',
+    event: 'pull_request',
+    head_branch: branch,
+    head_sha: releaseSha,
+    status: 'completed',
+    conclusion: 'success',
+    run_number: 30,
+    run_attempt: 1,
+    ...overrides,
+  });
+  const check = (runs) =>
+    requireSuccessfulCi({
+      repository: 'bastienmoulia/ikasbide-app',
+      releaseSha,
+      defaultBranch: branch,
+      event: 'pull_request',
+      token: 'test-token',
+      fetchImpl: async () => Response.json({ workflow_runs: runs }),
+      timeoutMs: 0,
+    });
+
+  assert.deepEqual(await check([run({})]), run({}));
+  await assert.rejects(
+    check([run({ event: 'push' }), run({ head_sha: 'b'.repeat(40) })]),
+    /No successful CI run/,
+  );
+});
+
 test('rejects failed and cancelled latest runs even when an older run passed', async () => {
   for (const conclusion of ['failure', 'cancelled']) {
     const fetchImpl = async () =>
@@ -216,6 +247,12 @@ test('release and deployment workflows retain the gated immutable-release path',
   ]);
   assert.match(releaseWorkflow, /googleapis\/release-please-action@v4/);
   assert.match(releaseWorkflow, /RELEASE_PLEASE_TOKEN/);
+  assert.match(releaseWorkflow, /CI_EVENT: pull_request/);
+  assert.match(releaseWorkflow, /--match-head-commit "\$PR_SHA"/);
+  assert.ok(
+    releaseWorkflow.indexOf('check-release-ci.mjs') <
+      releaseWorkflow.indexOf('name: Merge release pull request'),
+  );
   assert.match(deployWorkflow, /types:\s*\[published\]/);
   assert.match(deployWorkflow, /check-release-ci\.mjs/);
   assert.match(deployWorkflow, /git checkout --detach "\$release_sha"/);

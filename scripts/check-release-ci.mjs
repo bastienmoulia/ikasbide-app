@@ -1,11 +1,11 @@
 const apiVersion = '2022-11-28';
 
-function latestMainPushCiRun(runs, releaseSha, defaultBranch) {
+function latestCiRun(runs, releaseSha, branch, event) {
   const matchingRuns = runs.filter(
     (run) =>
       run.name === 'CI' &&
-      run.event === 'push' &&
-      run.head_branch === defaultBranch &&
+      run.event === event &&
+      run.head_branch === branch &&
       run.head_sha === releaseSha,
   );
   return matchingRuns.reduce(
@@ -27,6 +27,7 @@ export async function requireSuccessfulCi({
   repository,
   releaseSha,
   defaultBranch,
+  event = 'push',
   token,
   fetchImpl = fetch,
   timeoutMs = 15 * 60 * 1000,
@@ -63,7 +64,7 @@ export async function requireSuccessfulCi({
     if (!Array.isArray(payload.workflow_runs)) {
       throw new Error(`GitHub returned an invalid workflow run list for ${releaseSha}.`);
     }
-    const run = latestMainPushCiRun(payload.workflow_runs, releaseSha, defaultBranch);
+    const run = latestCiRun(payload.workflow_runs, releaseSha, defaultBranch, event);
     if (run?.status === 'completed') {
       if (run.conclusion !== 'success') {
         throw new Error(`CI for release commit ${releaseSha} ended with ${run.conclusion}.`);
@@ -83,8 +84,10 @@ if (process.argv[1]?.endsWith('/check-release-ci.mjs')) {
     const run = await requireSuccessfulCi({
       repository: process.env['GITHUB_REPOSITORY'],
       releaseSha: process.env['RELEASE_SHA'],
-      defaultBranch: process.env['DEFAULT_BRANCH'],
+      defaultBranch: process.env['CI_BRANCH'] || process.env['DEFAULT_BRANCH'],
+      event: process.env['CI_EVENT'] || 'push',
       token: process.env['GITHUB_TOKEN'],
+      timeoutMs: Number(process.env['CI_TIMEOUT_MINUTES'] || 15) * 60 * 1000,
     });
     console.log(`CI run ${run.run_number} succeeded for release commit ${run.head_sha}.`);
   } catch (error) {
