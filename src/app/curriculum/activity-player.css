@@ -49,15 +49,6 @@ form {
   color: var(--app-text-muted);
 }
 
-.prompt-help summary {
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.prompt-help[open] .prompt-translation {
-  margin-top: 0.75rem;
-}
-
 .choices {
   display: grid;
   width: 100%;

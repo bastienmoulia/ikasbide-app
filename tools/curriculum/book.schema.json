@@ -569,6 +569,10 @@
               "prompt": {
                 "$ref": "#/$defs/bilingual"
               },
+              "promptLanguage": {
+                "type": "string",
+                "const": "fr"
+              },
               "choices": {
                 "type": "array",
                 "minItems": 2,

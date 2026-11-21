@@ -320,6 +320,7 @@ export class ExerciseHint {
                     #answerInput
                     type="text"
                     name="exercise-answer"
+                    aria-describedby="gap-prompt-translation"
                     [value]="answer()"
                     (input)="updateAnswer($event)"
                     autocomplete="off"
@@ -328,12 +329,9 @@ export class ExerciseHint {
               }
               <span lang="eu">{{ currentQuestion.item.prompt.eu.slice(blank + 3) }}</span>
             </p>
-            <details class="prompt-help">
-              <summary>
-                <app-bilingual-text mode="stacked" eu="Frantsesez ikusi" fr="Voir en français" />
-              </summary>
-              <p class="prompt-translation" lang="fr">{{ currentQuestion.item.prompt.fr }}</p>
-            </details>
+            <p id="gap-prompt-translation" class="prompt-translation" lang="fr">
+              {{ currentQuestion.item.prompt.fr }}
+            </p>
             @if (!feedback()) {
               <button type="submit" [disabled]="!canSubmit()">
                 <app-icon name="check" />
@@ -343,11 +341,15 @@ export class ExerciseHint {
           </form>
         }
         @case ('multiple-choice') {
-          <app-bilingual-text
-            mode="reveal"
-            [eu]="currentQuestion.item.prompt.eu"
-            [fr]="currentQuestion.item.prompt.fr"
-          />
+          @if (currentQuestion.item.promptLanguage === 'fr') {
+            <p id="choice-prompt" lang="fr">{{ currentQuestion.item.prompt.fr }}</p>
+          } @else {
+            <app-bilingual-text
+              mode="reveal"
+              [eu]="currentQuestion.item.prompt.eu"
+              [fr]="currentQuestion.item.prompt.fr"
+            />
+          }
           @if (currentQuestion.item.hint?.length) {
             <app-exercise-hint
               [lines]="currentQuestion.item.hint!"
@@ -355,7 +357,13 @@ export class ExerciseHint {
               (toggled)="toggleHint()"
             />
           }
-          <fieldset class="choices" aria-label="Erantzun-aukerak / Choix de réponse">
+          <fieldset
+            class="choices"
+            aria-label="Erantzun-aukerak / Choix de réponse"
+            [attr.aria-describedby]="
+              currentQuestion.item.promptLanguage === 'fr' ? 'choice-prompt' : null
+            "
+          >
             @for (choice of choices(); track choice.id) {
               <button
                 type="button"

@@ -47,9 +47,9 @@ frères, le fichier `ikasbide-content/A1/book.json` peut référencer son schém
 Pour `chapters/<chapterId>.json`, la référence est
 `../../../ikasbide-app/tools/curriculum/chapter.schema.json`.
 
-Chaque texte affiché, sauf le titre éventuellement unilingue du livre, est bilingue :
-`{ "eu": "…", "fr": "…" }`, les deux valeurs non vides. Le basque est affiché en premier,
-le français en dessous.
+Chaque texte du curriculum, sauf le titre éventuellement unilingue du livre, est bilingue :
+`{ "eu": "…", "fr": "…" }`, les deux valeurs non vides. Par défaut, le basque est affiché
+en premier et le français est accessible en dessous.
 
 ## Types de contenus
 
@@ -70,6 +70,14 @@ le français en dessous.
 Les ressources ont `type: "resource"`, `id`, `kind` et `title` ; les activités ont
 `type: "activity"`, `id`, `kind`, `title` et `instructions`. Chaque item corrigé a
 un `id` et des `objectiveIds` qui référencent des objectifs du même chapitre.
+
+### Énoncés des activités
+
+Pour les phrases à trous, `prompt.fr` est toujours visible sous la phrase basque à compléter.
+Dans un QCM, l'énoncé basque est affiché par défaut avec sa traduction accessible à la demande.
+Si l'énoncé basque révèle la réponse, l'item peut définir `promptLanguage: "fr"` : seul
+`prompt.fr` est alors affiché, avant et après correction. Les deux langues de `prompt`
+restent obligatoires. Ce champ est réservé aux QCM et sa seule valeur admise est `"fr"`.
 
 ### Note en Markdown
 

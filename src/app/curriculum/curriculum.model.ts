@@ -119,6 +119,8 @@ export interface TranslationItem extends ItemBase {
 
 export interface MultipleChoiceItem extends ItemBase {
   prompt: BilingualText;
+  /** Show only the French prompt when the Basque version would reveal the answer. */
+  promptLanguage?: 'fr';
   choices: { id: string; lang: 'eu' | 'fr'; text: string }[];
   correctChoiceIds: string[];
 }

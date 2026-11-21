@@ -187,12 +187,15 @@ export function validateCurriculum(
       path: string,
       fields: string[],
       check: (item: JsonObject) => void,
+      optionalFields: string[] = [],
     ): void {
       const record = object(
         value,
         path,
         ['id', 'objectiveIds', ...fields],
-        fields.includes('acceptedAnswers') ? ['warningAnswers', 'hint'] : ['hint'],
+        fields.includes('acceptedAnswers')
+          ? ['warningAnswers', 'hint', ...optionalFields]
+          : ['hint', ...optionalFields],
       );
       if (!record) return;
       id(record['id'], `${path}.id`, itemIds);
@@ -272,27 +275,39 @@ export function validateCurriculum(
             });
             break;
           case 'multiple-choice':
-            item(value, itemPath, ['prompt', 'choices', 'correctChoiceIds'], (record) => {
-              bilingual(record['prompt'], `${itemPath}.prompt`);
-              const choiceIds = new Set<string>();
-              list(record['choices'], `${itemPath}.choices`, 2).forEach((choice, choiceIndex) => {
-                const choicePath = `${itemPath}.choices[${choiceIndex}]`;
-                const entry = object(choice, choicePath, ['id', 'lang', 'text']);
-                if (!entry) return;
-                id(entry['id'], `${choicePath}.id`, choiceIds);
-                if (entry['lang'] !== 'eu' && entry['lang'] !== 'fr') {
-                  fail(`${choicePath}.lang`, 'must be "eu" or "fr"');
+            item(
+              value,
+              itemPath,
+              ['prompt', 'choices', 'correctChoiceIds'],
+              (record) => {
+                bilingual(record['prompt'], `${itemPath}.prompt`);
+                if ('promptLanguage' in record && record['promptLanguage'] !== 'fr') {
+                  fail(`${itemPath}.promptLanguage`, 'must be "fr"');
                 }
-                text(entry['text'], `${choicePath}.text`);
-              });
-              texts(record['correctChoiceIds'], `${itemPath}.correctChoiceIds`).forEach(
-                (choiceId) => {
-                  if (!choiceIds.has(choiceId)) {
-                    fail(`${itemPath}.correctChoiceIds`, `references unknown choice "${choiceId}"`);
+                const choiceIds = new Set<string>();
+                list(record['choices'], `${itemPath}.choices`, 2).forEach((choice, choiceIndex) => {
+                  const choicePath = `${itemPath}.choices[${choiceIndex}]`;
+                  const entry = object(choice, choicePath, ['id', 'lang', 'text']);
+                  if (!entry) return;
+                  id(entry['id'], `${choicePath}.id`, choiceIds);
+                  if (entry['lang'] !== 'eu' && entry['lang'] !== 'fr') {
+                    fail(`${choicePath}.lang`, 'must be "eu" or "fr"');
                   }
-                },
-              );
-            });
+                  text(entry['text'], `${choicePath}.text`);
+                });
+                texts(record['correctChoiceIds'], `${itemPath}.correctChoiceIds`).forEach(
+                  (choiceId) => {
+                    if (!choiceIds.has(choiceId)) {
+                      fail(
+                        `${itemPath}.correctChoiceIds`,
+                        `references unknown choice "${choiceId}"`,
+                      );
+                    }
+                  },
+                );
+              },
+              ['promptLanguage'],
+            );
             break;
           case 'word-order':
             item(value, itemPath, ['prompt', 'words', 'acceptedAnswers'], (record) => {
