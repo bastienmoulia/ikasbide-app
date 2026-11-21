@@ -129,8 +129,6 @@ test('a learner starts a sequence practice with one item and advances after a co
   await expect(page.getByRole('heading', { name: /Complétez les phrases/ })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: /Choisissez la salutation/ })).toHaveCount(0);
-  await expect(page.getByText('Bonjour, je suis Jon.')).toBeHidden();
-  await page.locator('.prompt-help summary').click();
   await expect(page.getByText('Bonjour, je suis Jon.')).toBeVisible();
 
   await page.getByRole('textbox').fill('naiz');
@@ -144,8 +142,6 @@ test('a learner starts a sequence practice with one item and advances after a co
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2');
   await page.clock.fastForward(600);
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3');
-  await expect(page.getByText('Je suis de Bayonne.')).toBeHidden();
-  await page.locator('.prompt-help summary').click();
   await expect(page.getByText('Je suis de Bayonne.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Complétez les phrases/ })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveCount(1);

@@ -62,6 +62,31 @@ test('a standalone schema consumer can resolve the chapter schema and its refere
   expect(validate(chapter), JSON.stringify(validate.errors)).toBe(true);
 });
 
+for (const { name, kind, value, valid } of [
+  {
+    name: 'French-only multiple-choice prompts',
+    kind: 'multiple-choice',
+    value: 'fr',
+    valid: true,
+  },
+  { name: 'an unsupported prompt language', kind: 'multiple-choice', value: 'eu', valid: false },
+  { name: 'a null prompt language', kind: 'multiple-choice', value: null, valid: false },
+  { name: 'a prompt language on a gap-fill item', kind: 'gap-fill', value: 'fr', valid: false },
+]) {
+  test(`both curriculum validators handle ${name}`, async () => {
+    const schemas = await sourceSchemas();
+    const { book, chapters } = await sampleSource();
+    const contentIndex = kind === 'multiple-choice' ? 3 : 2;
+    chapters['chapter-1'].sequences[0].contents[contentIndex].items[0].promptLanguage = value;
+
+    expect(schemas.chapter(chapters['chapter-1']), JSON.stringify(schemas.chapter.errors)).toBe(
+      valid,
+    );
+    const result = validateCurriculum(book, new Map(Object.entries(chapters)));
+    expect(result.valid, result.valid ? '' : result.errors.join('\n')).toBe(valid);
+  });
+}
+
 const structuralErrors: [string, (book: any, chapters: Record<string, any>) => void, boolean][] = [
   [
     'a missing French translation',

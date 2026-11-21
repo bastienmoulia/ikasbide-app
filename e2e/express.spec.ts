@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { expect, test } from '@playwright/test';
-import type { PublishedBook, PublishedChapter } from '../src/app/curriculum/curriculum.model.ts';
+import type {
+  MultipleChoiceItem,
+  PublishedBook,
+  PublishedChapter,
+} from '../src/app/curriculum/curriculum.model.ts';
 import {
   answerCurrentText,
   expectBilingualPresentation,
@@ -28,24 +32,115 @@ test('the next-step title is visually separated from its bilingual label', async
   expect(titleBox!.y - (labelBox!.y + labelBox!.height)).toBeGreaterThanOrEqual(8);
 });
 
-test('French gap-fill help opens by keyboard without recording an answer and resets on the next item', async ({
-  page,
-}) => {
+test('French gap-fill prompts are visible immediately and on the next item', async ({ page }) => {
   await page.clock.install();
   await page.goto('/a1/chapter-1/greetings');
   const uid = await learnerId(await signInWithGoogle(page));
   await startPractice(page);
-  const help = page.locator('.prompt-help');
-  await expect(help.locator('.prompt-translation')).toBeHidden();
-  await help.locator('summary').focus();
-  await page.keyboard.press('Enter');
-  await expect(help.locator('.prompt-translation')).toHaveText('Bonjour, je suis Jon.');
-  await expect(help.locator('.prompt-translation')).toBeVisible();
+  const translation = page.locator('app-activity-player .prompt-translation');
+  await expect(translation).toHaveText('Bonjour, je suis Jon.');
+  await expect(translation).toBeVisible({ timeout: 1_000 });
+  await expect(translation).toHaveAttribute('lang', 'fr');
+  await expect(page.getByRole('textbox')).toHaveAccessibleDescription('Bonjour, je suis Jon.', {
+    timeout: 1_000,
+  });
   expect(await storedAttempts(uid)).toHaveLength(0);
   await answerCurrentText(page, 'naiz');
-  await expect(help).not.toHaveAttribute('open', '');
-  await expect(help.locator('.prompt-translation')).toBeHidden();
+  await expect(translation).toHaveText('Je suis de Bayonne.');
+  await expect(translation).toBeVisible();
+  await expect(page.getByRole('textbox')).toHaveAccessibleDescription('Je suis de Bayonne.');
   await expect(page.getByRole('textbox')).toBeFocused();
+});
+
+test('a French-only multiple-choice prompt does not reveal the Basque answer', async ({ page }) => {
+  const db = new Firestore({ projectId: 'demo-ikasbide' });
+  const bookId = `choice-prompt-${randomUUID()}`;
+  const title = { eu: 'Proba', fr: 'Démonstration' };
+  const frenchOnlyItem: MultipleChoiceItem = {
+    id: 'french-only',
+    objectiveIds: [],
+    promptLanguage: 'fr',
+    prompt: { eu: 'Autoa berdea da.', fr: 'La voiture est verte.' },
+    choices: [
+      { id: 'green', lang: 'eu', text: 'berdea' },
+      { id: 'blue', lang: 'eu', text: 'urdina' },
+    ],
+    correctChoiceIds: ['green'],
+  };
+  const defaultItem: MultipleChoiceItem = {
+    id: 'default',
+    objectiveIds: [],
+    prompt: { eu: 'Zein zenbaki da?', fr: 'Quel nombre ?' },
+    choices: [
+      { id: 'one', lang: 'eu', text: 'bat' },
+      { id: 'two', lang: 'eu', text: 'bi' },
+    ],
+    correctChoiceIds: ['one'],
+  };
+  const book: PublishedBook = {
+    title,
+    chapters: [{ id: 'chapter', number: 1, title }],
+  };
+  const chapter: PublishedChapter = {
+    bookId,
+    number: 1,
+    title,
+    objectives: [],
+    sequences: [
+      {
+        id: 'practice',
+        letter: 'A',
+        title,
+        contents: [
+          {
+            type: 'activity',
+            kind: 'multiple-choice',
+            id: 'choices',
+            title,
+            instructions: { eu: 'Aukeratu erantzuna.', fr: 'Choisissez la réponse.' },
+            items: [frenchOnlyItem, defaultItem],
+          },
+        ],
+      },
+    ],
+  };
+  try {
+    await Promise.all([
+      db.doc(`books/${bookId}`).set(book),
+      db.doc(`books/${bookId}/chapters/chapter`).set(chapter),
+    ]);
+    await page.clock.install();
+    await page.goto(`/${bookId}/chapter/practice`);
+    await signInWithGoogle(page);
+    await startPractice(page);
+
+    const player = page.locator('app-activity-player');
+    await expect(player.getByText('Autoa berdea da.', { exact: true })).toHaveCount(0, {
+      timeout: 1_000,
+    });
+    const frenchPrompt = player.locator('p[lang="fr"]');
+    await expect(frenchPrompt).toHaveText('La voiture est verte.');
+    await expect(frenchPrompt).toBeVisible();
+    const choices = player.getByRole('group', { name: 'Erantzun-aukerak / Choix de réponse' });
+    await expect(choices).toHaveAccessibleDescription('La voiture est verte.', { timeout: 1_000 });
+    await player.getByRole('button', { name: 'berdea', exact: true }).click();
+    await expect(player.locator('app-activity-feedback')).toHaveAttribute('data-result', 'correct');
+    await expect(player.getByText('Autoa berdea da.', { exact: true })).toHaveCount(0);
+
+    await page.clock.fastForward(600);
+    const defaultPrompt = player
+      .locator('app-bilingual-text')
+      .filter({ hasText: 'Zein zenbaki da?' });
+    await expect(defaultPrompt).toHaveAttribute('data-mode', 'reveal');
+    await expect(defaultPrompt.locator('[lang="eu"]')).toHaveText('Zein zenbaki da?');
+    await expect(choices).not.toHaveAttribute('aria-describedby');
+  } finally {
+    await Promise.all([
+      db.doc(`books/${bookId}/chapters/chapter`).delete(),
+      db.doc(`books/${bookId}`).delete(),
+    ]);
+    await db.terminate();
+  }
 });
 
 test('retrying is optional, keeps the same step and preserves immutable attempt evidence', async ({

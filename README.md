@@ -51,13 +51,13 @@ ce ne sont pas des progressions. Les numéros de chapitre ne sont affichés qu�
 fois, avec leur contexte conservé pour les lecteurs d’écran. Les accroches
 décoratives redondantes sont retirées, pas les consignes ni les explications utiles.
 Pendant la pratique, un mémo repliable donne accès à une ressource de la séquence
-lorsqu’elle existe, sans imposer de visite préalable. Les traductions pédagogiques restent accessibles
-à la demande. Après une réponse incorrecte ou presque correcte, « Réessayer »
+lorsqu’elle existe, sans imposer de visite préalable. Les traductions pédagogiques restent généralement
+accessibles à la demande. Après une réponse incorrecte ou presque correcte, « Réessayer »
 relance le même item sans obligation ; « Continuer » reste disponible. Chaque
 réponse corrigée conserve sa propre tentative, sans effacer l’historique.
-Pour les phrases à trous, « Voir en français » ouvre la traduction de l’énoncé ;
-ce volet se referme à chaque nouvel item. La phrase source d’un exercice de traduction
-reste toujours visible, puisqu’elle fait partie de la consigne à traduire.
+Pour les phrases à trous, la traduction française de l’énoncé est toujours visible.
+La phrase source d’un exercice de traduction reste toujours visible, puisqu’elle fait
+partie de la consigne à traduire.
 
 Les tickets [#4](https://github.com/bastienmoulia/ikasbide-app/issues/4) à
 [#7](https://github.com/bastienmoulia/ikasbide-app/issues/7) sont également livrés et

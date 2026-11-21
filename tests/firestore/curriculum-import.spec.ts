@@ -1,9 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { runCurriculumCli } from './run-curriculum-cli.ts';
 
 const sample = 'tests/fixtures/curriculum.sample';
@@ -149,6 +150,33 @@ async function writeVariant(
   }
   return directory;
 }
+
+test('the import preserves a French-only multiple-choice prompt', async ({}, testInfo) => {
+  const bookId = `prompt-language-${randomUUID()}`;
+  const directory = await writeVariant(
+    'french-only-prompt',
+    ({ book, chapters }) => {
+      book.id = bookId;
+      chapters['chapter-1'].sequences[0].contents[3].items[0].promptLanguage = 'fr';
+    },
+    testInfo,
+  );
+  try {
+    const result = await runCurriculumCli('import', directory, '--project', 'demo-ikasbide');
+    expect(result.code, result.stderr).toBe(0);
+    const chapter = (await getDoc(doc(learner(), `books/${bookId}/chapters/chapter-1`))).data();
+    expect(chapter?.['sequences'][0].contents[3].items[0].promptLanguage).toBe('fr');
+  } finally {
+    await environment.withSecurityRulesDisabled(async (context) => {
+      const firestore = context.firestore();
+      await Promise.all([
+        deleteDoc(doc(firestore, `books/${bookId}/chapters/chapter-1`)),
+        deleteDoc(doc(firestore, `books/${bookId}/chapters/chapter-2`)),
+        deleteDoc(doc(firestore, `books/${bookId}`)),
+      ]);
+    });
+  }
+});
 
 test('an invalid chapter blocks the entire import', async ({}, testInfo) => {
   const directory = await writeVariant(
