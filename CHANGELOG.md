@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.4.0...v0.5.0) (2026-11-21)
+
+
+### Features
+
+* ajouter les activités de vocabulaire illustré et leur publication ([#63](https://github.com/bastienmoulia/ikasbide-app/issues/63)) ([5e7647c](https://github.com/bastienmoulia/ikasbide-app/commit/5e7647cb3e7280abdb8cd4ee0f0d4d6728c5e6df))
+* ajouter un défi d’association de vocabulaire ([#65](https://github.com/bastienmoulia/ikasbide-app/issues/65)) ([77e15da](https://github.com/bastienmoulia/ikasbide-app/commit/77e15da3769480ff048be2efb6a26da67a21b5f3))
+
+
+### Bug Fixes
+
+* clarifier les énoncés des activités ([#66](https://github.com/bastienmoulia/ikasbide-app/issues/66)) ([d349f73](https://github.com/bastienmoulia/ikasbide-app/commit/d349f733418d17eda418d67d2bc89134750c70f0))
+
 ## [0.4.0](https://github.com/bastienmoulia/ikasbide-app/compare/v0.3.0...v0.4.0) (2026-11-08)
 
 
