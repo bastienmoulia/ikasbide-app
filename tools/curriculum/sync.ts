@@ -12,6 +12,20 @@ import { publishIllustrationAssets } from './publish-images.ts';
 
 const execute = promisify(execFile);
 const shaPattern = /^[a-f0-9]{40}$/;
+const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+
+export interface SyncResult {
+  published: boolean;
+  /** Version of the latest successful publication, absent for an unversioned checkpoint. */
+  version?: string;
+  sha?: string;
+}
+
+/** Each successful publication, even partial, advances the patch component. */
+export function nextContentVersion(previous: string | undefined): string {
+  const [major, minor, patch] = (previous ?? '0.0.0').split('.').map(Number);
+  return `${major}.${minor}.${patch + 1}`;
+}
 
 async function git(directory: string, ...args: string[]): Promise<string> {
   const { stdout } = await execute('git', ['-C', directory, ...args], {
@@ -79,7 +93,7 @@ async function identityErrors(directory: string, paths: readonly string[]): Prom
 }
 
 /** Publishes cumulative source changes; callers must serialize invocations for this project. */
-export async function syncCurriculum(db: Firestore, directory: string): Promise<void> {
+export async function syncCurriculum(db: Firestore, directory: string): Promise<SyncResult> {
   directory = resolve(directory);
   if ((await git(directory, 'rev-parse', '--show-toplevel')).trim() !== directory) {
     throw new Error('Sync requires the content repository root.');
@@ -90,7 +104,17 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
   const head = (await git(directory, 'rev-parse', 'HEAD')).trim();
   if (!shaPattern.test(head)) throw new Error('Unsupported content commit SHA.');
   const checkpoint = db.doc('curriculumPublications/ikasbide-content');
-  const previous: unknown = (await checkpoint.get()).data()?.['sha'];
+  const checkpointData = (await checkpoint.get()).data();
+  const previous: unknown = checkpointData?.['sha'];
+  const storedVersion: unknown = checkpointData?.['version'];
+  const previousVersion =
+    typeof storedVersion === 'string' && versionPattern.test(storedVersion)
+      ? storedVersion
+      : undefined;
+  const unchanged: SyncResult =
+    previousVersion && typeof previous === 'string' && shaPattern.test(previous)
+      ? { published: false, version: previousVersion, sha: previous }
+      : { published: false };
   let base: string | undefined;
   if (typeof previous === 'string' && shaPattern.test(previous)) {
     try {
@@ -105,7 +129,7 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
 
   if (base && (await ancestor(directory, head, base))) {
     console.log(`Skipping obsolete or already published revision ${head}; nothing was published.`);
-    return;
+    return unchanged;
   }
   if (base && !(await ancestor(directory, base, head))) {
     console.log(`Publication base ${base} diverged from HEAD; publishing complete books.`);
@@ -173,7 +197,7 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
     throw new Error(`Invalid source; nothing was published.\n${errors.join('\n')}`);
   if (!publications.length) {
     console.log(`No curriculum changes at ${head}; nothing was published.`);
-    return;
+    return unchanged;
   }
   await publishIllustrationAssets(
     directory,
@@ -190,6 +214,14 @@ export async function syncCurriculum(db: Firestore, directory: string): Promise<
       `Published book ${summary.bookId}: ${summary.chapters} chapters (${summary.removed} removed).`,
     );
   }
-  await checkpoint.set({ sha: head });
-  console.log(`Curriculum publication complete at ${head}.`);
+  const version = nextContentVersion(previousVersion);
+  const batch = db.batch();
+  batch.set(checkpoint, { sha: head, version });
+  batch.set(db.doc('curriculumVersions/ikasbide-content'), {
+    version,
+    publishedAt: new Date(),
+  });
+  await batch.commit();
+  console.log(`Curriculum publication ${version} complete at ${head}.`);
+  return { published: true, version, sha: head };
 }

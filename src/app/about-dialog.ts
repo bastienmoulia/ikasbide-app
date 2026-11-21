@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import packageJson from '../../package.json';
 import { BilingualText } from './bilingual-text';
+import { ContentVersionService } from './curriculum/content-version.service';
 
 @Component({
   imports: [BilingualText, MatButtonModule, MatDialogModule],
@@ -22,8 +23,16 @@ import { BilingualText } from './bilingual-text';
         />
       </p>
       <p class="about-dialog-version">
-        <app-bilingual-text mode="stacked" eu="Bertsioa" fr="Version" />
+        <app-bilingual-text
+          mode="stacked"
+          eu="Aplikazioaren bertsioa"
+          fr="Version de l’application"
+        />
         <span>{{ version }}</span>
+      </p>
+      <p class="about-dialog-version">
+        <app-bilingual-text mode="stacked" eu="Edukiaren bertsioa" fr="Version du contenu" />
+        <span data-testid="content-version">{{ contentVersion() ?? '—' }}</span>
       </p>
       <a
         mat-button
@@ -43,4 +52,11 @@ import { BilingualText } from './bilingual-text';
 })
 export class AboutDialog {
   protected readonly version = packageJson.version;
+  protected readonly contentVersion = signal<string | null>(null);
+
+  constructor() {
+    void inject(ContentVersionService)
+      .version()
+      .then((version) => this.contentVersion.set(version));
+  }
 }

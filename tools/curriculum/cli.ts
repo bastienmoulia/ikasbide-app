@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { publishCurriculum } from './publish.ts';
 import { readCurriculumDirectory } from './source.ts';
@@ -7,12 +8,16 @@ import { syncCurriculum } from './sync.ts';
 const usage = `Usage:
   npm run curriculum:validate -- <book-directory>
   npm run curriculum:import -- <book-directory> --project <firebase-project-id> [--chapter <id> ...]
-  npm run curriculum:sync -- <content-repository> --project <firebase-project-id>`;
+  npm run curriculum:sync -- <content-repository> --project <firebase-project-id> [--result-file <path>]`;
 
 async function main(): Promise<void> {
   const { positionals, values, tokens } = parseArgs({
     allowPositionals: true,
-    options: { project: { type: 'string' }, chapter: { type: 'string', multiple: true } },
+    options: {
+      project: { type: 'string' },
+      chapter: { type: 'string', multiple: true },
+      'result-file': { type: 'string' },
+    },
     tokens: true,
   });
   const chapterIds = values.chapter ? [...values.chapter] : undefined;
@@ -38,6 +43,7 @@ async function main(): Promise<void> {
     positionals.length < 2 ||
     !directory ||
     (command !== 'import' && chapterIds) ||
+    (command !== 'sync' && values['result-file'] !== undefined) ||
     !(command === 'validate' || ((command === 'import' || command === 'sync') && values.project))
   ) {
     throw new UsageError(usage);
@@ -46,7 +52,9 @@ async function main(): Promise<void> {
   if (command === 'sync' && values.project) {
     const db = await firestore(values.project);
     try {
-      await syncCurriculum(db, directory);
+      const result = await syncCurriculum(db, directory);
+      const resultFile = values['result-file'];
+      if (resultFile) await writeFile(resultFile, `${JSON.stringify(result)}\n`);
     } finally {
       await db.terminate();
     }

@@ -19,6 +19,11 @@ service cloud.firestore {
       }
     }
 
+    // Version of the latest successful content publication, written only by the sync CLI.
+    match /curriculumVersions/{repositoryId} {
+      allow read: if isGoogleLearner();
+    }
+
     // Frozen legacy chapters retain the original owner of pre-migration learner data.
     match /chapters/{chapterId} {
       allow read: if isGoogleLearner();

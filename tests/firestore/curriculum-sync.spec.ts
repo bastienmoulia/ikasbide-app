@@ -511,3 +511,51 @@ test('a new book can reuse an unaffected book’s chapter ID without changing th
     await db.terminate();
   }
 });
+
+test('each successful publication, even partial, advances the public content version', async ({}, testInfo) => {
+  const directory = await repository(testInfo.outputPath('source'));
+  const resultFile = testInfo.outputPath('result.json');
+  const projectId = `demo-sync-${randomUUID().slice(0, 8)}`;
+  const db = new Firestore({ projectId });
+  const sync = async () => {
+    const run = await runCurriculumCli(
+      'sync',
+      directory,
+      '--project',
+      projectId,
+      '--result-file',
+      resultFile,
+    );
+    return { run, result: run.code === 0 ? JSON.parse(await readFile(resultFile, 'utf8')) : null };
+  };
+  const publicVersion = async () =>
+    (await db.doc('curriculumVersions/ikasbide-content').get()).data()?.['version'];
+  try {
+    const initial = await commit(directory);
+    // A checkpoint written before versioning restarts the counter at the first patch.
+    await db.doc('curriculumPublications/ikasbide-content').set({ sha: 'f'.repeat(40) });
+    expect((await sync()).result).toEqual({ published: true, version: '0.0.1', sha: initial });
+    expect(await publicVersion()).toBe('0.0.1');
+
+    await changeTitle(directory, 'chapter-1', 'Berria');
+    const partial = await commit(directory);
+    expect((await sync()).result).toEqual({ published: true, version: '0.0.2', sha: partial });
+    expect((await db.doc('curriculumPublications/ikasbide-content').get()).data()).toEqual({
+      sha: partial,
+      version: '0.0.2',
+    });
+
+    await writeFile(join(directory, 'README.md'), 'Not curriculum source.\n');
+    await commit(directory);
+    expect((await sync()).result).toEqual({ published: false, version: '0.0.2', sha: partial });
+
+    const chapter = join(directory, 'A1', 'chapters', 'chapter-1.json');
+    await writeFile(chapter, '{');
+    await commit(directory);
+    const failed = await sync();
+    expect(failed.run.code).not.toBe(0);
+    expect(await publicVersion()).toBe('0.0.2');
+  } finally {
+    await db.terminate();
+  }
+});
