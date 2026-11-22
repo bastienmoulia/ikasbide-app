@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "book.schema.json",
   "title": "Ikasbide book",
-  "description": "Structural contract for book.json and shared chapter content. Cross-reference rules are checked by npm run curriculum:validate.",
+  "description": "Structural contract for book.json and shared chapter content. Cross-reference rules are checked by pnpm run curriculum:validate.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "id", "title", "chapters"],

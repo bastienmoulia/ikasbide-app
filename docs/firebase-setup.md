@@ -24,14 +24,15 @@ publics. Le curriculum est publié dans Firestore par une commande d’import d�
    Un écran limité aux utilisateurs de test ne permet pas l’accès à tous les comptes.
 6. Dans **Firestore Database → Créer une base de données**, choisir l’édition standard,
    un emplacement européen et le **mode production**. Ne jamais choisir le mode test :
-   les règles du dépôt sont déployées par `npm run deploy`.
+   les règles du dépôt sont déployées par `pnpm run deploy`.
 
 ## Configuration locale
 
 Depuis la racine du dépôt, avec Node 24.15+ (ou 22.22.3+) :
 
 ```bash
-npm ci
+corepack enable
+pnpm install --frozen-lockfile
 cp firebase-config.example.json public/firebase-config.json
 ```
 
@@ -48,7 +49,7 @@ avec le projet fictif `demo-ikasbide`.
 Pour développer avec le vrai projet :
 
 ```bash
-npm start
+pnpm start
 ```
 
 Ouvrir `http://localhost:4200`. Le service worker est désactivé en développement ;
@@ -57,15 +58,15 @@ utiliser la construction de production via Hosting pour vérifier l’installati
 ## Premier déploiement
 
 ```bash
-npx firebase login
-npx firebase use --add
+pnpm exec firebase login
+pnpm exec firebase use --add
 # Choisir le projet correspondant au JSON et lui donner l’alias default.
-npm run deploy
+pnpm run deploy
 ```
 
 Ne pas relancer `firebase init` : `firebase.json` contient déjà le dossier de sortie
 Angular, la réécriture SPA et les en-têtes de cache. `.firebaserc`, créé par
-`firebase use --add`, reste local. `npm run deploy` reconstruit l’application,
+`firebase use --add`, reste local. `pnpm run deploy` reconstruit l’application,
 vérifie que la configuration n’est pas celle des émulateurs et que l’alias `default`
 correspond au projet configuré, puis déploie Hosting et les règles Firestore avec
 `--project default`
@@ -77,7 +78,7 @@ Publier ensuite le curriculum depuis le dépôt privé de contenu (voir
 
 ```bash
 gcloud auth application-default login
-npm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID
+pnpm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID
 ```
 
 Ouvrir l’URL HTTPS affichée par la CLI. Vérifier la connexion Google, la liste des
@@ -109,7 +110,7 @@ Dans **Settings → Secrets and variables → Actions** du dépôt, configurer :
 Pour une récupération manuelle, ouvrir **Actions → Deploy Firebase Hosting → Run
 workflow**, sélectionner **main**, puis lancer. Un lancement sur une autre branche
 est ignoré. Le workflow installe les dépendances verrouillées, génère la configuration
-locale et réutilise `npm run deploy` avec ses vérifications. Le compte de service est
+locale et réutilise `pnpm run deploy` avec ses vérifications. Le compte de service est
 écrit dans un fichier temporaire privé, utilisé via Application Default Credentials,
 puis supprimé même en cas d’échec. Aucun `firebase login` interactif n’est nécessaire.
 Les déploiements sont sérialisés, avec jusqu’à 100 exécutions en attente ; GitHub
@@ -135,8 +136,8 @@ de ce même cache, puis sont synchronisées au retour du réseau.
 
 Les sources de l’identité sont `public/icon.svg` (application installée) et
 `public/favicon.svg` (version simplifiée pour les petits formats et l’en-tête).
-Après une modification, exécuter `npm run icons:generate` avec Chromium Playwright
-installé (`npx playwright install chromium`). Cette commande régénère les huit
+Après une modification, exécuter `pnpm run icons:generate` avec Chromium Playwright
+installé (`pnpm exec playwright install chromium`). Cette commande régénère les huit
 tailles PNG référencées par le manifeste, l’icône Apple de 180 px et le favicon PNG
 de 32 px. Garder le symbole dans la zone centrale sûre des icônes masquables ;
 leur fond lavande reste opaque, y compris en mode sombre.
@@ -144,12 +145,12 @@ leur fond lavande reste opaque, y compris en mode sombre.
 ## Vérification sans projet de production
 
 ```bash
-npx playwright install chromium webkit
-npm run typecheck
-npm test
+pnpm exec playwright install chromium webkit
+pnpm run typecheck
+pnpm test
 ```
 
-`npm test` construit la PWA, écrit une configuration fictive **uniquement dans `dist/`**,
+`pnpm test` construit la PWA, écrit une configuration fictive **uniquement dans `dist/`**,
 et démarre les émulateurs Authentication (`127.0.0.1:9099`), Firestore
 (`127.0.0.1:8080`) et Hosting (`127.0.0.1:5100`) avec `demo-ikasbide`. Le curriculum
 fictif `tests/fixtures/curriculum.sample/` y est importé avant les tests. La fenêtre Google de l’émulateur crée des
@@ -161,23 +162,23 @@ Ne saisir aucun compte réel dans cette fenêtre. Un test ne modifie jamais
 Pour explorer manuellement cette même construction :
 
 ```bash
-npm run build:e2e
-npm run emulators
+pnpm run build:e2e
+pnpm run emulators
 ```
 
 Ouvrir `http://127.0.0.1:5100`, puis arrêter les émulateurs avec Ctrl-C.
 Pour exécuter un seul fichier après construction :
 
 ```bash
-npx firebase emulators:exec --project demo-ikasbide --only auth,firestore,hosting \
-  "playwright test e2e/curriculum.spec.ts --project=desktop"
+pnpm exec firebase emulators:exec --project demo-ikasbide --only auth,firestore,hosting \
+  "pnpm exec playwright test e2e/curriculum.spec.ts --project=desktop"
 ```
 
 Les règles Firestore et l’import se testent sans construire l’application :
 
 ```bash
-npx firebase emulators:exec --project demo-ikasbide --only firestore \
-  "playwright test --project=firestore"
+pnpm exec firebase emulators:exec --project demo-ikasbide --only firestore \
+  "pnpm exec playwright test --project=firestore"
 ```
 
 Les tests couvrent les vues mobile et bureau, le parcours Google émulé, la navigation
@@ -209,4 +210,4 @@ le défi d’association conserve les scores atteints par chapitre dans
 `learners/{uid}/books/{bookId}/chapters/{chapterId}/vocabularyRush/{score}` pour en
 déduire le record. Ces données sont lisibles uniquement par leur propriétaire.
 L’authentification de l’interface ne remplace pas ces règles : toujours les déployer
-avec `npm run deploy`.
+avec `pnpm run deploy`.

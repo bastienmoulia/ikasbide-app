@@ -82,7 +82,7 @@ remplacent pas la validation humaine du sens et de la qualité de l’image.
 Depuis le checkout de l’application :
 
 ```bash
-npm run curriculum:images -- /path/to/ikasbide-content \
+pnpm run curriculum:images -- /path/to/ikasbide-content \
   --book A1 --chapter objects --draft /path/to/draft.json \
   --bucket YOUR_PROJECT.firebasestorage.app
 ```
@@ -158,7 +158,7 @@ n’est créé ou modifié par ces commandes de préparation ni par les tests.
 
 ## Vérification
 
-`npm run test:images` couvre le contrat, la préparation/réutilisation et la frontière
-de téléversement, avec des images fictives. `npm test` inclut les parcours navigateur
+`pnpm run test:images` couvre le contrat, la préparation/réutilisation et la frontière
+de téléversement, avec des images fictives. `pnpm test` inclut les parcours navigateur
 mobile/PC, la reprise partielle, le cache hors ligne et les règles Storage dans les
 émulateurs. Aucun appel IA payant ni upload de production n’est exécuté.

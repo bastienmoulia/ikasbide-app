@@ -7,19 +7,19 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "typecheck": "ngc --noEmit -p tsconfig.app.json && tsc -p tsconfig.e2e.json",
-    "build:e2e": "npm run build && node scripts/prepare-e2e.mjs",
+    "build:e2e": "pnpm run build && node scripts/prepare-e2e.mjs",
     "emulators": "firebase emulators:start --project demo-ikasbide --only auth,firestore,hosting",
-    "test": "npm run test:release && npm run test:images && npm run test:e2e",
+    "test": "pnpm run test:release && pnpm run test:images && pnpm run test:e2e",
     "test:images": "node --test tests/images.test.ts tests/image-authoring.test.ts tests/image-publication.test.ts",
     "test:release": "node --test scripts/release-automation.test.mjs",
-    "test:e2e": "npm run build:e2e && firebase emulators:exec --project demo-ikasbide --only auth,firestore,hosting,storage \"playwright test\"",
+    "test:e2e": "pnpm run build:e2e && firebase emulators:exec --project demo-ikasbide --only auth,firestore,hosting,storage \"playwright test\"",
     "format:check": "prettier --check .",
     "icons:generate": "node scripts/generate-icons.mjs",
     "curriculum:validate": "node tools/curriculum/cli.ts validate",
     "curriculum:import": "node tools/curriculum/cli.ts import",
     "curriculum:sync": "node tools/curriculum/cli.ts sync",
     "curriculum:images": "node tools/curriculum/images-cli.ts",
-    "deploy": "npm run build && node scripts/check-deploy.mjs && firebase deploy --project default --only hosting,firestore:rules"
+    "deploy": "pnpm run build && node scripts/check-deploy.mjs && firebase deploy --project default --only hosting,firestore:rules"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
@@ -28,7 +28,7 @@
     "@grpc/grpc-js": "^1.14.6"
   },
   "private": true,
-  "packageManager": "npm@11.13.0",
+  "packageManager": "pnpm@12.21.0",
   "dependencies": {
     "@angular/cdk": "^22.2.5",
     "@angular/common": "^22.2.0",
