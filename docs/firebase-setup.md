@@ -78,7 +78,7 @@ Publier ensuite le curriculum depuis le dépôt privé de contenu (voir
 
 ```bash
 gcloud auth application-default login
-pnpm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID
+pnpm run curriculum:import ../ikasbide-content/A1 --project PROJECT_ID
 ```
 
 Ouvrir l’URL HTTPS affichée par la CLI. Vérifier la connexion Google, la liste des

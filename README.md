@@ -93,7 +93,7 @@ du dépôt voisin :
 
 ```bash
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
-  pnpm run curriculum:import -- ../ikasbide-content/A1 --project demo-ikasbide
+  pnpm run curriculum:import ../ikasbide-content/A1 --project demo-ikasbide
 ```
 
 Sans accès au dépôt de contenu, utiliser `tests/fixtures/curriculum.sample`
@@ -129,7 +129,7 @@ bastienmoulia/
 Depuis `ikasbide-app`, valider le livre complet avant de le publier :
 
 ```bash
-pnpm run curriculum:validate -- ../ikasbide-content/A1
+pnpm run curriculum:validate ../ikasbide-content/A1
 ```
 
 Pour publier dans le projet Firebase de production `ikasbide-app`, installer la
@@ -138,7 +138,7 @@ une fois un compte disposant des droits d’écriture Firestore :
 
 ```bash
 gcloud auth application-default login
-env -u FIRESTORE_EMULATOR_HOST pnpm run curriculum:import -- \
+env -u FIRESTORE_EMULATOR_HOST pnpm run curriculum:import \
   ../ikasbide-content/A1 --project ikasbide-app
 ```
 
@@ -151,7 +151,7 @@ pour identifier le livre d’origine des données synchronisées.
 Pour republier seulement certains chapitres après une première publication complète :
 
 ```bash
-env -u FIRESTORE_EMULATOR_HOST pnpm run curriculum:import -- \
+env -u FIRESTORE_EMULATOR_HOST pnpm run curriculum:import \
   ../ikasbide-content/A1 --project ikasbide-app --chapter chapter-1 chapter-2
 ```
 

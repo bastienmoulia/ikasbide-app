@@ -82,7 +82,7 @@ remplacent pas la validation humaine du sens et de la qualité de l’image.
 Depuis le checkout de l’application :
 
 ```bash
-pnpm run curriculum:images -- /path/to/ikasbide-content \
+pnpm run curriculum:images /path/to/ikasbide-content \
   --book A1 --chapter objects --draft /path/to/draft.json \
   --bucket YOUR_PROJECT.firebasestorage.app
 ```

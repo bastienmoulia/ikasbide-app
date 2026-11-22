@@ -314,7 +314,7 @@ Voir [ADR 0006](adr/0006-book-scoped-identities.md).
 Depuis ce dépôt, avec le dépôt de contenu cloné à côté :
 
 ```bash
-pnpm run curriculum:validate -- ../ikasbide-content/A1
+pnpm run curriculum:validate ../ikasbide-content/A1
 ```
 
 Pour publier en production, utiliser les identifiants par défaut de Google Cloud
@@ -322,13 +322,13 @@ Pour publier en production, utiliser les identifiants par défaut de Google Clou
 
 ```bash
 gcloud auth application-default login
-pnpm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID
+pnpm run curriculum:import ../ikasbide-content/A1 --project PROJECT_ID
 ```
 
 Pour ne republier que certains chapitres, après une publication initiale complète :
 
 ```bash
-pnpm run curriculum:import -- ../ikasbide-content/A1 --project PROJECT_ID \
+pnpm run curriculum:import ../ikasbide-content/A1 --project PROJECT_ID \
   --chapter chapter-1 chapter-2
 ```
 
@@ -343,13 +343,13 @@ La commande refuse un projet `demo-…` sans émulateur, et un vrai projet si
 pnpm run emulators
 # dans un autre terminal
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
-  pnpm run curriculum:import -- tests/fixtures/curriculum.sample --project demo-ikasbide
+  pnpm run curriculum:import tests/fixtures/curriculum.sample --project demo-ikasbide
 ```
 
 ## Republication automatique depuis Git
 
 ```bash
-pnpm run curriculum:sync -- /chemin/ikasbide-content --project PROJECT_ID
+pnpm run curriculum:sync /chemin/ikasbide-content --project PROJECT_ID
 ```
 
 `sync` exige la racine d’un dépôt Git et une révision HEAD propre. Il découvre tous les
