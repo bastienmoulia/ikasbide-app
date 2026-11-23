@@ -18,7 +18,7 @@ Avant `1.0.0`, `feat:` incrémente la version mineure, `fix:` la version correct
 et une modification incompatible signalée par `!` ou `BREAKING CHANGE:` incrémente
 la version mineure. Ces versions restent pré-1.0 ; elles ne promettent pas une API
 stable. Après la première release, Release Please crée ou met à jour une pull request
-de release avec les changements de `package.json`, `package-lock.json`, du manifeste
+de release avec les changements de `package.json`, `pnpm-lock.yaml`, du manifeste
 et de `CHANGELOG.md`. Le workflow `Release Please` fusionne automatiquement (squash)
 cette pull request dès que le `CI` de pull request réussit pour son commit de tête
 exact ; aucune validation manuelle n’est nécessaire. Si la pull request est mise à

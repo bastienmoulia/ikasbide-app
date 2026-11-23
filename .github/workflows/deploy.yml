@@ -34,11 +34,12 @@ jobs:
             (github.event_name == 'push' && github.sha) || 'main' }}
           fetch-depth: 0
           persist-credentials: false
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Resolve deployment commit
         id: revision
         shell: bash
@@ -91,7 +92,7 @@ jobs:
             mode: 0o600,
           });
           NODE
-          npm run deploy -- --non-interactive
+          pnpm run deploy --non-interactive
       - name: Remove deployment credentials
         if: always()
         run: rm -f "$RUNNER_TEMP/firebase-service-account.json"

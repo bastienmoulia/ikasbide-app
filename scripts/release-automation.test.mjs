@@ -258,7 +258,7 @@ test('release and deployment workflows retain the gated immutable-release path',
   assert.match(deployWorkflow, /git checkout --detach "\$release_sha"/);
   assert.match(deployWorkflow, /github\.event\.release\.tag_name/);
   assert.match(deployWorkflow, /github\.ref == 'refs\/heads\/main'/);
-  assert.match(deployWorkflow, /npm run deploy -- --non-interactive/);
+  assert.match(deployWorkflow, /pnpm run deploy --non-interactive/);
   assert.match(ciWorkflow, /validate-pr-title\.mjs/);
   assert.match(ciWorkflow, /types:\s*\[opened, synchronize, reopened, edited\]/);
   assert.match(deployWorkflow, /cancel-in-progress: false/);
@@ -306,17 +306,14 @@ test('release metadata checks allow version changes and reject inconsistencies',
       ],
       { cwd: directory, encoding: 'utf8', env: environment },
     );
-  const writeVersions = async ({ manifest, packageVersion, lock, lockRoot }) => {
+  const writeVersions = async ({ manifest, packageVersion }) => {
     await Promise.all([
       writeFile(
         join(directory, '.release-please-manifest.json'),
         JSON.stringify({ '.': manifest }),
       ),
       writeFile(join(directory, 'package.json'), JSON.stringify({ version: packageVersion })),
-      writeFile(
-        join(directory, 'package-lock.json'),
-        JSON.stringify({ version: lock, packages: { '': { version: lockRoot } } }),
-      ),
+      writeFile(join(directory, 'pnpm-lock.yaml'), "lockfileVersion: '9.0'\nimporters:\n  .: {}\n"),
     ]);
   };
 
@@ -330,8 +327,6 @@ test('release metadata checks allow version changes and reject inconsistencies',
       await writeVersions({
         manifest: version,
         packageVersion: version,
-        lock: version,
-        lockRoot: version,
       });
       const result = checkMetadata();
       assert.ifError(result.error);
@@ -340,10 +335,9 @@ test('release metadata checks allow version changes and reject inconsistencies',
     }
 
     for (const versions of [
-      { manifest: '0.0.0', packageVersion: '0.1.0', lock: '0.1.0', lockRoot: '0.1.0' },
-      { manifest: '0.1.0', packageVersion: '0.1.0', lock: '0.0.0', lockRoot: '0.1.0' },
-      { manifest: '0.1.0', packageVersion: '0.1.0', lock: '0.1.0', lockRoot: '0.0.0' },
-      { manifest: 'invalid', packageVersion: 'invalid', lock: 'invalid', lockRoot: 'invalid' },
+      { manifest: '0.0.0', packageVersion: '0.1.0' },
+      { manifest: '0.1.1', packageVersion: '0.1.0' },
+      { manifest: 'invalid', packageVersion: 'invalid' },
     ]) {
       await writeVersions(versions);
       const result = checkMetadata();
@@ -358,11 +352,11 @@ test('release metadata checks allow version changes and reject inconsistencies',
 });
 
 test('Release Please configuration and package versions remain consistent', async () => {
-  const [config, manifest, packageJson, packageLock] = await Promise.all([
+  const [config, manifest, packageJson, pnpmLock] = await Promise.all([
     readFile('release-please-config.json', 'utf8').then(JSON.parse),
     readFile('.release-please-manifest.json', 'utf8').then(JSON.parse),
     readFile('package.json', 'utf8').then(JSON.parse),
-    readFile('package-lock.json', 'utf8').then(JSON.parse),
+    readFile('pnpm-lock.yaml', 'utf8'),
   ]);
   assert.equal(config.packages['.']['initial-version'], '0.1.0');
   assert.equal(config.packages['.']['bump-minor-pre-major'], true);
@@ -371,6 +365,6 @@ test('Release Please configuration and package versions remain consistent', asyn
   assert.equal(config['include-v-in-tag'], true);
   assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
   assert.equal(manifest['.'], packageJson.version);
-  assert.equal(packageLock.version, packageJson.version);
-  assert.equal(packageLock.packages[''].version, packageJson.version);
+  assert.match(pnpmLock, /^lockfileVersion: /m);
+  assert.match(pnpmLock, /^importers:\n/m);
 });

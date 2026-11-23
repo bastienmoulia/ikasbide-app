@@ -6,9 +6,9 @@ import { validateCurriculum } from './validate.ts';
 import { syncCurriculum } from './sync.ts';
 
 const usage = `Usage:
-  npm run curriculum:validate -- <book-directory>
-  npm run curriculum:import -- <book-directory> --project <firebase-project-id> [--chapter <id> ...]
-  npm run curriculum:sync -- <content-repository> --project <firebase-project-id> [--result-file <path>]`;
+  pnpm run curriculum:validate <book-directory>
+  pnpm run curriculum:import <book-directory> --project <firebase-project-id> [--chapter <id> ...]
+  pnpm run curriculum:sync <content-repository> --project <firebase-project-id> [--result-file <path>]`;
 
 async function main(): Promise<void> {
   const { positionals, values, tokens } = parseArgs({

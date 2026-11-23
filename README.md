@@ -78,10 +78,11 @@ sont la prochaine évolution prévue.
 Avec Node 24.15+ (ou 22.22.3+) :
 
 ```bash
-npm ci
-npx playwright install chromium webkit
-npm run build:e2e
-npm run emulators
+corepack enable
+pnpm install --frozen-lockfile
+pnpm exec playwright install chromium webkit
+pnpm run build:e2e
+pnpm run emulators
 ```
 
 Ouvrir `http://127.0.0.1:5100`, cliquer sur la connexion Google, puis créer un compte
@@ -92,7 +93,7 @@ du dépôt voisin :
 
 ```bash
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
-  npm run curriculum:import -- ../ikasbide-content/A1 --project demo-ikasbide
+  pnpm run curriculum:import ../ikasbide-content/A1 --project demo-ikasbide
 ```
 
 Sans accès au dépôt de contenu, utiliser `tests/fixtures/curriculum.sample`
@@ -101,13 +102,13 @@ Sans accès au dépôt de contenu, utiliser `tests/fixtures/curriculum.sample`
 Pour vérifier le projet :
 
 ```bash
-npm run typecheck
-npm test
-npm run format:check
+pnpm run typecheck
+pnpm test
+pnpm run format:check
 ```
 
 La [procédure Firebase](docs/firebase-setup.md) décrit la connexion à votre projet,
-le développement avec `npm start`, le déploiement Hosting et l’installation de la PWA.
+le développement avec `pnpm start`, le déploiement Hosting et l’installation de la PWA.
 Les tests automatisés n’utilisent que les émulateurs et ne déploient jamais en production.
 
 ### Gérer et publier le curriculum
@@ -128,7 +129,7 @@ bastienmoulia/
 Depuis `ikasbide-app`, valider le livre complet avant de le publier :
 
 ```bash
-npm run curriculum:validate -- ../ikasbide-content/A1
+pnpm run curriculum:validate ../ikasbide-content/A1
 ```
 
 Pour publier dans le projet Firebase de production `ikasbide-app`, installer la
@@ -137,7 +138,7 @@ une fois un compte disposant des droits d’écriture Firestore :
 
 ```bash
 gcloud auth application-default login
-env -u FIRESTORE_EMULATOR_HOST npm run curriculum:import -- \
+env -u FIRESTORE_EMULATOR_HOST pnpm run curriculum:import \
   ../ikasbide-content/A1 --project ikasbide-app
 ```
 
@@ -150,7 +151,7 @@ pour identifier le livre d’origine des données synchronisées.
 Pour republier seulement certains chapitres après une première publication complète :
 
 ```bash
-env -u FIRESTORE_EMULATOR_HOST npm run curriculum:import -- \
+env -u FIRESTORE_EMULATOR_HOST pnpm run curriculum:import \
   ../ikasbide-content/A1 --project ikasbide-app --chapter chapter-1 chapter-2
 ```
 

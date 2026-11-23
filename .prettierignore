@@ -11,6 +11,6 @@ node_modules/
 test-results/
 playwright-report/
 public/firebase-config.json
-package-lock.json
+pnpm-lock.yaml
 CHANGELOG.md
 *-debug.log*

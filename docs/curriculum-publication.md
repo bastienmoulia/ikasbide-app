@@ -94,7 +94,7 @@ Configurer ces **variables Actions**, pas des secrets JSON :
 Le CLI doit être disponible publiquement avant l’activation : publier/fusionner son
 commit puis configurer le SHA immuable. L’archive du dépôt public est téléchargée sans
 token GitHub inter-dépôts. Les actions sont également épinglées par SHA.
-`npm ci` précède l’authentification pour ne pas consommer la durée du jeton pendant
+`pnpm install --frozen-lockfile` précède l’authentification pour ne pas consommer la durée du jeton pendant
 l’installation. Le job n’accorde que `contents: read` et `id-token: write`.
 Le fichier ADC temporaire exporté par l’action est consommé directement par le client
 Google Cloud Firestore ; `gha-creds-*.json` doit rester ignoré, hors logs et artefacts.
@@ -140,8 +140,8 @@ depuis la dernière réussite ; ne pas modifier le checkpoint pour masquer un é
 Avec les ports émulateur libres (ne jamais réutiliser ni vider un émulateur partagé) :
 
 ```bash
-npx firebase emulators:exec --project demo-ikasbide --only firestore \
-  "npx playwright test --project=firestore tests/firestore/curriculum-sync.spec.ts tests/firestore/curriculum-import.spec.ts tests/firestore/curriculum-partial-import.spec.ts"
+pnpm exec firebase emulators:exec --project demo-ikasbide --only firestore \
+  "pnpm exec playwright test --project=firestore tests/firestore/curriculum-sync.spec.ts tests/firestore/curriculum-import.spec.ts tests/firestore/curriculum-partial-import.spec.ts"
 ```
 
 Chaque scénario de synchronisation utilise un dépôt Git temporaire avec des sources

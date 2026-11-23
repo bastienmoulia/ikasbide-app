@@ -5,7 +5,7 @@ import { sampleContentVersion } from './support.ts';
 /** Publishes the original synthetic sample curriculum to the Firestore emulator. */
 export default async function globalSetup(): Promise<void> {
   if (!process.env['FIRESTORE_EMULATOR_HOST']) {
-    throw new Error('Run the tests through `npm test` so the Firebase emulators are available.');
+    throw new Error('Run the tests through `pnpm test` so the Firebase emulators are available.');
   }
   const result = await runCurriculumCli(
     'import',

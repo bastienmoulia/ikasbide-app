@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util';
 import { prepareIllustrations } from './illustrations.ts';
 
 const usage =
-  'Usage: npm run curriculum:images -- <content-repository> --book A1 --chapter <id> --draft <file.json> --bucket <bucket-name>';
+  'Usage: pnpm run curriculum:images <content-repository> --book A1 --chapter <id> --draft <file.json> --bucket <bucket-name>';
 
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({

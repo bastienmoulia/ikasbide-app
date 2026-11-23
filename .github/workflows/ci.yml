@@ -15,10 +15,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
       - name: Validate pull request title
         if: github.event_name == 'pull_request'
         env:
@@ -28,11 +29,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
-      - run: npm run typecheck
-      - run: npm run format:check
-      - run: npm test
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm run typecheck
+      - run: pnpm run format:check
+      - run: pnpm test
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
